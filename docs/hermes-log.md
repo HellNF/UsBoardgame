@@ -4,7 +4,8 @@ Sezioni richieste da [HERMES.md](../HERMES.md) § 6: una per pacchetto, aggiunte
 
 ## Pacchetto A · Motore completo — 2026-09-17
 
-Branch: hermes/a-engine · Ultimo commit: 013c506 (il commit che ha aggiunto questo rapporto)
+Branch: hermes/a-engine · Ultimo commit del pacchetto: c9e9155 (questo rapporto è in quel commit;
+l'aggiornamento di questa riga è l'unica modifica successiva).
 
 - **Fatto:** F1-01 `[x]`, F1-02 `[x]`, F1-03 `[x]`, F1-04 `[x]`, F5-01 `[x]`, F5-02 `[x]`, F5-03 `[x]`, F5-04 `[x]`;
   parte motore di F3-03, F4-02, F4-03, F4-06 e F5-05 `[~]` (mancano carte, schermate e route: pacchetti C e D).
