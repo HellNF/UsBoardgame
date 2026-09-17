@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { EVENTS } from "@/content/events";
 import { ITEMS } from "@/content/items";
+import { challenges } from "@/content/challenges";
+import { questions } from "@/content/questions";
 import type { EventCardId, GameState, ItemId, Seat } from "@/engine";
 import { plural } from "@/lib/plural";
 import { parseGameState } from "@/server/game/context";
@@ -16,6 +18,10 @@ import { parseGameState } from "@/server/game/context";
  * La mappa evento → momento è pura e si prova con i test; sotto c'è solo la lettura del database.
  * I tipi qui sotto rispecchiano `DiaryEntry` e l'archivio di `src/features/diary/diary-view.tsx`
  * (che `src/server` non può importare: la regola di import vale in un verso solo).
+ *
+ * I **testi** delle domande e i **nomi** delle sfide si prendono dal catalogo nel bundle
+ * (`src/content`), come fa `online-table` per le carte: stesso testo della partita, nessuna
+ * seconda copia nel database e nessuna query in più (D-54).
  */
 
 export type DiaryEntryRow = {
@@ -57,15 +63,25 @@ const METHODS: Record<string, string> = {
   coin_flip: "lancio di moneta",
 };
 
-const COIN_SOURCES: Record<string, string> = {
-  cell: "casella",
-  question: "domanda",
-  challenge: "sfida",
-  gift: "regalo",
-  thief: "ladro",
-  star_purchase: "stella comprata",
-  item_purchase: "oggetto comprato",
+/** Da dove arrivano (o dove vanno) le monete, detto come si direbbe a voce. */
+const COIN_SOURCES: Record<string, { gained: string; lost: string }> = {
+  cell: { gained: "Dalla casella", lost: "Alla casella" },
+  question: { gained: "Dalla domanda", lost: "Alla domanda" },
+  challenge: { gained: "Dalla sfida", lost: "Alla sfida" },
+  gift: { gained: "Dal regalo", lost: "Al regalo" },
+  thief: { gained: "Dal ladro", lost: "Al ladro" },
+  star_purchase: { gained: "Dalla stella", lost: "Alla stella comprata" },
+  item_purchase: { gained: "Dall'oggetto", lost: "All'oggetto comprato" },
 };
+
+/** Testi delle domande dal catalogo nel bundle: nel diario ci va il testo, non l'id. */
+const QUESTION_TEXTS = new Map(questions.map((question) => [question.id, question.text]));
+
+/** Nomi delle sfide dal catalogo nel bundle. */
+const CHALLENGE_NAMES = new Map(challenges.map((challenge) => [challenge.id, challenge.name]));
+
+const questionTitle = (id: string): string => QUESTION_TEXTS.get(id) ?? `Domanda ${id}`;
+const challengeName = (id: string): string => CHALLENGE_NAMES.get(id) ?? `Sfida ${id}`;
 
 const asSeat = (value: unknown): Seat | null => (value === 1 || value === 2 ? value : null);
 const asNumber = (value: unknown, fallback = 0): number => (typeof value === "number" ? value : fallback);
@@ -93,25 +109,25 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
       case "QUESTION_ANSWERED":
         push(
           "question",
-          `Domanda ${asString(event.payload.questionId, "?")}`,
+          questionTitle(asString(event.payload.questionId, "?")),
           `Risposta: «${asString(event.payload.answer)}»`,
         );
         break;
       case "QUESTION_JUDGED":
         push(
           "question",
-          `Domanda ${asString(event.payload.questionId, "?")}`,
+          questionTitle(asString(event.payload.questionId, "?")),
           `Verdetto: ${VERDICTS[asString(event.payload.verdict)] ?? asString(event.payload.verdict)}.`,
         );
         break;
       case "QUESTION_SKIPPED":
-        push("question", "Domanda saltata", "Salta domanda consumato: nessuna moneta, nessuna salita.");
+        push("question", "Domanda saltata", "Usato «Salta domanda»: l'oggetto è andato, il turno no.");
         break;
       case "CHALLENGE_RESOLVED": {
         const winner = event.payload.seat;
         push(
           "challenge",
-          `Sfida ${asString(event.payload.challengeId, "?")}`,
+          challengeName(asString(event.payload.challengeId, "?")),
           winner === "draw" || winner === null
             ? `Pareggio: nessun premio (${METHODS[asString(event.payload.method)] ?? "?"}).`
             : `Vinta: +${plural(asNumber(event.payload.prize), "moneta", "monete")} (${METHODS[asString(event.payload.method)] ?? "?"}).`,
@@ -131,10 +147,10 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
       case "TIMER_EXPIRED":
         push(
           "challenge",
-          `Tempo scaduto: ${asString(event.payload.challengeId, "?")}`,
+          `Tempo scaduto: ${challengeName(asString(event.payload.challengeId, "?"))}`,
           event.payload.outcome === "failed"
-            ? "Prova fallita: nessun premio."
-            : "Si passa alla doppia conferma.",
+            ? "La prova non è riuscita: nessun premio."
+            : "Si passa alle dichiarazioni di entrambi.",
         );
         break;
       case "EVENT_RESOLVED": {
@@ -146,22 +162,29 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
         );
         break;
       }
-      case "COINS_GAINED":
+      case "COINS_GAINED": {
+        // Le monete a zero non sono un momento della serata.
+        const amount = asNumber(event.payload.amount);
+        if (amount <= 0) break;
+        const source = COIN_SOURCES[asString(event.payload.source)];
         push(
           "coins",
-          `+${plural(asNumber(event.payload.amount), "moneta", "monete")}`,
-          `${COIN_SOURCES[asString(event.payload.source)] ?? asString(event.payload.source)}${
-            event.payload.doubled === true ? " (raddoppiate)" : ""
-          }.`,
+          `+${plural(amount, "moneta", "monete")}`,
+          `${source?.gained ?? asString(event.payload.source)}${event.payload.doubled === true ? ", raddoppiate" : ""}.`,
         );
         break;
-      case "COINS_LOST":
+      }
+      case "COINS_LOST": {
+        const amount = asNumber(event.payload.amount);
+        if (amount <= 0) break;
+        const source = COIN_SOURCES[asString(event.payload.source)];
         push(
           "coins",
-          `−${plural(asNumber(event.payload.amount), "moneta", "monete")}`,
-          `${COIN_SOURCES[asString(event.payload.source)] ?? asString(event.payload.source)}.`,
+          `−${plural(amount, "moneta", "monete")}`,
+          `${source?.lost ?? asString(event.payload.source)}.`,
         );
         break;
+      }
       case "ITEM_BOUGHT":
         push(
           "coins",
@@ -173,37 +196,33 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
         push(
           "coins",
           ITEMS[asString(event.payload.item) as ItemId]?.name ?? "Oggetto",
-          "Ricevuto in regalo.",
+          "Arrivato in regalo.",
         );
         break;
       case "ITEM_USED":
-        push("coins", ITEMS[asString(event.payload.item) as ItemId]?.name ?? "Oggetto", "Usato.");
+        push("coins", ITEMS[asString(event.payload.item) as ItemId]?.name ?? "Oggetto", "Usato nel turno.");
         break;
       case "ITEM_DISCARDED":
         push(
           "coins",
           ITEMS[asString(event.payload.item) as ItemId]?.name ?? "Oggetto",
-          "Scartato: lo zaino è pieno.",
+          "Lasciato andare: lo zaino era pieno.",
         );
         break;
       case "CLIMBED_LADDER":
-        push("event", "Scala", `Dalla ${asNumber(event.payload.from)} alla ${asNumber(event.payload.to)}.`);
+        push("event", "La scala", `Su, dalla ${asNumber(event.payload.from)} alla ${asNumber(event.payload.to)}.`);
         break;
       case "SLID_DOWN_SNAKE":
-        push(
-          "event",
-          "Serpente",
-          `Dalla ${asNumber(event.payload.from)} alla ${asNumber(event.payload.to)}.`,
-        );
+        push("event", "Il serpente", `Giù, dalla ${asNumber(event.payload.from)} alla ${asNumber(event.payload.to)}.`);
         break;
       case "STAR_BOUGHT":
-        push("star", "Stella comprata", `${plural(asNumber(event.payload.price), "moneta", "monete")}.`);
+        push("star", "Stella comprata", `Pagata ${plural(asNumber(event.payload.price), "moneta", "monete")}.`);
         break;
       case "STAR_DECLINED":
-        push("star", "Stella rifiutata", "Nessuna moneta spesa.");
+        push("star", "Stella rifiutata", "Nessuna moneta spesa: le monete restano in tasca.");
         break;
       case "FINISH_REACHED":
-        push("star", "Arrivo alla 100", `Round ${asNumber(event.payload.round, round)}.`);
+        push("star", "Arrivo alla 100", `Round ${asNumber(event.payload.round, round)}: la partita si chiude alla fine del giro.`);
         break;
       default:
         break;
