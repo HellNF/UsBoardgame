@@ -8,6 +8,10 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 2. **Il colore è solo dei giocatori:** gettone della pedina, evidenziazione del turno e punteggi. Mai sul tabellone.
 3. **Geometria, non decorazione:** il tipo di casella si riconosce dalla forma (vedi tabella).
 4. **Tratto spesso e campiture nere** per le illustrazioni, come le stampe della reference.
+5. **Una schermata sola** (≥ 1024 × 768, D-16): la partita non fa scorrere la pagina; il tabellone si adatta
+   all'altezza disponibile e, se serve, scorre solo il pannello di destra. Chi ha il turno si riconosce a colpo
+   d'occhio — bordo pieno della riga, pallino pieno del colore del giocatore, etichetta "Tocca a te" — e non dal
+   solo colore.
 
 ## Token (`src/app/globals.css`)
 

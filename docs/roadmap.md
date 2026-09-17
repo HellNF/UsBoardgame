@@ -62,6 +62,15 @@ Dopo la fase 3: **prima serata giocabile**.
       schermo: tabellone, dadi, pannello, tutte le carte, timer, schermata finale. Verificato a occhio con
       `pnpm dev` (voci F1-05 del Registro in [local-testing.md](local-testing.md)).
       Modalità "hot seat" (entrambi i posti sullo stesso schermo) per provare le regole senza Supabase.
+      Correzioni del 2026-09-17 (branch `hermes/e-ui-fix`): numeri e simboli delle caselle disegnati sopra scale e
+      serpenti con l'alone del colore della carta (A1); pedina con il **numero del posto** invece dell'iniziale del
+      nome (A2); turno segnalato da bordo pieno, pallino pieno ed etichetta "Tocca a te" (A3); partita in **una
+      schermata sola** da 1024 × 768 in su, con il solo pannello di destra scorrevole (A4); stella della casella 15
+      leggibile sotto la scala 8→26, che non è stata spostata (A5).
+      Sullo stesso branch la pagina `/dev/scenari` elenca **25 stati di carta fissati a mano** (le carte rare: i
+      sette imprevisti, l'offerta della stella con e senza monete, lo zaino pieno, la doppia conferma in disaccordo,
+      la sfida lampo del serpente, la schermata finale): la carta è viva e cliccabile, e la verifica è nel Registro
+      di [local-testing.md](local-testing.md).
 
 ## Fase 2 · Tempo reale — _partita a distanza sincronizzata_
 

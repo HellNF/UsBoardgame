@@ -251,7 +251,7 @@ si tocca da qui.
 
 ### D-43 · Hot seat: il motore gira nel browser, solo nelle pagine `/dev`
 
-**Derivata, dal pacchetto C.** La pagina `/dev/hotseat` fa girare `reduce` nel browser con un `EngineContext`
+**Derivata, dal pacchetto C, confermata dal proprietario il 2026-09-17.** La pagina `/dev/hotseat` fa girare `reduce` nel browser con un `EngineContext`
 finto, per poter giocare una partita intera senza Supabase. È l'unica **eccezione** alla regola 1 di AGENTS.md
 ("le regole girano solo sul server") e vale solo per le pagine di sviluppo: la pagina chiama `notFound()` quando
 `NODE_ENV === "production"` (verificato: in `pnpm start` le pagine `/dev/*` rispondono 404).
@@ -260,7 +260,7 @@ il motore nel browser; tenerlo confinato a `/dev` e spento in produzione evita c
 
 ### D-44 · Hot seat: scheda di prova e due sfide in più per i minigiochi
 
-**Derivata, dal pacchetto C.** In hot seat non ci sono schede vere (arrivano con F3-02), quindi il contesto finto
+**Derivata, dal pacchetto C, confermata dal proprietario il 2026-09-17.** In hot seat non ci sono schede vere (arrivano con F3-02), quindi il contesto finto
 risponde alle domande "quanto mi conosci" confrontando la risposta con la **prima opzione** di ogni domanda a
 scelta multipla. Inoltre la hot seat aggiunge due carte sfida di prova (`dev-forza-4`, `dev-memory`) perché il
 mazzo di `main` contiene solo il tris: servono a provare le tre interfacce dei minigiochi. Le due carte vivono in
@@ -300,9 +300,11 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 ## Ancora aperte
 
 - [ ] Elenco dei giochi DS/3DS posseduti e regole di ogni sfida (fase 7).
-- [ ] Posizioni di scale, serpenti e geometrie nella disposizione `classic`: la proposta è in
-      `src/content/boards/classic.ts` (verificata dal validatore) e va rivista a occhio accanto a
-      `docs/reference/board/boardReference.png` (task F1-01).
+- [x] Posizioni di scale, serpenti e geometrie nella disposizione `classic`: **approvate dal proprietario il
+      2026-09-17** (l'impianto va bene e le scale da 5 file si leggono). Le correzioni di leggibilità richieste
+      sono A1/A5, fatte nel branch `hermes/e-ui-fix`: i simboli delle caselle sono disegnati sopra scale e
+      serpenti con l'alone del colore della carta, quindi la stella della casella 15 resta visibile e la scala
+      8→26 non è stata spostata.
 - [ ] Revisione delle ~150 domande (task F3-04).
 - [ ] Valori esatti di verde bosco e ocra (proposta in `globals.css`, da validare accanto alla reference).
 
@@ -322,3 +324,31 @@ cambiare verdetto e `minigame` in `src/content/challenges.ts`.
 _Nota di numerazione:_ questa voce è stata scritta sul branch `hermes/b-content`, partito da `main`; le decisioni
 D-31…D-40 arrivano dal branch `hermes/a-engine` (pacchetto A). Al merge dei due branch l'ordine dei numeri resta
 questo.
+
+---
+
+## Interfaccia e verifica a occhio (branch `hermes/e-ui-fix`)
+
+### D-45 · Pagina `/dev/scenari`: le carte rare, uno stato alla volta
+
+**Derivata, dall'indicazione del proprietario.** La pagina `/dev/scenari` (solo sviluppo, 404 in produzione come
+`/dev/hotseat`, D-43) elenca ogni stato di carta e di schermata costruito da un `GameState` **fissato a mano** in
+`src/features/game/dev-scenarios.ts`: domanda a scelta multipla con verdetto giusto e sbagliato, domanda breve nei
+tre verdetti, domanda aperta, domanda su base di scala, i sette imprevisti, l'offerta della stella con e senza
+monete, lo zaino pieno, sfida duello automatica, prova a giudizio, doppia conferma d'accordo e in disaccordo con
+rivincita o moneta, sfida lampo del serpente, schermata finale in vittoria dell'uno, dell'altro e in pareggio.
+Nessuna carta è pescata a caso: l'unico valore calcolato all'apertura è la scadenza dei timer.
+I componenti sono quelli di `src/features` (nessuna copia) e la carta resta viva e cliccabile perché il reducer
+gira nel browser con l'`EngineContext` finto della hot seat.
+_Perché:_ le carte rare si vedono altrimenti solo sperando che escano in partita; con stati fissati a mano si
+controllano in un colpo solo, senza toccare i contenuti né le regole.
+
+### D-46 · La pedina segnaposto porta il numero del posto
+
+**Derivata, dall'indicazione del proprietario.** Il segnaposto della pedina mostra **il numero del posto** (1 o 2)
+e non l'iniziale del nome: entrambi i giocatori si chiamano "Giocatore 1" e "Giocatore 2", quindi le due pedine
+mostravano la stessa lettera. Il nome resta nell'etichetta accessibile della pedina. Nello stesso pannello il posto
+di turno si riconosce da tre segnali insieme — bordo pieno della riga, pallino pieno del colore del giocatore ed
+etichetta "Tocca a te" — così non dipende dal solo colore.
+_Perché:_ il "·" che segnava il turno sembrava un errore di battitura, e due pedine identiche non si distinguono
+guardando il tabellone.
