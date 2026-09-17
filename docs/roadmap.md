@@ -25,15 +25,34 @@ Dopo la fase 3: **prima serata giocabile**.
 
 ## Fase 0 · Base — _entrambi entrano nella stessa stanza_
 
-- [ ] **F0-01** Avviare Supabase locale (`pnpm db:start`), applicare la migrazione, correggere eventuali errori SQL,
-      `pnpm db:types`. Creare `.env.local`.
-- [ ] **F0-02** `hashPassword` / `verifyPassword` con `scrypt` + test.
-- [ ] **F0-03** `pnpm room:create`: crea stanza e due posti (password chiesta a terminale, mai negli argomenti).
-- [ ] **F0-04** `src/proxy.ts` per il refresh della sessione; `POST /api/rooms/join`; accesso anonimo; ritardo sui
-      tentativi falliti. Test RLS: un posto non legge la scheda dell'altro né `rooms`.
-- [~] **F0-05** Pagina di accesso (codice, password, scelta del posto) e lobby minima con indicatore "connesso".
+- [L] **F0-01** Avviare Supabase locale (`pnpm db:start`), applicare la migrazione, correggere eventuali errori SQL,
+  `pnpm db:types`. Creare `.env.local`.
+  Nota: il pacchetto D ha corretto la migrazione leggendola (non è mai stata applicata): policy del catalogo
+  legate ad `active`, `select` concesso ai client solo sulle tabelle leggibili e nessun privilegio di scrittura
+  (su `rooms` nemmeno il `select`), `replica identity full` su `games`, `game_events` e `players`, indice su
+  `used_questions (room_id, seat)` e la funzione `apply_game_action` delle transazioni. Resta da **applicarla**:
+  `pnpm db:reset` e `pnpm db:types` sono la verifica (voce F0-01 del Registro).
+- [x] **F0-02** `hashPassword` / `verifyPassword` con `scrypt` + test.
+      Nota: `src/server/auth/password-core.ts` (scrypt con salt casuale, formato `scrypt$N$r$p$salt$hash`, confronto
+      con `timingSafeEqual`, 7 test) e `password.ts` con il marcatore `server-only`. Il core è senza marcatore perché
+      lo usano anche gli script `tsx` (`room:create`): l'import dal browser è impedito da ESLint.
+- [L] **F0-03** `pnpm room:create`: crea stanza e due posti (password chiesta a terminale, mai negli argomenti).
+  Nota: `scripts/create-room.ts` con `--code`, `--name1`, `--name2`, `--pawn1/2`, `--color1/2`; la password si
+  chiede due volte a terminale e si salva solo l'hash. Lettura di `.env.local` in `scripts/lib/env-file.ts` e
+  argomenti puri in `scripts/lib/room-args.ts` (12 test). Da eseguire con Supabase acceso (Registro, F0-03).
+- [L] **F0-04** `src/proxy.ts` per il refresh della sessione; `POST /api/rooms/join`; accesso anonimo; ritardo sui
+  tentativi falliti. Test RLS: un posto non legge la scheda dell'altro né `rooms`.
+  Nota: `src/proxy.ts` (il middleware di Next 16 si chiama proxy) rinnova il cookie della sessione, rimanda alla
+  pagina di accesso chi apre `/r/...` senza sessione e non fa nulla senza `.env.local`; `POST /api/rooms/join`
+  valida il corpo con Zod, le due risposte sbagliate (codice o password) sono identiche e arrivano dopo il ritardo
+  crescente di `src/server/auth/attempts.ts` (test); `POST /api/rooms/leave` libera il posto. Le query di verifica
+  sono in `supabase/tests/rls.sql`.
+- [L] **F0-05** Pagina di accesso (codice, password, scelta del posto) e lobby minima con indicatore "connesso".
   Nota: UI pronta e visibile in `/dev/ui` su dati finti (`src/features/access`), con lo stato dell'altro
   giocatore; il collegamento a Supabase e la scelta del posto sono del pacchetto D.
+  Dal pacchetto D: la pagina `/` usa `AccessContainer` (sessione anonima, `POST /api/rooms/join`, scelta del posto)
+  e rimanda alla schermata della fase; la lobby di `/r/[code]/lobby` è collegata ai dati veri (F2-02, F2-04) e
+  l'indicatore "l'altro è collegato" viene da Presence.
 - [ ] **F0-06** Progetto Supabase remoto + progetto Vercel + variabili; deploy di prova.
 
 ## Fase 1 · Tabellone — _partita completa su un solo schermo_
@@ -74,12 +93,24 @@ Dopo la fase 3: **prima serata giocabile**.
 
 ## Fase 2 · Tempo reale — _partita a distanza sincronizzata_
 
-- [ ] **F2-01** `applyAction` + `POST /api/games/[gameId]/actions` (identità, versione, transazione, eventi).
-- [~] **F2-02** Lobby completa: impostazioni, pronto, creazione della partita (`status` lobby → playing).
+- [L] **F2-01** `applyAction` + `POST /api/games/[gameId]/actions` (identità, versione, transazione, eventi).
+  Nota: `src/server/game/` con schemi Zod delle azioni (oggetti stretti: i campi di troppo sono rifiutati),
+  `apply-action.ts` (sessione → posto, stanza, versione attesa, `reduce`, `apply_game_action` in una transazione) e
+  gli adattatori del contesto in `context.ts`. Risposte 400/401/403/404/409/422/500; il `409` porta lo stato fresco
+  con cui il client si riallinea. Verifica nel Registro (F2-01), **compreso il doppio clic**.
+- [L] **F2-02** Lobby completa: impostazioni, pronto, creazione della partita (`status` lobby → playing).
   Nota: la parte visiva (disposizione, categorie, durata massima, posta, pronto dei due posti) è in
   `src/features/lobby` e si vede in `/dev/ui`; `status` e la creazione della partita sono del pacchetto D.
-- [ ] **F2-03** Abbonamento Realtime a `games`/`game_events`, gestione dei `409`, riconnessione alla fase salvata.
-- [ ] **F2-04** Presence: indicatore dell'altro giocatore e `last_seen_at`.
+  Dal pacchetto D: `POST /api/rooms/[code]/games` (impostazioni, pronto, `start`, `new`) con le regole pure in
+  `src/server/room/lobby.ts` (test); con entrambi pronti si passa a `sheets` se una scheda è incompleta (D-28),
+  altrimenti a `playing`; `LobbyContainer` collega `LobbyView` all'API e a Realtime.
+- [L] **F2-03** Abbonamento Realtime a `games`/`game_events`, gestione dei `409`, riconnessione alla fase salvata.
+  Nota: `src/features/presence/use-room-realtime.ts` (un canale per stanza, `games` e `game_events` filtrati per
+  partita) e `OnlineTable`, che manda le azioni all'API e sul `409` prende lo stato del server senza ricalcolarlo.
+  Ogni pagina della stanza rimanda alla schermata della fase (`src/server/room/current.ts`): è la riconnessione.
+- [L] **F2-04** Presence: indicatore dell'altro giocatore e `last_seen_at`.
+  Nota: Presence sul canale della stanza (`{ seat, screen }`) alimenta l'indicatore in lobby e in partita;
+  `players.last_seen_at` si aggiorna a ogni caricamento di pagina della stanza (lato server).
 - [~] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
   Nota: fatti il salto della pedina verso la casella nuova (con la curva del serpente quando lo spostamento è
   una discesa), l'anello del turno e l'ingresso delle carte; manca il salto **cella per cella** e l'uso degli
@@ -87,11 +118,19 @@ Dopo la fase 3: **prima serata giocabile**.
 
 ## Fase 3 · Domande — _prima serata giocabile_
 
-- [ ] **F3-01** `drawQuestion` lato server (categoria, 60/40, livelli profonde, solo domande con risposta, registro
-      per posto/coppia, azzeramento) + test.
-- [~] **F3-02** Pagina scheda: blocchi per categoria, salvataggio automatico, avanzamento; stato `sheets` in lobby.
+- [L] **F3-01** `drawQuestion` lato server (categoria, 60/40, livelli profonde, solo domande con risposta, registro
+  per posto/coppia, azzeramento) + test.
+  Nota: la scelta è pura in `src/server/game/question-draw.ts` (`selectQuestion` e `selectChallenge`, 16 test):
+  categoria, livello massimo per le profonde, solo domande con risposta in scheda (D-28), niente ripetizioni e
+  azzeramento del registro a mazzo esaurito (D-29), categoria di ripiego se quella della casella è vuota (D-30).
+  Il 60/40 lo decide il motore; l'adattatore in `context.ts` carica catalogo, schede e registro. Registrazione
+  delle domande uscite e azzeramento avvengono nella stessa transazione dell'azione.
+- [L] **F3-02** Pagina scheda: blocchi per categoria, salvataggio automatico, avanzamento; stato `sheets` in lobby.
   Nota: la scheda è in `src/features/sheet` (blocchi per categoria, contatore, avviso scheda incompleta) e si
   vede in `/dev/ui`; le risposte private e lo stato `sheets` arrivano con il pacchetto D.
+  Dal pacchetto D: la pagina `/r/[code]/sheet` legge le domande del catalogo e **solo** le proprie risposte (RLS),
+  il salvataggio passa da `PUT /api/sheet/[questionId]` con la risposta controllata contro la domanda, lo stato
+  `sheets` nasce dal pronto in lobby (F2-02) e la lobby offre "Gioca lo stesso" (D-28).
 - [~] **F3-03** Carta domanda: `multiple` (verdetto automatico), `short` (giudizio dell'altro), `open`;
   regola della scala con una sola domanda.
   Nota: motore completo e testato (pacchetto A); manca la carta della UI (pacchetto C).
@@ -99,7 +138,10 @@ Dopo la fase 3: **prima serata giocabile**.
   Nota: 150 domande (30 per categoria: 8 da scheda e 22 aperte; profonde dieci per livello) in
   `src/content/questions/`, con i controlli di forma in `src/content/content.test.ts`. I testi sono una prima
   bozza da rileggere: voce nel Registro di [local-testing.md](local-testing.md).
-- [ ] **F3-05** `pnpm content:push` per pubblicare i contenuti in produzione.
+- [L] **F3-05** `pnpm content:push` per pubblicare i contenuti in produzione.
+  Nota: `scripts/push-content.ts` fa upsert su `questions`, `challenges` e `boards` con gli stessi id del seed
+  (ripubblicare non duplica e non tocca schede, domande usate né partite). Da eseguire con le variabili del
+  progetto remoto: Registro, voce F3-05.
 
 ## Fase 4 · Sfide — _tutte le categorie tranne l'emulatore_
 
@@ -131,9 +173,12 @@ Dopo la fase 3: **prima serata giocabile**.
 - [~] **F5-05** Schermata finale: stelle bonus una alla volta, vincitore, posta in palio.
   Nota: motore delle stelle bonus e del vincitore fatto e testato (pacchetto A); la schermata arriva con il
   pacchetto C.
-- [~] **F5-06** Diario della serata e archivio delle partite.
+- [L] **F5-06** Diario della serata e archivio delle partite.
   Nota: la vista è in `src/features/diary` (momenti della serata + archivio) e si vede in `/dev/ui` su dati
   finti; la lettura del diario dal database è del pacchetto D.
+  Dal pacchetto D: la pagina `/r/[code]/diary` legge i momenti da `game_events` con `src/server/diary/read-diary.ts`
+  (mappa evento → momento pura, con test: round, monete, oggetti, scale, serpenti, stelle) e l'archivio dalle
+  partite concluse; le risposte della scheda non entrano mai nel diario.
 
 ## Fase 6 · Illustrazioni — _estetica finale_ (in parallelo)
 

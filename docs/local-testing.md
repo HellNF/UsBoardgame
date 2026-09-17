@@ -206,3 +206,198 @@ La schermata finale scriveva "1 stelle · 12 monete · 1 risposte giuste"; la ri
 "· oggetti" senza il numero. Corretto in `main` con `src/lib/plural.ts` (`plural(n, "stella", "stelle")` → "1 stella"),
 usato ora anche dal pannello laterale, dal diario, dalla carta della stella e dalla carta sfida. Nessun cambiamento
 di regole: solo testo.
+
+## Registro · Pacchetto D (server e database) — branch `hermes/d-server`
+
+Qui il database non c'è (niente Docker né Supabase): **tutto il pacchetto D è `[L]`**, tranne ciò che è coperto da
+test puri. Le voci seguono l'ordine di lettura: prima la base, poi le azioni, poi i contenuti.
+
+### F0-01 · Migrazione applicata e tipi rigenerati
+
+1. `pnpm db:start`; poi `cp .env.example .env.local` e incolla URL, publishable key e secret key.
+2. `pnpm db:reset`: deve applicare `20260917000000_init.sql` **senza errori** e caricare il seed.
+3. `pnpm content:seed && pnpm db:reset` se il seed è cambiato.
+4. `pnpm db:types`: deve finire senza errori e scrivere `src/lib/supabase/database.types.ts`. Il file non è nel
+   repo: se lo committi, `pnpm check` deve restare verde (per ora il codice non lo importa: vedi "Limiti noti" nel
+   resoconto).
+5. In Studio: `select tablename, rowsecurity from pg_tables where schemaname = 'public' order by 1;` → le tabelle
+   del gioco con `rowsecurity = true`.
+6. In Studio, controllo dei privilegi del client (devono risultare solo letture, e nessuna su `rooms`):
+   `select table_name, privilege_type, grantee from information_schema.role_table_grants
+ where table_schema = 'public' and grantee = 'authenticated' order by 1, 2;`
+   → solo `SELECT`, nessuna riga per `rooms`.
+7. In Studio, controllo della funzione delle transazioni:
+   `select proname, prosecdef, pg_get_function_identity_arguments(oid) from pg_proc
+ where pronamespace = 'public'::regnamespace order by 1;`
+   → `apply_game_action` con `prosecdef = true` e gli argomenti `uuid, integer, jsonb, jsonb, jsonb, jsonb`.
+8. Incolla `supabase/tests/rls.sql` nel SQL editor ed eseguilo: attesi i NOTICE `ok: …` di ogni controllo e nessun
+   ERROR. Lo script chiude con ROLLBACK, quindi non lascia righe.
+
+**Esito:**
+
+### F0-03 · `pnpm room:create`
+
+1. `pnpm room:create` (senza argomenti) → stampa l'uso e non tocca il database.
+2. `pnpm room:create -- --code COPPIA42 --name1 Nicolò --name2 Marta`: chiede la password **due volte**, e mentre
+   la scrivi non si vede (l'eco è spento). Atteso: `Stanza COPPIA42 creata (id …)` e i due posti con il loro id.
+3. In Studio: `select code, left(password_hash, 20) from public.rooms;` → l'hash comincia con `scrypt$16384$8$1$`;
+   la password in chiaro non compare da nessuna parte.
+4. Rilancia lo stesso comando: atteso `La stanza COPPIA42 esiste già: …` (non nasce una seconda stanza).
+5. In Studio: `select seat, display_name, pawn, color from public.players order by seat;` → due righe, posto 1 e
+   posto 2, con pedina e colore scelti.
+6. `pnpm room:create -- --code COPPIA42 --name1 A --name2 B --pawn1 fox --pawn2 fox` → rifiuta pedine o colori
+   uguali **prima** di chiedere la password.
+
+**Esito:**
+
+### F0-04 · Accesso alla stanza, posto legato al browser, uscita
+
+1. `pnpm dev`, finestra A (normale): <http://localhost:3000>, codice `COPPIA42`, password, **posto 1** → si arriva
+   a `/r/COPPIA42/lobby`.
+2. Finestra B (incognito): password **sbagliata** → stesso messaggio `Codice o password non corretti.` e la
+   risposta arriva sempre più tardi (≈ 0,4 s, 0,8 s, 1,6 s, 3,2 s… fino a 8 s). Con un codice inesistente il
+   messaggio è identico: dal messaggio non si capisce quale dei due è sbagliato.
+3. Finestra B: password giusta, **posto 2** → lobby, con i due posti e i loro nomi.
+4. In Studio: `select count(*) from public.player_sessions;` → 2 righe con due `auth_user_id` diversi (uno per
+   browser). `select seat, last_seen_at from public.players order by seat;` → entrambi valorizzati.
+5. Apri `/r/COPPIA42/lobby` in una terza finestra senza sessione → si torna all'accesso con il codice già scritto
+   nel campo (lo fa `src/proxy.ts`).
+6. Uscita: dalla console della finestra A `await fetch('/api/rooms/leave', { method: 'POST' })` → `{ ok: true }`;
+   in Studio quella riga di `player_sessions` sparisce e ricaricando la lobby si torna all'accesso (la sessione
+   anonima resta, il posto no).
+7. `supabase/tests/rls.sql` nel SQL editor: tutte le voci `ok:` (in particolare `rooms` non leggibile e
+   `sheet_answers` solo la propria).
+
+**Esito:**
+
+### F0-05 · F2-02 · Lobby con i dati veri
+
+1. Due finestre (normale + incognito) sulla lobby della stessa stanza.
+2. Cambia la posta in palio in A: in B compare entro un secondo (Realtime su `games`), senza ricaricare.
+3. Cambia disposizione, categorie di sfida e durata massima: le stesse impostazioni si vedono in B; in Studio
+   `select settings from public.games where status = 'lobby';` mostra quello che hai scelto.
+4. Premete "Sono pronto" **uno alla volta**: con un solo pronto la serata resta in lobby.
+5. Con **entrambi** pronti: se una scheda è incompleta lo stato diventa `sheets` e compare "Gioca lo stesso";
+   premendolo (o completando le schede) si passa a `playing` e le due finestre vanno in `/r/COPPIA42/game`.
+6. "Nuova serata" in lobby: la partita aperta diventa `abandoned` e ne nasce una nuova in `lobby`. In Studio:
+   `select id, status, created_at from public.games order by created_at;` → la vecchia resta con stato `abandoned`.
+7. Indicatore "l'altro è collegato": compare quando l'altra finestra è aperta e sparisce chiudendola (F2-04).
+
+**Esito:**
+
+### F2-01 · Azione di gioco, versione e conflitto (`409`)
+
+1. Partita avviata, due finestre. In A "Tira i dadi" → la pedina si muove e la carta (se c'è) si apre **anche in
+   B** entro un secondo.
+2. Prova un'azione fuori turno (in B, quando tocca ad A): la carta/pulsante non c'è, e anche forzando dalla
+   console la risposta è `422` con `Il motore ha rifiutato l'azione: Non è il turno di questo giocatore.`
+3. **Conflitto di versione, modo semplice (consigliato):** in Studio
+   `select id, version from public.games where status = 'playing';` (segna il numero), poi
+   `update public.games set version = version + 1 where id = '<id>';`
+   Ora in A premi un pulsante qualsiasi: atteso il messaggio "Qualcuno ha giocato prima di te: stato ricaricato." e
+   la schermata che si riallinea **da sola** sullo stato del server (nessuna mossa persa, nessun doppio tiro).
+   In Studio `select version from public.games where id = '<id>';` → è cresciuta di 1 per ogni azione accettata.
+4. **Conflitto vero, con due clic quasi simultanei:** apri la partita nelle due finestre, poi premi lo stesso
+   pulsante (in A e in B) con un distacco di mezzo secondo su un'azione che entrambi possono fare (es. il tiro di
+   chi ha il turno, o "Pronto" in lobby): una richiesta passa e l'altra riceve `409`; nella finestra che ha perso
+   compare il messaggio di riallineamento. In DevTools → Network la seconda chiamata ha stato `409`.
+5. Dalla console, con la publishable key del browser (senza secret key): un `insert` diretto su qualsiasi tabella
+   deve fallire. Esempio:
+   `supabase.from('players').insert({ room_id: '<uuid>', seat: 1, display_name: 'intruso' })` →
+   errore `new row violates row-level security policy` o `permission denied`.
+6. Le due righe di `game_events` dell'azione sono in Studio: `select id, version, seat, type from public.game_events
+order by id desc limit 10;` → una riga per evento, con `seat` giusto (null per gli eventi di partita).
+
+**Esito:**
+
+### F2-03 · Riconnessione alla fase salvata
+
+1. Con la partita in corso, ricarica la pagina (F5) a metà carta in entrambe le finestre: si torna **alla stessa
+   carta** e allo stesso turno, senza passi da rifare.
+2. Apri a mano l'indirizzo sbagliato per la fase: con la serata in lobby `/r/COPPIA42/game` → rimanda alla lobby;
+   con la partita in corso `/r/COPPIA42/lobby` → rimanda alla partita; con la scheda da completare
+   `/r/COPPIA42/game` → rimanda alla scheda.
+3. Chiudi e riapri la finestra in incognito sulla partita: si rientra nel posto giusto (il posto è legato alla
+   sessione anonima) e lo stato è quello del server.
+4. Spegni il wi-fi per qualche secondo e riaccendilo: la schermata resta usabile e al primo aggiornamento Realtime
+   torna allineata (lo stato non vive mai solo nel browser).
+
+**Esito:**
+
+### F2-04 · Presence e `last_seen_at`
+
+1. Due finestre nella stessa stanza: in entrambe si legge "L'altro è collegato".
+2. Chiudi una finestra: entro pochi secondi l'altra passa a "L'altro non è collegato".
+3. In Studio: `select seat, last_seen_at from public.players order by seat;` → ricaricando una pagina della stanza,
+   quel `last_seen_at` si aggiorna (è il battito "lento": la presenza viva è il canale Realtime).
+4. Con la partita in corso l'indicatore c'è anche nel gioco (in alto, accanto al turno).
+
+**Esito:**
+
+### F3-01 · Pesca delle domande: registro e niente ripetizioni
+
+1. Gioca e finisci su una casella domanda: la carta mostra una domanda del catalogo vero.
+2. In Studio: `select question_id, seat, count(*) from public.used_questions group by 1, 2 order by 1;` → cresce una
+   riga per ogni domanda uscita; le "quanto mi conosci" hanno `seat` 1 o 2, le aperte hanno `seat` null.
+3. Ripeti la stessa casella/lo stesso giocatore: la domanda è **diversa** finché il sottoinsieme non è esaurito.
+4. **Scheda incompleta (D-28):** lascia senza risposta una domanda della scheda dell'altro posto; quella domanda
+   non deve mai uscire in partita finché non la compila.
+5. **Azzeramento del registro (D-29):** in Studio conta le domande pescabili di una categoria per un posto
+   (`select count(*) from public.questions where active and category = 'tastes' and kind <> 'open';`), poi gioca
+   finché non le hai viste tutte: quando il sottoinsieme è esaurito, le righe di quel posto in `used_questions`
+   si azzerano e le domande tornano pescabili (il conteggio riparte da poche righe).
+6. Le domande ritirate non escono: `update public.questions set active = false where id = '<una domanda>';` → non
+   compare più in partita (e in Studio non è più visibile dal client). Rimettila `active = true` alla fine.
+
+**Esito:**
+
+### F3-02 · Scheda: salvataggio automatico e segretezza
+
+1. `/r/COPPIA42/sheet` nella finestra A: rispondi a qualche domanda. Atteso: "Salvataggio…" poi l'avviso sparisce,
+   il contatore delle risposte cresce e nessun errore rosso.
+2. In Studio: `select count(*) from public.sheet_answers where player_id = (select id from public.players where
+seat = 1);` → cresce con le risposte date (una riga per domanda, mai due).
+3. Ricarica la pagina: le risposte ci sono ancora. Rispondi di nuovo alla stessa domanda con un'altra opzione:
+   resta **una** riga, aggiornata.
+4. **Segretezza:** nella finestra B (posto 2) apri la console e leggi `select` sulla tabella:
+   `supabase.from('sheet_answers').select('*')` → tornano **solo** le risposte del posto 2. In DevTools → Network,
+   durante una domanda in partita, nessuna risposta della scheda dell'altro compare nelle chiamate HTTP né nei
+   messaggi WebSocket (Realtime).
+5. Le domande aperte non stanno nella scheda (non compaiono in pagina) e le risposte a scelta multipla accettate
+   sono solo quelle fra le opzioni: se dal browser mandi un testo inventato, la route risponde `400`.
+
+**Esito:**
+
+### F3-05 · `pnpm content:push`
+
+1. Con le variabili del progetto **remoto** in `.env.local`: `pnpm content:push` → atteso
+   `Pubblicati: 150 domande, 17 sfide, 1 tabelloni in https://<progetto>.supabase.co`.
+2. Rilanciato una seconda volta: stesso messaggio e in Studio `select count(*) from public.questions;` → **150**
+   (nessun doppione: gli id sono stabili).
+3. Il push non tocca le partite: `select count(*) from public.games;` e `select count(*) from public.sheet_answers;`
+   restano quelli di prima.
+
+**Esito:**
+
+### F5-06 · Diario e archivio
+
+1. Gioca qualche turno, poi apri `/r/COPPIA42/diary`: i momenti della serata hanno il round, il nome di chi ha
+   giocato, un titolo e un dettaglio (domande, sfide, imprevisti, monete, oggetti, scale, serpenti, stelle).
+2. Nessuna risposta della scheda compare nel diario: si vede solo la risposta **data** in partita
+   (`QUESTION_ANSWERED`), mai quella della scheda dell'altro.
+3. Finisci una partita (o arriva al limite di round): in cima al diario compare la riga dell'archivio, con data,
+   vincitore e stelle/monete dei due posti.
+4. La partita conclusa non blocca la serata successiva: "Nuova serata" dalla lobby crea una partita nuova e
+   l'archivio continua a elencare le vecchie.
+
+**Esito:**
+
+### Prima di chiudere un pacchetto · `/dev/scenari` e `/dev/hotseat` restano vivi
+
+1. `pnpm dev`: <http://localhost:3000/dev/scenari> → 25 riquadri, carte vive, nessun errore in console;
+   <http://localhost:3000/dev/hotseat> → la partita in hot seat si apre e si gioca.
+2. `pnpm build && pnpm start`: entrambe le pagine rispondono **404** e `/` risponde **200**.
+3. Questo controllo va rifatto **prima di chiudere ogni pacchetto**: le pagine di sviluppo devono continuare a
+   funzionare anche dopo il collegamento a Supabase (F0-05, F2-01, F3-01 non le toccano, ma i componenti sì).
+
+**Esito:**

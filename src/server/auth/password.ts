@@ -1,13 +1,17 @@
 import "server-only";
 
 /**
- * Hash della password della stanza (scrypt di node:crypto, con salt).
- * TODO(F0-02): implementare hashPassword / verifyPassword con confronto a tempo costante.
+ * Password della stanza, lato applicazione (F0-02).
+ * Il calcolo sta in `password-core.ts` (lo usano anche gli script da terminale); questo
+ * modulo esiste perché chi importa da `src/server` dall'applicazione passi dal marcatore
+ * `server-only`.
  */
-export async function hashPassword(_password: string): Promise<string> {
-  throw new Error("Non implementato (F0-02)");
-}
-
-export async function verifyPassword(_password: string, _hash: string): Promise<boolean> {
-  throw new Error("Non implementato (F0-02)");
-}
+export {
+  HASH_PREFIX,
+  MIN_PASSWORD_LENGTH,
+  SCRYPT_PARAMS,
+  hashPassword,
+  parseHash,
+  verifyPassword,
+  type ParsedHash,
+} from "./password-core";

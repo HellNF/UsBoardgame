@@ -307,6 +307,8 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
       8→26 non è stata spostata.
 - [ ] Revisione delle ~150 domande (task F3-04).
 - [ ] Valori esatti di verde bosco e ocra (proposta in `globals.css`, da validare accanto alla reference).
+- [ ] Tentativi di accesso: il contatore del ritardo è in memoria del processo (D-50); se il sito diventasse
+      pubblico va spostato su Postgres (una tabella di tentativi per stanza).
 
 ---
 
@@ -352,3 +354,50 @@ di turno si riconosce da tre segnali insieme — bordo pieno della riga, pallino
 etichetta "Tocca a te" — così non dipende dal solo colore.
 _Perché:_ il "·" che segnava il turno sembrava un errore di battitura, e due pedine identiche non si distinguono
 guardando il tabellone.
+
+---
+
+## Server e database (pacchetto D)
+
+### D-47 · Il calcolo dell'hash della password sta in un file senza `server-only`
+
+**Derivata.** `src/server/auth/password.ts` ha il marcatore `server-only`; il calcolo vero (`hashPassword`,
+`verifyPassword`, `parseHash`, i parametri scrypt) sta in `src/server/auth/password-core.ts`, che **non** lo ha,
+perché lo usano anche gli script da terminale (`pnpm room:create` gira con `tsx`, dove il marcatore solleva subito
+un errore). La regola "ogni file di `src/server` comincia con `import server-only`" (docs/architecture.md) resta
+vera per l'applicazione; l'import dal browser è impedito da ESLint, che vieta a `src/features` e `src/app` di
+importare da `@/server`. Lo stesso vale per la lettura di `.env.local` negli script
+(`scripts/lib/env-file.ts`), che vive fuori da `src/server` proprio per non violare quella regola.
+_Perché:_ un solo punto per l'hash (testato una volta sola) e script capaci di riusarlo, senza indebolire il
+confine tra codice server e browser.
+
+### D-48 · Le pagine della stanza si riparano da sole e rimandano alla fase
+
+**Derivata da D-23, D-28.** Ogni pagina di `/r/[code]/...` passa da `currentRoom(code)`
+(`src/server/room/current.ts`): se il browser non ha un posto rimanda all'accesso con il codice già scritto;
+se nella stanza non c'è una serata aperta la crea (lobby con le impostazioni di partenza); se la partita esiste
+sa qual è la fase e la pagina rimanda alla schermata giusta (`/lobby`, `/sheet`, `/game`, `/diary`). Le letture di
+posti e stanze passano dal client con RLS, disposizione e stato della partita dal client con la secret key.
+_Perché:_ la riconnessione di F2-03 non deve dipendere da cosa ricorda il browser, e nessuna pagina deve
+pretendere che qualcuno abbia già creato la serata a mano.
+
+### D-49 · La pesca delle domande: scelta pura, adattatore nel server, registrazione nella transazione
+
+**Derivata da D-06, D-09, D-28, D-29.** La scelta è una funzione pura (`src/server/game/question-draw.ts`:
+`selectQuestion`, `selectChallenge`) provata con Vitest; l'adattatore (`src/server/game/context.ts`) carica
+catalogo, schede, `used_questions` e le sfide già uscite **prima** del `reduce`, perché il reducer è sincrono;
+registrazione delle domande uscite e azzeramento del registro esaurito viaggiano nella stessa transazione
+dell'azione (`apply_game_action(…, p_used, p_reset_seats)`). L'azzeramento è una **cancellazione** delle righe di
+quel sottoinsieme (stanza + posto per le "quanto mi conosci", stanza + righe con `seat` nullo per le aperte): il
+diario non legge `used_questions`, quindi non si perde storia.
+_Perché:_ le regole di pesca restano verificabili senza database, e la partita non può restare con una domanda
+usata ma non registrata (o viceversa) se la scrittura fallisce a metà.
+
+### D-50 · Ritardo sui tentativi di accesso: contatore in memoria del processo
+
+**Derivata.** Il ritardo crescente sui tentativi falliti (`src/server/auth/attempts.ts`) è una funzione pura con
+un contatore in memoria per codice di stanza, che dimentica le chiavi vecchie dopo 15 minuti. Con più istanze
+della funzione (Vercel) ogni istanza conta per sé: è un ostacolo all'automazione più stupida, non una difesa.
+_Perché:_ per due giocatori la password della stanza è il vero controllo, e una tabella di tentativi nel database
+sarebbe un'altra scrittura da gestire per un guadagno nullo; se un giorno il sito diventasse pubblico andrà
+spostato su Postgres (riga in "Ancora aperte").

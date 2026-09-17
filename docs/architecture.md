@@ -78,7 +78,9 @@ dal contenitore e restituiscono azioni, non calcolano mai l'esito di una mossa.
 **Pagine di sviluppo** (rispondono 404 in produzione, D-43):
 
 - `/dev/hotseat` — partita completa per due giocatori su un solo schermo, col motore nel browser;
-- `/dev/ui` — accesso, lobby, scheda e diario su dati finti, per rivedere l'estetica senza database.
+- `/dev/ui` — accesso, lobby, scheda e diario su dati finti, per rivedere l'estetica senza database;
+- `/dev/scenari` — le carte rare, uno stato fissato a mano per ognuna (D-45), da riprovare prima di chiudere ogni
+  pacchetto: dopo il collegamento a Supabase restano l'unico modo di rivederle senza aspettare che escano.
 
 Il timer delle sfide non è un componente a sé: il conto alla rovescia sta dentro
 `features/cards/challenge-card.tsx` (che manda `TIMER_EXPIRED` quando scade) e l'orologio di pagina è in
@@ -150,17 +152,34 @@ risposta **data** dal giocatore, che serve all'altro per giudicare.
 
 ## Rotte
 
-| Rotta                                      | Schermata / funzione                                                                       |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `/`                                        | Accesso                                                                                    |
-| `/r/[code]/lobby`                          | Lobby                                                                                      |
-| `/r/[code]/sheet`                          | Scheda                                                                                     |
-| `/r/[code]/game`                           | Partita (carte, pausa per sfide esterne e schermata finale sono stati della stessa pagina) |
-| `/r/[code]/diary`                          | Diario e archivio                                                                          |
-| `POST /api/rooms/join`                     | Accesso a un posto                                                                         |
-| `POST /api/games/[gameId]/actions`         | Azione di gioco                                                                            |
-| (da creare) `POST /api/rooms/[code]/games` | Nuova serata / impostazioni lobby / pronto                                                 |
-| (da creare) `PUT /api/sheet/[questionId]`  | Salvataggio automatico di una risposta della scheda                                        |
+| Rotta                              | Schermata / funzione                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| `/`                                | Accesso                                                                                    |
+| `/r/[code]/lobby`                  | Lobby                                                                                      |
+| `/r/[code]/sheet`                  | Scheda                                                                                     |
+| `/r/[code]/game`                   | Partita (carte, pausa per sfide esterne e schermata finale sono stati della stessa pagina) |
+| `/r/[code]/diary`                  | Diario e archivio                                                                          |
+| `POST /api/rooms/join`             | Accesso a un posto                                                                         |
+| `POST /api/rooms/leave`            | Uscita dal posto (toglie la sessione)                                                      |
+| `POST /api/games/[gameId]/actions` | Azione di gioco                                                                            |
+| `POST /api/rooms/[code]/games`     | Impostazioni lobby, pronto, avvio, nuova serata                                            |
+| `PUT /api/sheet/[questionId]`      | Salvataggio automatico di una risposta della scheda                                        |
+
+## Schermate della stanza (pacchetto D)
+
+Le pagine sotto `(room)/r/[code]/` sono **server component** sottili: chiamano `currentRoom(code)`
+(`src/server/room/current.ts`), che identifica il posto dalla sessione, garantisce una serata aperta e restituisce
+partita, impostazioni, stato e disposizione; poi rimandano alla schermata della fase e montano il contenitore
+client giusto. I componenti provati in `/dev/ui` e `/dev/hotseat` restano di presentazione:
+
+| Contenitore client                       | Componente presentazionale     | Cosa fa                                                                 |
+| ---------------------------------------- | ------------------------------ | ----------------------------------------------------------------------- |
+| `features/access/access-container.tsx`   | `access/access-view.tsx`       | sessione anonima, `POST /api/rooms/join`, scelta del posto, navigazione |
+| `features/lobby/lobby-container.tsx`     | `lobby/lobby-view.tsx`         | impostazioni e pronto via API, aggiornamenti da Realtime                |
+| `features/sheet/sheet-container.tsx`     | `sheet/sheet-view.tsx`         | salvataggio automatico di ogni risposta                                 |
+| `features/game/online-table.tsx`         | `game/*`, `board/*`, `cards/*` | stato dal server, azioni via API, riallineamento sul `409`              |
+| `features/diary/diary-view.tsx`          | — (dati letti dalla pagina)    | momenti da `game_events`, archivio dalle partite concluse               |
+| `features/presence/use-room-realtime.ts` | — (hook)                       | canale della stanza: `games`, `game_events`, Presence                   |
 
 ## Test
 

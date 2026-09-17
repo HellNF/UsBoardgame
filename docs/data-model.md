@@ -4,18 +4,18 @@ Fonte di verità: `supabase/migrations/*.sql`. Questo file spiega il perché. I 
 generano con `pnpm db:types` (`src/lib/supabase/database.types.ts`); lo stato di gioco in `games.state` è
 tipizzato da `GameState` in `src/engine/types.ts`.
 
-| Tabella (specs) | Tabella           | Contenuto                                                                | Letture client (RLS)     | Scritture            |
-| --------------- | ----------------- | ------------------------------------------------------------------------ | ------------------------ | -------------------- |
-| stanze          | `rooms`           | codice, `password_hash` (scrypt)                                         | nessuna                  | script `room:create` |
-| giocatori       | `players`         | posto 1/2, nome, pedina, colore, `last_seen_at`                          | membri della stanza      | server               |
-| —               | `player_sessions` | sessione anonima Supabase → posto                                        | solo la propria          | server (join)        |
-| domande         | `questions`       | catalogo: categoria, livello, tipo, testo, testo per la scheda, opzioni  | tutti gli autenticati    | seed                 |
-| sfide           | `challenges`      | carta sfida intera in `data` (jsonb, schema in `src/content/schema.ts`)  | tutti gli autenticati    | seed                 |
-| tabelloni       | `boards`          | disposizione intera in `layout` (`BoardLayout`)                          | tutti gli autenticati    | seed                 |
-| schede          | `sheet_answers`   | risposta di un giocatore a una domanda                                   | **solo il proprietario** | server               |
-| domande_usate   | `used_questions`  | domanda uscita, a quale posto (null per le aperte)                       | membri della stanza      | server               |
-| partite         | `games`           | stato della serata, impostazioni, `state` (GameState), `version`, pronti | membri della stanza      | server               |
-| eventi          | `game_events`     | registro di ogni azione accettata, per diario e animazioni               | membri della stanza      | server               |
+| Tabella (specs) | Tabella           | Contenuto                                                                | Letture client (RLS)                  | Scritture            |
+| --------------- | ----------------- | ------------------------------------------------------------------------ | ------------------------------------- | -------------------- |
+| stanze          | `rooms`           | codice, `password_hash` (scrypt)                                         | nessuna                               | script `room:create` |
+| giocatori       | `players`         | posto 1/2, nome, pedina, colore, `last_seen_at`                          | membri della stanza                   | server               |
+| —               | `player_sessions` | sessione anonima Supabase → posto                                        | solo la propria                       | server (join)        |
+| domande         | `questions`       | catalogo: categoria, livello, tipo, testo, testo per la scheda, opzioni  | tutti gli autenticati (solo `active`) | seed                 |
+| sfide           | `challenges`      | carta sfida intera in `data` (jsonb, schema in `src/content/schema.ts`)  | tutti gli autenticati (solo `active`) | seed                 |
+| tabelloni       | `boards`          | disposizione intera in `layout` (`BoardLayout`)                          | tutti gli autenticati                 | seed                 |
+| schede          | `sheet_answers`   | risposta di un giocatore a una domanda                                   | **solo il proprietario**              | server               |
+| domande_usate   | `used_questions`  | domanda uscita, a quale posto (null per le aperte)                       | membri della stanza                   | server               |
+| partite         | `games`           | stato della serata, impostazioni, `state` (GameState), `version`, pronti | membri della stanza                   | server               |
+| eventi          | `game_events`     | registro di ogni azione accettata, per diario e animazioni               | membri della stanza                   | server               |
 
 ## Note
 
@@ -28,3 +28,15 @@ tipizzato da `GameState` in `src/engine/types.ts`.
 - **Diario:** si costruisce da `game_events` (tipi evento definiti in `src/engine`) più `questions` per i testi.
   Le risposte date alle `short` sono nel payload dell'evento; le risposte della scheda no.
 - **Realtime:** `games`, `game_events` e `players` sono nella publication `supabase_realtime`; RLS filtra gli eventi.
+  Le tre tabelle hanno `replica identity full`: senza, Realtime valuta la policy solo sulla riga nuova e un
+  aggiornamento potrebbe arrivare a chi non è della stanza.
+- **Permessi oltre le policy:** i ruoli `anon` e `authenticated` ricevono solo `select` sulle tabelle leggibili, e
+  **nessun** privilegio su `rooms`. Le policy da sole non bastano come documentazione di "i client non scrivono":
+  il privilegio non c'è proprio. Tutte le scritture passano dal client con secret key (`src/server/**`).
+- **`apply_game_action(game_id, expected_version, new_state, events)`:** funzione `security definer` (revocata ai
+  ruoli client, eseguibile solo da `service_role`) che in **una sola transazione** aggiorna `games` con
+  `where version = <attesa>`, incrementa `version` e inserisce la riga di `game_events` di ogni evento. Se la
+  versione non combacia ritorna `null`: la route risponde `409` e il client si riallinea (D-23).
+- **Domande usate:** quando il sottoinsieme pescabile è esaurito il registro si azzera (D-29). L'azzeramento è
+  una cancellazione delle righe di quel sottoinsieme (stanza + posto per le "quanto mi conosci", stanza + righe con
+  `seat` nullo per le aperte): il diario non legge `used_questions`, quindi non si perde storia.

@@ -182,3 +182,55 @@ successiva).
     accorcia la carta o si stringe il pannello;
   - `/dev/scenari` non è collegata da nessun indice: si apre a mano;
   - il salto della pedina resta "in un salto solo" (F2-05) e gli scenari non mostrano il tabellone, solo la carta.
+
+## Pacchetto D · Server e database — 2026-09-17
+
+Branch: `hermes/d-server`, creato da `hermes/e-ui-fix` (portava i task A e B) e poi **ribasato su `main`** con il
+lavoro del proprietario (concordanza dei numeri e `src/lib/plural.ts`) · Commit: `1544dea` (F0-01), `500971a`
+(F0-02), `eed7e01` (F0-03), `225eb0d` (F0-04), `bda9468` (F2-01 e parte pura di F3-01), `fda7f6e` (F2-02, F3-02,
+F3-05, F5-06), `210224d` (schermate collegate, F2-03, F2-04), più i commit di documentazione. Il primo commit del
+pacchetto dice da dove nasce il branch. Il lavoro interrotto a metà sessione è su `hermes/d-wip` (b366b5b), **da
+ripescare, non da unire**.
+
+- **Fatto:** F0-01 `[L]`, F0-02 `[x]` (coperto dai test), F0-03 `[L]`, F0-04 `[L]`, F0-05 `[L]`, F2-01 `[L]`,
+  F2-02 `[L]`, F2-03 `[L]`, F2-04 `[L]`, F3-01 `[L]`, F3-02 `[L]`, F3-05 `[L]`, F5-06 `[L]`. Tutto il resto `[L]`
+  perché **qui il database non c'è**: le voci del Registro di [local-testing.md](local-testing.md) sono scritte
+  perché il proprietario possa eseguirle senza sapere come sono fatte dentro. `supabase/tests/rls.sql` impersona i
+  due posti della stanza e pretende sia il "non deve vedere niente" (rooms mai leggibile, scheda dell'altro
+  invisibile, scritture rifiutate) sia il "deve vedere solo la sua stanza".
+- **Verificato da me:** comandi eseguiti davvero, con l'esito reale:
+  - `pnpm check` — verde a ogni commit: da 209 test (main) a **269 test su 26 file**.
+  - `pnpm build` — verde, con il Proxy di Next 16 e tutte le rotte nuove (`/api/rooms/[code]/games`,
+    `/api/sheet/[questionId]`, `/api/rooms/leave`, le quattro pagine `/r/[code]/*`).
+  - `pnpm room:create --help`, con argomenti sbagliati e senza `.env.local`: stampa l'uso o l'errore giusto e non
+    tocca il database.
+  - `pnpm content:push` senza variabili: esce con il messaggio sulle variabili mancanti e non pubblica nulla.
+  - `pnpm build && pnpm start`: in produzione `/dev/scenari`, `/dev/hotseat` e `/dev/ui` rispondono **404** e `/`
+    risponde **200** (le pagine di sviluppo restano spente).
+- **Non verificato da me** (serve Docker e Supabase, cioè le voci del Registro): migrazione applicata davvero,
+  `pnpm db:types`, `supabase/tests/rls.sql`, l'accesso da due browser, il `409` con due clic quasi simultanei,
+  Realtime e Presence, la pesca delle domande dal catalogo vero, il salvataggio della scheda, il diario.
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), sezione "Pacchetto D": F0-01,
+  F0-03, F0-04, F0-05 · F2-02, F2-01, F2-03, F2-04, F3-01, F3-02, F3-05, F5-06, più la voce finale sulle pagine
+  `/dev`.
+- **Decisioni Derivate aggiunte:** D-47 (hash della password fuori dal marcatore `server-only`, per gli script),
+  D-48 (le pagine della stanza si riparano da sole e rimandano alla fase), D-49 (pesca delle domande: scelta pura,
+  adattatore, registrazione nella transazione), D-50 (ritardo sui tentativi in memoria del processo, con la riga in
+  "Ancora aperte").
+- **Domande per il proprietario:**
+  1. `src/lib/supabase/database.types.ts` non esiste nel repo: lo generi con `pnpm db:types` e vuoi che sia
+     committato? (Passare i client Supabase ai tipi generati è un lavoro piccolo ma a parte.)
+  2. Il `409` consigliato nel Registro è quello "da Studio" (alzi `games.version` a mano e premi un pulsante): la
+     prova con due clic veri dipende dai tempi e può non capitare. Va bene, o vuoi una via più diretta?
+  3. La scheda incompleta porta a `sheets` con il pulsante "Gioca lo stesso": preferisci che la lobby parta da
+     sola quando la scheda è solo parzialmente piena?
+- **Limiti noti / debito tecnico:**
+  - **niente tipi generati**: i client Supabase sono senza schema e le righe lette sono riportate a mano;
+    `pnpm db:types` più un giro di tipi è il lavoro successivo;
+  - **layout del gioco duplicato in parte**: `features/game/online-table.tsx` ripete la griglia di
+    `game-table.tsx` (tabellone a sinistra, colonna di destra scorrevole) invece di estrarla: i componenti sono gli
+    stessi, la cornice no;
+  - **la pesca delle domande legge l'intero catalogo** a ogni azione (150 righe: va bene ora, non a mille);
+  - **Presence** alimenta l'indicatore "connesso", non ancora "connesso ma in un'altra schermata";
+  - **`quiz-lampo` e `riflessi`** restano duelli a doppia conferma (D-41); F4-04, i file `.riv`, l'emulatore e gli
+    account Vercel/Supabase restano fuori da questa sessione, come richiesto.
