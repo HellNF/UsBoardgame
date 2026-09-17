@@ -43,6 +43,7 @@ function DevSection({ title, children }: { title: string; children: ReactNode })
 
 export function DevViews({ access, lobby, sheet, diary }: DevViewsProps) {
   const [otherConnected, setOtherConnected] = useState(access.otherConnected);
+  const [seat, setSeat] = useState<Seat>(1);
   const [boardId, setBoardId] = useState(lobby.boardId);
   const [activeCategories, setActiveCategories] = useState(lobby.activeCategories);
   const [maxChallengeSeconds, setMaxChallengeSeconds] = useState(lobby.maxChallengeSeconds);
@@ -80,6 +81,8 @@ export function DevViews({ access, lobby, sheet, diary }: DevViewsProps) {
         <AccessView
           roomCode={access.roomCode}
           otherConnected={otherConnected}
+          seat={seat}
+          onSeatChange={setSeat}
           onJoin={() => setOtherConnected(true)}
         />
       </DevSection>

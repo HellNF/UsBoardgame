@@ -1,12 +1,17 @@
+import { AccessContainer } from "@/features/access/access-container";
+
 /**
- * Accesso — codice stanza, password, scelta del posto, stato dell'altro giocatore.
- * TODO(F0-05): form di accesso che chiama POST /api/rooms/join.
+ * Accesso (F0-05, collegato a Supabase dal pacchetto D): codice stanza, password, scelta
+ * del posto. Il modulo `src/proxy.ts` rimanda qui con `?code=…` chi prova ad aprire una
+ * stanza senza sessione.
  */
-export default function Home() {
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const params = await searchParams;
+  const code = typeof params.code === "string" ? params.code.toUpperCase() : undefined;
+
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 p-8">
-      <h1 className="font-display text-5xl italic">Scale e serpenti</h1>
-      <p className="text-sm tracking-wide uppercase">di coppia · in costruzione</p>
+    <main className="flex flex-1 flex-col items-center justify-center">
+      <AccessContainer roomCode={code} />
     </main>
   );
 }

@@ -2,13 +2,22 @@
 
 import { useState, type FormEvent } from "react";
 
+import type { Seat } from "@/engine";
+
 export type AccessViewProps = {
-  /** Codice stanza già noto (arriva dal link), se c'è. */
+  /** Codice stanza già noto (arriva dal link, o dal proxy che rimanda qui). */
   roomCode?: string;
   /** Vero se l'altro giocatore risulta collegato. */
   otherConnected: boolean;
-  /** Chiamata con i dati inseriti; il server arriverà con il pacchetto D. */
-  onJoin?: (code: string, password: string) => void;
+  /** Posto scelto in questo browser. */
+  seat: Seat;
+  onSeatChange: (seat: Seat) => void;
+  /** Chiamata con i dati inseriti: codice, password e posto scelto. */
+  onJoin?: (code: string, password: string, seat: Seat) => void;
+  /** Messaggio del server quando l'accesso non riesce. */
+  error?: string | null;
+  /** Vero mentre la richiesta di accesso è in corso. */
+  busy?: boolean;
 };
 
 const FIELD_CLASS =
@@ -16,8 +25,18 @@ const FIELD_CLASS =
 
 const LABEL_CLASS = "text-xs tracking-[0.2em] uppercase";
 
-/** Accesso — codice stanza, password e stato dell'altro giocatore. */
-export function AccessView({ roomCode, otherConnected, onJoin }: AccessViewProps) {
+const SEATS: Seat[] = [1, 2];
+
+/** Accesso — codice stanza, password, scelta del posto e stato dell'altro giocatore. */
+export function AccessView({
+  roomCode,
+  otherConnected,
+  seat,
+  onSeatChange,
+  onJoin,
+  error,
+  busy = false,
+}: AccessViewProps) {
   const [code, setCode] = useState(roomCode ?? "");
   const [password, setPassword] = useState("");
 
@@ -25,7 +44,7 @@ export function AccessView({ roomCode, otherConnected, onJoin }: AccessViewProps
     event.preventDefault();
     const trimmedCode = code.trim();
     if (!trimmedCode || !password) return;
-    onJoin?.(trimmedCode, password);
+    onJoin?.(trimmedCode, password, seat);
   };
 
   return (
@@ -57,13 +76,39 @@ export function AccessView({ roomCode, otherConnected, onJoin }: AccessViewProps
             />
           </label>
 
+          <fieldset className="flex flex-col gap-2">
+            <legend className={LABEL_CLASS}>Il tuo posto</legend>
+            <div className="mt-2 flex gap-3">
+              {SEATS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={option === seat}
+                  onClick={() => onSeatChange(option)}
+                  className={`border border-ink px-6 py-3 text-sm tracking-[0.2em] uppercase focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+                    option === seat ? "bg-ink text-paper" : "bg-paper text-ink"
+                  }`}
+                >
+                  Posto {option}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
           <button
             type="submit"
-            className="border border-ink bg-ink px-6 py-4 text-sm tracking-[0.2em] text-paper uppercase focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+            disabled={busy}
+            className="border border-ink bg-ink px-6 py-4 text-sm tracking-[0.2em] text-paper uppercase focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:border-dashed disabled:bg-paper disabled:text-ink"
           >
-            Entra nella stanza
+            {busy ? "Entro…" : "Entra nella stanza"}
           </button>
         </form>
+
+        {error && (
+          <p role="status" className="mt-6 border-2 border-ink px-4 py-3 text-sm">
+            {error}
+          </p>
+        )}
 
         <div className="mt-10 flex items-center gap-3 border border-ink bg-paper px-4 py-3">
           <span
