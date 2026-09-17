@@ -1,8 +1,8 @@
-import { defaultBoardId } from "@/content/boards";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { GameSettings } from "@/engine";
 import {
+  DEFAULT_SETTINGS,
   createLobbyGame,
   findOpenGame,
   lobbyActionSchema,
@@ -24,16 +24,6 @@ import { screenFor } from "@/server/room/join";
  * Il "pronto" dei due posti fa partire la serata: `sheets` se una scheda è incompleta (D-28),
  * altrimenti `playing`.
  */
-
-/** Impostazioni di partenza di una serata nuova. */
-const DEFAULT_SETTINGS: GameSettings = {
-  boardId: defaultBoardId,
-  challengeCategories: ["builtin", "videocall", "external"],
-  maxChallengeSeconds: 300,
-  stake: "",
-  pawns: { 1: "fox", 2: "rabbit" },
-  colors: { 1: "red", 2: "blue" },
-};
 
 export async function POST(request: Request, ctx: RouteContext<"/api/rooms/[code]/games">) {
   const { code } = await ctx.params;

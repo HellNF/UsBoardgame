@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { EVENTS } from "@/content/events";
 import { ITEMS } from "@/content/items";
 import type { EventCardId, GameState, ItemId, Seat } from "@/engine";
-import { parseGameState, type GameRow } from "@/server/game/context";
+import { parseGameState } from "@/server/game/context";
 
 /**
  * Diario della serata (F5-06): i momenti si costruiscono dal registro `game_events`, non da
@@ -212,10 +212,18 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
   return entries;
 }
 
+/** Il minimo che serve al diario di una partita: le due forme di `GameRow` (context e lobby) lo soddisfano. */
+export type DiaryGame = {
+  id: string;
+  status: string;
+  state: unknown;
+  finished_at?: string | null;
+};
+
 /** Momenti della serata: gli eventi della partita più recente che li ha. */
 export async function readDiary(
   admin: SupabaseClient,
-  games: (GameRow & { finished_at?: string | null })[],
+  games: DiaryGame[],
 ): Promise<{ entries: DiaryEntryRow[]; archive: ArchiveRow[] }> {
   const dateFormat = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric" });
   const archive: ArchiveRow[] = [];

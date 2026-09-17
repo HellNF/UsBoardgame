@@ -5,6 +5,7 @@ import { randomInt as cryptoRandomInt } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
+import { defaultBoardId } from "@/content/boards";
 import { createInitialState, RULES, type GameSettings, type GameState } from "@/engine";
 
 /**
@@ -33,6 +34,16 @@ export const lobbyActionSchema = z.discriminatedUnion("action", [
 ]);
 
 export type LobbyAction = z.infer<typeof lobbyActionSchema>;
+
+/** Impostazioni di partenza di una serata nuova. */
+export const DEFAULT_SETTINGS: GameSettings = {
+  boardId: defaultBoardId,
+  challengeCategories: ["builtin", "videocall", "external"],
+  maxChallengeSeconds: 300,
+  stake: "",
+  pawns: { 1: "fox", 2: "rabbit" },
+  colors: { 1: "red", 2: "blue" },
+};
 
 /** Stati della serata in cui la lobby ha senso. */
 const OPEN_STATUSES = ["lobby", "sheets", "playing"];
@@ -63,7 +74,7 @@ export function nextStatus(
   return sheetsIncomplete ? "sheets" : "playing";
 }
 
-type GameRow = {
+export type GameRow = {
   id: string;
   room_id: string;
   status: string;
