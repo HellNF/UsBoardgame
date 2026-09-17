@@ -17,10 +17,11 @@ guardarle prima di iniziare.
 
 ## Elenco
 
-| File                       | Descrizione                                                                                 | Fonte                                                         |
-| -------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `board/boardReference.png` | **Reference primaria**: tabellone scale e serpenti B/N a tema coppia, 10 × 10               | caricata dal proprietario                                     |
-| `mascots/mascots1.png`     | Teste di animali piatte in bianco e nero (coniglio, gatto, orso, …): stile delle **pedine** | illustrazione firmata "DOMZO", solo come riferimento di stile |
+| File                       | Descrizione                                                                                         | Fonte                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `board/boardReference.png` | **Reference primaria**: tabellone scale e serpenti B/N a tema coppia, 10 × 10                       | caricata dal proprietario                                     |
+| `mascots/mascots1.png`     | Teste di animali piatte in bianco e nero (coniglio, gatto, orso, …): stile delle **pedine**         | illustrazione firmata "DOMZO", solo come riferimento di stile |
+| `mascots/cats.png`         | Gatti neri con occhi grandi in pose ed espressioni diverse: stile delle **mascotte delle reazioni** | foglio di sticker firmato, solo come riferimento di stile     |
 
 ## Cosa prendere da `boardReference.png`
 
@@ -55,3 +56,11 @@ le posizioni di scale e serpenti e il numero di illustrazioni non vanno copiati,
 - Per le nostre sei pedine (volpe, coniglio, gatto, orso, rana, gufo): coniglio, gatto e orso hanno un modello
   diretto; volpe, rana e gufo vanno ridisegnati nello stesso stile.
 - Sul gioco il fondo è carta `#F2F2F0`, non il grigio caldo dell'immagine.
+
+## Cosa prendere da `cats.png`
+
+- Silhouette nere piene, senza contorni interni: l'espressione sta tutta negli **occhi grandi** bianchi con pupilla
+  piccola e in pochi segni (baffi sottili, punti, "?" e "!" intorno alla figura).
+- Pose molto diverse con la stessa forma di base (seduto, a pancia in su, arruffato, a palla): è il modello per gli
+  stati delle mascotte in Rive (neutro, felice, sorpreso, triste, esultante; vedi `docs/design.md`).
+- Piccoli segni grafici attorno (gocce, punti, cuore) per sottolineare la reazione, sempre in nero.
