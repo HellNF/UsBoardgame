@@ -74,6 +74,33 @@ export function nextStatus(
   return sheetsIncomplete ? "sheets" : "playing";
 }
 
+/** Esito del pronto di un posto: la riga aggiornata e se con questo pronto si parte. */
+export type ReadyOutcome = {
+  ready: Record<string, boolean>;
+  /** Vero se è questo pronto a far partire la serata (lo decide solo l'ultimo dei due). */
+  starts: boolean;
+  status: "lobby" | "sheets" | "playing";
+};
+
+/**
+ * Il pronto di un posto applicato alla riga letta adesso (F2-02, D-53).
+ *
+ * È la regola che `set_lobby_ready` esegue in una sola istruzione SQL: il posto scrive il
+ * proprio pronto sulla riga fresca, quindi il pronto dei due posti non si perde per una
+ * corsa, e parte solo il pronto che rende pronti entrambi. Due clic quasi simultanei: il
+ * primo lascia la serata in lobby, il secondo la fa partire.
+ */
+export function readyOutcome(
+  currentReady: Record<string, boolean>,
+  seat: 1 | 2,
+  value: boolean,
+  sheetsIncomplete: boolean,
+): ReadyOutcome {
+  const ready = toggleReady(currentReady, seat, value);
+  const status = nextStatus(ready, sheetsIncomplete);
+  return { ready, starts: status !== "lobby", status };
+}
+
 export type GameRow = {
   id: string;
   room_id: string;
@@ -166,38 +193,48 @@ export async function saveSettings(
   if (result.error) throw new Error(`Salvataggio delle impostazioni fallito: ${result.error.message}`);
 }
 
-/** Segna un posto come pronto (o non pronto). */
-export async function saveReady(
+/** Segna un posto come pronto (o non pronto) e, se è il caso, fa partire la serata: una transazione. */
+export async function applyReady(
   admin: SupabaseClient,
   gameId: string,
-  ready: Record<string, boolean>,
+  seat: 1 | 2,
+  ready: boolean,
+  sheetsIncomplete: boolean,
+  newState: GameState,
 ): Promise<void> {
-  const result = await admin.from("games").update({ ready }).eq("id", gameId);
+  const result = await admin.rpc("set_lobby_ready", {
+    p_game_id: gameId,
+    p_seat: seat,
+    p_ready: ready,
+    p_sheets_incomplete: sheetsIncomplete,
+    p_new_state: newState,
+  });
   if (result.error) throw new Error(`Salvataggio del pronto fallito: ${result.error.message}`);
 }
 
 /**
- * Fa partire la serata: crea lo stato iniziale (chi comincia è sorteggiato, D-05) e porta
- * `games.status` a `playing` o `sheets`. Il seme del caso non entra mai nello stato (D-24).
+ * Fa partire la serata (F2-02, D-53): stato iniziale e `playing` in una sola transazione.
+ * Idempotente: se la serata è già partita non è un errore — la seconda chiamata ("Gioca lo
+ * stesso", o la corsa fra due posti) ritrova la riga com'è.
  */
-export async function startGame(
+export async function startLobbyGame(
   admin: SupabaseClient,
   gameId: string,
-  settings: GameSettings,
-  status: "sheets" | "playing",
-): Promise<GameState> {
-  const firstSeat = cryptoRandomInt(2) === 0 ? 1 : 2;
-  const state = createInitialState(settings, firstSeat);
-  const result = await admin
-    .from("games")
-    .update({ state, version: 1, status })
-    .eq("id", gameId)
-    .in("status", ["lobby", "sheets"])
-    .select("state")
-    .single();
+  newState: GameState,
+): Promise<void> {
+  const result = await admin.rpc("start_lobby_game", {
+    p_game_id: gameId,
+    p_new_state: newState,
+  });
   if (result.error) throw new Error(`Avvio della partita fallito: ${result.error.message}`);
-  return state;
 }
+
+/** Chi comincia la serata: sorteggiato dal server, il seme non entra mai nello stato (D-05, D-24). */
+export const pickFirstSeat = (): 1 | 2 => (cryptoRandomInt(2) === 0 ? 1 : 2);
+
+/** Stato iniziale di una serata che parte adesso. */
+export const initialStateFor = (settings: GameSettings): GameState =>
+  createInitialState(settings, pickFirstSeat());
 
 /** Round massimi della serata: la pagina li mostra prima di iniziare. */
 export const maxRounds = RULES.maxRounds;
