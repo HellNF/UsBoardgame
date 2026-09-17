@@ -61,26 +61,30 @@ Per le `short` la risposta data dal giocatore è nello stato (serve all'altro pe
 La UI sta in `src/features`, un componente per area. Sono tutti componenti **presentazionali**: ricevono lo stato
 dal contenitore e restituiscono azioni, non calcolano mai l'esito di una mossa.
 
-| File / cartella                              | Cosa contiene                                                                                 |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `features/board/geometry.ts`                 | geometria del tabellone (unità SVG, centri, scale, serpenti, caselle multi-cella)             |
-| `features/board/board.tsx`                   | tabellone SVG: celle per tipo, decorazioni, segnaposto, pedine animate                        |
-| `features/board/pawn.tsx`                    | pedina segnaposto (cerchio del colore del posto + iniziale)                                   |
-| `features/dice/dice.tsx`                     | dadi (punti disegnati) e pulsante del tiro                                                    |
-| `features/cards/*`                           | `card-panel.tsx` instrada sulle cinque carte: domanda, sfida, imprevisto, stella, zaino pieno |
-| `features/minigames/*`                       | tris, forza 4, memory + `minigame.tsx` che sceglie dal `kind` dello stato                     |
-| `features/game/game-table.tsx`               | contenitore della partita: reducer, eventi, orologio di un secondo, strumenti di prova        |
-| `features/game/side-panel.tsx`               | turno, punteggi, negozio degli oggetti, uso degli oggetti attivi                              |
-| `features/game/final-screen.tsx`             | schermata finale con stelle bonus rivelate una alla volta                                     |
-| `features/game/dev-context.ts`               | `EngineContext` finto della hot seat (scheda di prova, mazzo di prova)                        |
-| `features/access`, `lobby`, `sheet`, `diary` | schermate su props e dati finti (Supabase nel pacchetto D)                                    |
+| File / cartella                              | Cosa contiene                                                                                                                                      |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `features/board/geometry.ts`                 | geometria del tabellone (unità SVG, centri, scale, serpenti, caselle multi-cella)                                                                  |
+| `features/board/board.tsx`                   | tabellone SVG: celle per tipo, decorazioni, segnaposto, pedine animate                                                                             |
+| `features/board/route.ts`                    | percorso della pedina: cella per cella, gradino per gradino, lungo il serpente (puro)                                                              |
+| `features/board/use-move-queue.ts`           | accoda gli eventi di spostamento e li anima in ordine, uno per volta                                                                               |
+| `features/board/pawn.tsx`                    | pedina segnaposto (cerchio del colore del posto + iniziale)                                                                                        |
+| `features/dice/dice.tsx`                     | dadi (punti disegnati) e pulsante del tiro                                                                                                         |
+| `features/cards/*`                           | `card-panel.tsx` instrada sulle cinque carte: domanda, sfida, imprevisto, stella, zaino pieno; `viewer.ts` decide cosa vede il posto di chi guarda |
+| `features/minigames/*`                       | tris, forza 4, memory, quiz, riflessi + `minigame.tsx` che sceglie dal `kind` dello stato                                                          |
+| `features/game/game-table.tsx`               | contenitore della partita: reducer, eventi, orologio di un secondo, strumenti di prova                                                             |
+| `features/game/side-panel.tsx`               | turno, punteggi, negozio degli oggetti, uso degli oggetti attivi                                                                                   |
+| `features/game/final-screen.tsx`             | schermata finale con stelle bonus rivelate una alla volta                                                                                          |
+| `features/game/dev-context.ts`               | `EngineContext` finto della hot seat (scheda di prova, mazzo di prova)                                                                             |
+| `features/access`, `lobby`, `sheet`, `diary` | schermate su props e dati finti (Supabase nel pacchetto D)                                                                                         |
 
 **Pagine di sviluppo** (rispondono 404 in produzione, D-43):
 
 - `/dev/hotseat` — partita completa per due giocatori su un solo schermo, col motore nel browser;
 - `/dev/ui` — accesso, lobby, scheda e diario su dati finti, per rivedere l'estetica senza database;
 - `/dev/scenari` — le carte rare, uno stato fissato a mano per ognuna (D-45), da riprovare prima di chiudere ogni
-  pacchetto: dopo il collegamento a Supabase restano l'unico modo di rivederle senza aspettare che escano.
+  pacchetto: dopo il collegamento a Supabase restano l'unico modo di rivederle senza aspettare che escano. Ogni
+  riquadro ha l'interruttore «Guarda come posto 1 / posto 2 / Tutti e due», che è come si controllano le due viste
+  di una partita a due schermi senza database (D-56).
 
 Il timer delle sfide non è un componente a sé: il conto alla rovescia sta dentro
 `features/cards/challenge-card.tsx` (che manda `TIMER_EXPIRED` quando scade) e l'orologio di pagina è in
@@ -90,18 +94,18 @@ Il timer delle sfide non è un componente a sé: il conto alla rovescia sta dent
 
 `src/engine` è puro e senza I/O. Il reducer è l'unico punto d'ingresso, ma le regole sono divise per area:
 
-| File                  | Contenuto                                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `reducer.ts`          | `createInitialState`, `reduce` (instrada le azioni), il tiro dei dadi                                         |
-| `turn.ts`             | stato di lavoro `Draft`, fine turno, round e fine partita (stelle bonus, vincitore)                           |
-| `resolution.ts`       | effetto della casella d'arrivo, scale e serpenti, pesca di domande e sfide, chiusura della sfida              |
-| `cards.ts`            | azioni delle carte: domande, sfide (giudice, doppia conferma, disputa, timer, minigiochi), stella, imprevisti |
-| `items.ts`            | acquisto, uso e scarto degli oggetti                                                                          |
-| `economy.ts`          | guadagni, perdite, trasferimenti e raddoppio da 71 in su                                                      |
-| `board.ts`            | coordinate a serpentina e ricerca di scale e serpenti                                                         |
-| `board-validation.ts` | i sei vincoli di una disposizione valida                                                                      |
-| `minigames/`          | tris, forza 4, memory: moduli puri con `init`, `applyMove`, `result`                                          |
-| `testing.ts`          | **solo test**: `EngineContext` finto, disposizione di prova, partita di prova                                 |
+| File                  | Contenuto                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `reducer.ts`          | `createInitialState`, `reduce` (instrada le azioni), il tiro dei dadi                                                     |
+| `turn.ts`             | stato di lavoro `Draft`, fine turno, round e fine partita (stelle bonus, vincitore)                                       |
+| `resolution.ts`       | effetto della casella d'arrivo, scale e serpenti, pesca di domande e sfide, chiusura della sfida                          |
+| `cards.ts`            | azioni delle carte: domande, sfide (giudice, doppia conferma, disputa, timer, minigiochi), stella, imprevisti             |
+| `items.ts`            | acquisto, uso e scarto degli oggetti                                                                                      |
+| `economy.ts`          | guadagni, perdite, trasferimenti e raddoppio da 71 in su                                                                  |
+| `board.ts`            | coordinate a serpentina e ricerca di scale e serpenti                                                                     |
+| `board-validation.ts` | i sei vincoli di una disposizione valida                                                                                  |
+| `minigames/`          | tris, forza 4, memory, quiz, riflessi: moduli puri con `init`, `applyMove`, `result`, `turn` (orologio e caso dal server) |
+| `testing.ts`          | **solo test**: `EngineContext` finto, disposizione di prova, partita di prova                                             |
 
 Il reducer lavora su una copia profonda dello stato: se l'azione non è valida ritorna `{ ok: false, error }` senza
 toccare nulla; se è valida aumenta `version` di uno e restituisce il nuovo stato con gli eventi prodotti.
