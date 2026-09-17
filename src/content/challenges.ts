@@ -1,10 +1,16 @@
 import { challengeSchema, type ChallengeContent } from "./schema";
 
 /**
- * Carte sfida. Aggiungere una sfida = aggiungere un oggetto qui.
- * TODO(F4-01): completare il mazzo per le quattro categorie.
+ * Carte sfida (task F4-01). Aggiungere una sfida = aggiungere un oggetto qui.
+ *
+ * Vincoli (docs/content.md, `challengeSchema`): prova ⇒ verdetto `judge`; duello ⇒ `automatic` (con `minigame`)
+ * oppure `double_confirm`; sfida lampo ⇒ durata massima 30 secondi.
+ *
+ * `quiz` e `riflessi` sono minigiochi a tempo del motore (task F4-04): finché i loro moduli non esistono in
+ * `src/engine/minigames`, la loro carta è un duello a doppia conferma (D-41), così una partita non si rompe.
  */
 const raw: ChallengeContent[] = [
+  // --- Integrati ---------------------------------------------------------
   {
     id: "tic-tac-toe",
     name: "Tris",
@@ -18,6 +24,56 @@ const raw: ChallengeContent[] = [
     minigame: "tic-tac-toe",
   },
   {
+    id: "connect-four",
+    name: "Forza 4",
+    category: "builtin",
+    mode: "duel",
+    verdict: "automatic",
+    durationSeconds: { min: 90, max: 240 },
+    instructions: "Quattro pedine in fila, in orizzontale, verticale o diagonale. Pareggio: si rigioca.",
+    prize: 3,
+    snakeFlash: false,
+    minigame: "connect-four",
+  },
+  {
+    id: "memory",
+    name: "Memory",
+    category: "builtin",
+    mode: "duel",
+    verdict: "automatic",
+    durationSeconds: { min: 90, max: 240 },
+    instructions: "Dodici carte, sei coppie: chi ne trova di più vince. In caso di pareggio si rigioca.",
+    prize: 3,
+    snakeFlash: false,
+    minigame: "memory",
+  },
+  {
+    id: "quiz-lampo",
+    name: "Quiz a tempo",
+    category: "builtin",
+    mode: "duel",
+    verdict: "double_confirm",
+    durationSeconds: { min: 60, max: 120 },
+    instructions:
+      "Cinque domande a risposta rapida, a turno, con i secondi che scorrono: chi risponde giusto a più domande vince. Al ritorno dichiarate entrambi il punteggio.",
+    prize: 3,
+    snakeFlash: false,
+  },
+  {
+    id: "riflessi",
+    name: "Riflessi",
+    category: "builtin",
+    mode: "duel",
+    verdict: "double_confirm",
+    durationSeconds: { min: 60, max: 120 },
+    instructions:
+      "Un segnale parte a sorpresa, il primo che lo tocca prende il punto: si gioca al meglio di cinque e dichiarate entrambi il risultato.",
+    prize: 3,
+    snakeFlash: false,
+  },
+
+  // --- Videochiamata -----------------------------------------------------
+  {
     id: "funny-face",
     name: "Faccia buffa",
     category: "videocall",
@@ -28,6 +84,109 @@ const raw: ChallengeContent[] = [
     prize: 2,
     snakeFlash: true,
   },
+  {
+    id: "mimo",
+    name: "Mimo in 30 secondi",
+    category: "videocall",
+    mode: "trial",
+    verdict: "judge",
+    durationSeconds: { min: 30, max: 30 },
+    instructions: "Fai indovinare una scena di film solo con i gesti. L'altro giudica se ci sei riuscito.",
+    prize: 2,
+    snakeFlash: true,
+  },
+  {
+    id: "oggetto-in-20-secondi",
+    name: "Trova l'oggetto",
+    category: "videocall",
+    mode: "trial",
+    verdict: "judge",
+    durationSeconds: { min: 20, max: 20 },
+    instructions: "Porta davanti alla webcam l'oggetto chiesto dall'altro entro 20 secondi.",
+    prize: 2,
+    snakeFlash: true,
+  },
+  {
+    id: "accento-straniero",
+    name: "Accento straniero",
+    category: "videocall",
+    mode: "trial",
+    verdict: "judge",
+    durationSeconds: { min: 30, max: 30 },
+    instructions: "Racconta la tua giornata con un accento a scelta: l'altro giudica se l'accento tiene.",
+    prize: 2,
+    snakeFlash: true,
+  },
+  {
+    id: "imitazione-cantante",
+    name: "Imitazione",
+    category: "videocall",
+    mode: "trial",
+    verdict: "judge",
+    durationSeconds: { min: 30, max: 30 },
+    instructions: "Impersona un cantante per trenta secondi: l'altro giudica se si capisce chi è.",
+    prize: 2,
+    snakeFlash: true,
+  },
+  {
+    id: "scioglilingua",
+    name: "Scioglilingua",
+    category: "videocall",
+    mode: "trial",
+    verdict: "judge",
+    durationSeconds: { min: 30, max: 30 },
+    instructions: "Ripeti tre volte di fila uno scioglilingua scelto dall'altro senza inciampare.",
+    prize: 2,
+    snakeFlash: true,
+  },
+  {
+    id: "tre-parole",
+    name: "Storia in tre parole",
+    category: "videocall",
+    mode: "trial",
+    verdict: "judge",
+    durationSeconds: { min: 60, max: 60 },
+    instructions: "L'altro sceglie tre parole: racconta una storia di un minuto che le contenga tutte.",
+    prize: 2,
+    snakeFlash: false,
+  },
+  {
+    id: "indovina-la-canzone",
+    name: "Indovina la canzone",
+    category: "videocall",
+    mode: "duel",
+    verdict: "double_confirm",
+    durationSeconds: { min: 90, max: 120 },
+    instructions:
+      "A turno canticchiate un pezzo a bocca chiusa: chi indovina per primo vince il punto, si gioca al meglio di cinque. Dichiarate entrambi il risultato.",
+    prize: 3,
+    snakeFlash: false,
+  },
+  {
+    id: "karaoke-a-due",
+    name: "Karaoke a due",
+    category: "videocall",
+    mode: "duel",
+    verdict: "double_confirm",
+    durationSeconds: { min: 120, max: 180 },
+    instructions:
+      "Cantate insieme un ritornello, ognuno per conto suo: al ritorno dichiarate entrambi chi ha tenuto meglio la tonalità.",
+    prize: 3,
+    snakeFlash: false,
+  },
+  {
+    id: "sfida-foto",
+    name: "Foto uguale",
+    category: "videocall",
+    mode: "trial",
+    verdict: "judge",
+    durationSeconds: { min: 45, max: 45 },
+    instructions: "L'altro sceglie una foto di voi due: ricrea la posa in 45 secondi e mostra il risultato.",
+    prize: 2,
+    snakeFlash: false,
+  },
+
+  // --- Siti esterni ------------------------------------------------------
   {
     id: "lichess-blitz",
     name: "Lichess blitz 3 minuti",
@@ -40,6 +199,19 @@ const raw: ChallengeContent[] = [
     snakeFlash: false,
     url: "https://lichess.org/",
   },
+  {
+    id: "skribblio",
+    name: "Skribbl.io",
+    category: "external",
+    mode: "duel",
+    verdict: "double_confirm",
+    durationSeconds: { min: 300, max: 600 },
+    instructions:
+      "Una partita a skribbl.io con le impostazioni di base: al ritorno dichiarate entrambi chi ha fatto più punti.",
+    prize: 5,
+    snakeFlash: false,
+    url: "https://skribbl.io/",
+  },
 ];
 
-export const challenges: ChallengeContent[] = raw.map((c) => challengeSchema.parse(c));
+export const challenges: ChallengeContent[] = raw.map((challenge) => challengeSchema.parse(challenge));
