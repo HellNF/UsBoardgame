@@ -232,14 +232,19 @@ grant execute on function public.current_room_id() to authenticated, service_rol
 -- ---------------------------------------------------------------------------
 
 -- Applica un'azione di gioco in una sola transazione: aggiorna lo stato solo se la
--- versione attesa combacia e scrive gli eventi nella stessa istruzione.
+-- versione attesa combacia, scrive gli eventi e registra le domande uscite.
 -- Ritorna la riga aggiornata, oppure `null` se qualcuno è arrivato prima
 -- (conflitto di versione: la route risponde 409 e il client si riallinea, D-23).
+--
+-- p_used: `[{ "questionId": "tastes-004", "seat": 1 }, …]`, `seat` null per le domande aperte.
+-- p_reset_seats: sottoinsiemi a mazzo esaurito da azzerare (D-29): 1, 2, oppure 0 per le aperte.
 create function public.apply_game_action(
   p_game_id uuid,
   p_expected_version integer,
   p_new_state jsonb,
-  p_events jsonb
+  p_events jsonb,
+  p_used jsonb default '[]'::jsonb,
+  p_reset_seats jsonb default '[]'::jsonb
 ) returns public.games
 language plpgsql
 security definer
@@ -267,13 +272,25 @@ begin
          event
     from jsonb_array_elements(coalesce(p_events, '[]'::jsonb)) as event;
 
+  -- Prima si azzerano i sottoinsiemi esauriti, poi si registra la domanda nuova:
+  -- al contrario la cancellazione porterebbe via anche quella appena pescata.
+  delete from public.used_questions
+   where room_id = updated.room_id
+     and coalesce(seat, 0) in (
+       select value::smallint from jsonb_array_elements_text(coalesce(p_reset_seats, '[]'::jsonb))
+     );
+
+  insert into public.used_questions (room_id, question_id, seat)
+  select updated.room_id, used ->> 'questionId', (used ->> 'seat')::smallint
+    from jsonb_array_elements(coalesce(p_used, '[]'::jsonb)) as used;
+
   return updated;
 end;
 $$;
 
-revoke all on function public.apply_game_action(uuid, integer, jsonb, jsonb)
+revoke all on function public.apply_game_action(uuid, integer, jsonb, jsonb, jsonb, jsonb)
   from public, anon, authenticated;
-grant execute on function public.apply_game_action(uuid, integer, jsonb, jsonb)
+grant execute on function public.apply_game_action(uuid, integer, jsonb, jsonb, jsonb, jsonb)
   to service_role;
 
 -- ---------------------------------------------------------------------------
