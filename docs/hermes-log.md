@@ -134,8 +134,9 @@ Branch: hermes/b-content (partito da `main`) · Ultimo commit: vedi `git log -1 
 
 ## Correzioni all'interfaccia e scenari delle carte (task A e B) — 2026-09-17
 
-Branch: hermes/e-ui-fix (partito da `main` a 9f4477d: `main` conteneva già i pacchetti A, B e C) · Ultimo commit:
-<da riempire>
+Branch: hermes/e-ui-fix (partito da `main` a 9f4477d: `main` conteneva già i pacchetti A, B e C) · Ultimo commit
+del pacchetto: e3ab31f (questo rapporto è in quel commit; l'aggiornamento di questa riga è l'unica modifica
+successiva).
 
 - **Fatto:** i cinque punti del task A (A1 numeri e simboli delle caselle sopra scale e serpenti con l'alone del
   colore della carta; A2 pedina con il numero del posto; A3 indicatore del turno; A4 partita in una schermata sola
