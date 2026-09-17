@@ -67,21 +67,32 @@ export function useRoomRealtime(input: UseRoomRealtimeInput): RoomRealtimeState 
         );
     }
 
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState();
-        const seats = Object.values(state)
-          .flat()
-          .map((entry) => (entry as { seat?: number }).seat)
-          .filter((value): value is number => typeof value === "number");
-        setOtherConnected(seats.some((value) => value !== seat));
-      })
-      .subscribe((status) => {
+    channel.on("presence", { event: "sync" }, () => {
+      const state = channel.presenceState();
+      const seats = Object.values(state)
+        .flat()
+        .map((entry) => (entry as { seat?: number }).seat)
+        .filter((value): value is number => typeof value === "number");
+      setOtherConnected(seats.some((value) => value !== seat));
+    });
+
+    let cancelled = false;
+
+    // Il token della sessione deve arrivare al tempo reale **prima** della sottoscrizione:
+    // senza, il canale si collega come `anon`, RLS non consegna nessuna riga e le pagine
+    // restano ferme (la presenza invece funziona, quindi il guasto è silenzioso).
+    // Dopo un caricamento di pagina la sessione arriva dal cookie e nessun evento di
+    // autenticazione la passa al canale: va fatto qui a mano.
+    void supabase.realtime.setAuth().then(() => {
+      if (cancelled) return;
+      channel.subscribe((status) => {
         setConnected(status === "SUBSCRIBED");
         if (status === "SUBSCRIBED") void channel.track({ seat, screen });
       });
+    });
 
     return () => {
+      cancelled = true;
       void supabase.removeChannel(channel);
     };
   }, [roomId, gameId, seat, screen, onGame, onEvents]);

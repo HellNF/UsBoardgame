@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { EVENTS } from "@/content/events";
 import { ITEMS } from "@/content/items";
 import type { EventCardId, GameState, ItemId, Seat } from "@/engine";
+import { plural } from "@/lib/plural";
 import { parseGameState } from "@/server/game/context";
 
 /**
@@ -113,7 +114,7 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
           `Sfida ${asString(event.payload.challengeId, "?")}`,
           winner === "draw" || winner === null
             ? `Pareggio: nessun premio (${METHODS[asString(event.payload.method)] ?? "?"}).`
-            : `Vinta: +${asNumber(event.payload.prize)} monete (${METHODS[asString(event.payload.method)] ?? "?"}).`,
+            : `Vinta: +${plural(asNumber(event.payload.prize), "moneta", "monete")} (${METHODS[asString(event.payload.method)] ?? "?"}).`,
         );
         break;
       }
@@ -148,7 +149,7 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
       case "COINS_GAINED":
         push(
           "coins",
-          `+${asNumber(event.payload.amount)} monete`,
+          `+${plural(asNumber(event.payload.amount), "moneta", "monete")}`,
           `${COIN_SOURCES[asString(event.payload.source)] ?? asString(event.payload.source)}${
             event.payload.doubled === true ? " (raddoppiate)" : ""
           }.`,
@@ -157,7 +158,7 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
       case "COINS_LOST":
         push(
           "coins",
-          `−${asNumber(event.payload.amount)} monete`,
+          `−${plural(asNumber(event.payload.amount), "moneta", "monete")}`,
           `${COIN_SOURCES[asString(event.payload.source)] ?? asString(event.payload.source)}.`,
         );
         break;
@@ -165,7 +166,7 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
         push(
           "coins",
           ITEMS[asString(event.payload.item) as ItemId]?.name ?? "Oggetto",
-          `Comprato: ${asNumber(event.payload.price)} monete.`,
+          `Comprato: ${plural(asNumber(event.payload.price), "moneta", "monete")}.`,
         );
         break;
       case "ITEM_RECEIVED":
@@ -196,7 +197,7 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
         );
         break;
       case "STAR_BOUGHT":
-        push("star", "Stella comprata", `${asNumber(event.payload.price)} monete.`);
+        push("star", "Stella comprata", `${plural(asNumber(event.payload.price), "moneta", "monete")}.`);
         break;
       case "STAR_DECLINED":
         push("star", "Stella rifiutata", "Nessuna moneta spesa.");

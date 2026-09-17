@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { challenges } from "@/content/challenges";
 import { questions } from "@/content/questions";
@@ -70,10 +70,16 @@ export function OnlineTable(props: OnlineTableProps) {
   const router = useRouter();
   const [state, setState] = useState<GameState>(props.state);
   const [version, setVersion] = useState(props.version);
+  // La versione mostrata, leggibile dalle richiamate del tempo reale senza rifarle a ogni cambio.
+  const versionRef = useRef(props.version);
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    versionRef.current = version;
+  }, [version]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -113,9 +119,13 @@ export function OnlineTable(props: OnlineTableProps) {
     [props.gameId, version],
   );
 
+  // Una riga più vecchia di quella che si sta già mostrando non deve riportare indietro il
+  // tabellone: può succedere se la risposta del proprio `POST` arriva prima del messaggio di
+  // tempo reale dell'azione precedente.
   const onGame = useCallback((row: RoomRow) => {
+    if (typeof row.version !== "number" || row.version < versionRef.current) return;
     if (row.state) setState(row.state);
-    if (typeof row.version === "number") setVersion(row.version);
+    setVersion(row.version);
   }, []);
 
   const onEvents = useCallback((incoming: GameEvent[]) => {

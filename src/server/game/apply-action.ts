@@ -62,8 +62,14 @@ async function findSeat(
   return { seat: row.seat === 2 ? 2 : 1, roomId: row.room_id };
 }
 
-/** Riga della partita aggiornata dalla funzione SQL. */
-type UpdatedGame = { state: unknown; version: number };
+/**
+ * Riga della partita aggiornata dalla funzione SQL.
+ *
+ * In caso di conflitto `apply_game_action` ritorna NULL, ma PostgREST non lo consegna come
+ * `null`: manda la riga composita **con tutti i campi a `null`**. Il conflitto si riconosce
+ * quindi da `version`, non dall'assenza dell'oggetto.
+ */
+type UpdatedGame = { id: string | null; state: unknown; version: number | null };
 
 export async function applyAction(input: ApplyActionInput): Promise<ApplyActionResult> {
   const { admin } = input;
@@ -123,9 +129,9 @@ export async function applyAction(input: ApplyActionInput): Promise<ApplyActionR
     return fail(500, `Salvataggio dell'azione fallito: ${updated.error.message}`);
   }
 
-  // La funzione ritorna `null` quando la versione non combacia più: è il conflitto del passo 6.
+  // Versione non più valida: è il conflitto del passo 6 (riga composita con i campi a `null`).
   const row = updated.data as UpdatedGame | null;
-  if (!row) {
+  if (!row || row.version === null) {
     const fresh = await loadGameById(admin, game.id);
     return {
       ...fail(409, "Qualcuno ha giocato prima di te: ricarica lo stato."),

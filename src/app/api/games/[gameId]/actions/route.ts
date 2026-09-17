@@ -27,13 +27,23 @@ export async function POST(request: Request, ctx: RouteContext<"/api/games/[game
     return Response.json({ error: "Sessione anonima mancante: ricarica la pagina." }, { status: 401 });
   }
 
-  const result = await applyAction({
-    admin: createSupabaseAdminClient(),
-    userId: data.user.id,
-    gameId,
-    action: asEngineAction(parsed.data.action),
-    expectedVersion: parsed.data.expectedVersion,
-  });
+  // Un'eccezione non prevista diventa un 500 **con un messaggio**: un 500 dal corpo vuoto
+  // lascerebbe il client senza niente da mostrare.
+  let result;
+  try {
+    result = await applyAction({
+      admin: createSupabaseAdminClient(),
+      userId: data.user.id,
+      gameId,
+      action: asEngineAction(parsed.data.action),
+      expectedVersion: parsed.data.expectedVersion,
+    });
+  } catch (error) {
+    return Response.json(
+      { error: error instanceof Error ? error.message : "Azione non applicata." },
+      { status: 500 },
+    );
+  }
 
   if (!result.ok) {
     return Response.json(
