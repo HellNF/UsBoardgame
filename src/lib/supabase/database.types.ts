@@ -379,6 +379,52 @@ export type Database = {
       }
       current_player_id: { Args: never; Returns: string }
       current_room_id: { Args: never; Returns: string }
+      set_lobby_ready: {
+        Args: {
+          p_game_id: string
+          p_new_state: Json
+          p_ready: boolean
+          p_seat: number
+          p_sheets_incomplete: boolean
+        }
+        Returns: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          ready: Json
+          room_id: string
+          settings: Json
+          state: Json | null
+          status: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "games"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      start_lobby_game: {
+        Args: { p_game_id: string; p_new_state: Json }
+        Returns: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          ready: Json
+          room_id: string
+          settings: Json
+          state: Json | null
+          status: string
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "games"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never
