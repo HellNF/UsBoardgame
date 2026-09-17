@@ -6,7 +6,23 @@ import type { ItemId, QuestionLevel } from "./types";
  * Riferimento: docs/rules.md.
  */
 export const RULES = {
-  board: { size: 10, cells: 100, ladders: 7, snakes: 6 },
+  board: {
+    size: 10,
+    cells: 100,
+    ladders: 7,
+    snakes: 6,
+    /** Quantità di caselle per tipo di una disposizione valida (docs/rules.md § Tabellone). */
+    cellCounts: {
+      question: 35,
+      challenge: 12,
+      event: 10,
+      coins: 10,
+      star: 3,
+      free: 28,
+      start: 1,
+      finish: 1,
+    },
+  },
 
   dice: { count: 2, faces: 6 },
   maxRounds: 25,

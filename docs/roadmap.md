@@ -36,13 +36,13 @@ Dopo la fase 3: **prima serata giocabile**.
 
 ## Fase 1 · Tabellone — _partita completa su un solo schermo_
 
-- [ ] **F1-01** Disposizione `classic` (100 celle, 7 scale, 6 serpenti, geometrie ispirate alla reference) +
+- [~] **F1-01** Disposizione `classic` (100 celle, 7 scale, 6 serpenti, geometrie ispirate alla reference) +
       validatore dei vincoli di [rules.md § Tabellone](rules.md#tabellone) con test.
-- [ ] **F1-02** `createInitialState`.
-- [ ] **F1-03** `reduce` per: tiro, rimonta, movimento, caselle libere/monete, scale e serpenti con **segnaposto**
+- [~] **F1-02** `createInitialState`.
+- [~] **F1-03** `reduce` per: tiro, rimonta, movimento, caselle libere/monete, scale e serpenti con **segnaposto**
       per domanda e sfida (risolte con un pulsante "riuscita/fallita"), fine turno, round, fine partita, stelle bonus.
       Test per ogni regola.
-- [ ] **F1-04** `EngineContext` finto per i test (RNG deterministico).
+- [~] **F1-04** `EngineContext` finto per i test (RNG deterministico).
 - [ ] **F1-05** Tabellone SVG con segnaposto geometrici, pedine, scale e serpenti generati, dadi, pannello laterale.
       Modalità "hot seat" (entrambi i posti sullo stesso schermo) per provare le regole senza Supabase.
 
