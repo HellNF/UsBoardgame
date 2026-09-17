@@ -17,6 +17,7 @@ import {
   type PlayerColor,
   type QuestionCategory,
   type QuestionLevel,
+  type QuizItem,
   type Seat,
 } from "@/engine";
 import {
@@ -170,6 +171,8 @@ export async function loadChallenges(admin: SupabaseClient, categories: string[]
     },
     snakeFlash: row.data.snakeFlash === true,
     minigame: (row.data.minigame as MinigameId | undefined) ?? null,
+    // Le domande del quiz-lampo vivono nel `data` della carta (contenuto pubblico, non la scheda).
+    quiz: Array.isArray(row.data.quiz) ? (row.data.quiz as QuizItem[]) : null,
   }));
 }
 

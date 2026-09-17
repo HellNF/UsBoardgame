@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { otherSeat, RULES, SEATS } from "@/engine";
-import type { ActiveCard, Seat } from "@/engine";
+import { minigameTurn, otherSeat, RULES, SEATS } from "@/engine";
+import type { ActiveCard, MinigameState, Seat } from "@/engine";
 import { plural } from "@/lib/plural";
 import type { CardPanelProps } from "./card-panel";
 import { viewerActs, type Viewer } from "./viewer";
@@ -34,6 +34,17 @@ function winnerLabel(winner: Seat | "draw", names: Record<Seat, string>): string
 
 /** Vero se chi guarda ha il suo pezzo da dichiarare (doppia conferma e disaccordo). */
 const owns = (viewer: Viewer, seat: Seat): boolean => viewer === "all" || viewer === seat;
+
+/**
+ * Chi manda la mossa e quale tabellone è cliccabile. Nei minigiochi a turni è chi ha il turno
+ * nel minigioco; nei riflessi (`"both"`) è chi guarda lo schermo — nella hot seat, il posto di
+ * turno della partita.
+ */
+const seatFor = (minigame: MinigameState, viewer: Viewer, turnOfGame: Seat): Seat => {
+  const current = minigameTurn(minigame);
+  if (current === "both") return viewer === "all" ? turnOfGame : viewer;
+  return current;
+};
 
 export function ChallengeCard({
   state,
@@ -264,17 +275,19 @@ export function ChallengeCard({
 
       {card.verdict === "automatic" && minigame !== null && (
         <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">
-          {viewerActs(viewerSeat, minigame.turn) ? (
+          {viewerActs(viewerSeat, minigameTurn(minigame)) ? (
             <Minigame
               state={minigame}
-              seat={minigame.winner === null ? minigame.turn : null}
-              onMove={(move) => act({ type: "MINIGAME_MOVE", seat: minigame.turn, move })}
+              seat={minigame.winner === null ? seatFor(minigame, viewerSeat, state.turn) : null}
+              onMove={(move) =>
+                act({ type: "MINIGAME_MOVE", seat: seatFor(minigame, viewerSeat, state.turn), move })
+              }
               names={names}
             />
           ) : (
             <>
               <Minigame state={minigame} seat={null} onMove={() => {}} names={names} />
-              <WaitingRow text={`Tocca a ${names[minigame.turn]} muovere.`} />
+              <WaitingRow text={`Tocca a ${names[seatFor(minigame, viewerSeat, state.turn)]} muovere.`} />
             </>
           )}
         </div>

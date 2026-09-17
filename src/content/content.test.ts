@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MINIGAMES } from "@/engine";
 import { challenges } from "./challenges";
 import { questions } from "./questions";
 import type { QuestionContent } from "./schema";
@@ -84,15 +85,25 @@ describe("mazzo di sfide (F4-01)", () => {
   });
 
   it("i minigiochi automatici sono quelli che il motore conosce", () => {
-    // Id dei moduli registrati in `src/engine/minigames` (pacchetto A). Quando quel branch sarà in `main`
-    // questo controllo può leggere direttamente la mappa dei moduli invece di ripetere la lista.
-    const known = ["tic-tac-toe", "connect-four", "memory"];
+    // I moduli sono quelli registrati in `src/engine/minigames` (pacchetto A è in `main`).
+    const known = Object.keys(MINIGAMES);
     for (const challenge of challenges.filter((item) => item.verdict === "automatic")) {
       expect(challenge.minigame).toBeDefined();
       expect(known).toContain(challenge.minigame);
     }
     for (const id of known) {
       expect(challenges.some((challenge) => challenge.minigame === id)).toBe(true);
+    }
+  });
+
+  it("il quiz-lampo porta le sue domande, con la risposta giusta fra le opzioni", () => {
+    const quiz = challenges.find((challenge) => challenge.minigame === "quiz");
+    expect(quiz).toBeDefined();
+    expect(quiz?.quiz?.length).toBeGreaterThanOrEqual(5);
+    for (const item of quiz?.quiz ?? []) {
+      expect(item.correct).toBeGreaterThanOrEqual(0);
+      expect(item.correct).toBeLessThan(item.options.length);
+      expect(new Set(item.options).size).toBe(item.options.length);
     }
   });
 

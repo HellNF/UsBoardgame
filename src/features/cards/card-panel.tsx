@@ -8,7 +8,7 @@ import { EventCard } from "./event-card";
 import { ItemOverflowCard } from "./item-overflow-card";
 import { QuestionCard } from "./question-card";
 import { StarOfferCard } from "./star-offer-card";
-import { cardActor, type Viewer } from "./viewer";
+import { cardActor, type Actor, type Viewer } from "./viewer";
 
 /** Manda un'azione al motore: la cabla il contenitore della partita. */
 export type CardAct = (action: Action) => void;
@@ -52,7 +52,7 @@ export function CardPanel(props: CardPanelProps): React.ReactElement | null {
   if (card === null) return null;
 
   // Chi deve agire adesso (in una prova a decidere è l'altro posto): l'intestazione lo dice.
-  const actor: Seat = cardActor(state, card);
+  const actor: Actor = cardActor(state, card);
   const actorLabel = card.type === "challenge" ? (card.verdict === "judge" ? "Giudica" : "Gioca") : "Tocca a";
 
   return (
@@ -60,7 +60,13 @@ export function CardPanel(props: CardPanelProps): React.ReactElement | null {
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-4 border-ink px-5 py-3">
         <h2 className="font-display text-2xl italic">{CARD_TITLES[card.type]}</h2>
         <p className="text-sm">
-          {actorLabel} <span className={`font-semibold ${SEAT_TEXT[actor]}`}>{names[actor]}</span>
+          {actor === "both" ? (
+            <>Pronti tutti e due: chi tocca per primo</>
+          ) : (
+            <>
+              {actorLabel} <span className={`font-semibold ${SEAT_TEXT[actor]}`}>{names[actor]}</span>
+            </>
+          )}
         </p>
       </header>
       <div className="px-5 py-5">

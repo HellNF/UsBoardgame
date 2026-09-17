@@ -1,7 +1,7 @@
 import { nearestLadderAhead, nearestSnakeHeadBehind } from "./board";
 import { RULES } from "./config";
 import { gainCoins, loseCoins, transferCoins } from "./economy";
-import { minigameById } from "./minigames";
+import { minigameAllows, minigameById } from "./minigames";
 import {
   climbLadder,
   finishCard,
@@ -211,9 +211,13 @@ export const minigameMove: Handler<Extract<Action, { type: "MINIGAME_MOVE" }>> =
   }
   const minigame = minigameById(card.minigame.kind);
   if (!minigame) return `Minigioco sconosciuto: ${card.minigame.kind}.`;
-  if (minigame.turn(card.minigame) !== action.seat) return "Non tocca a te nel minigioco.";
+  // I riflessi li possono giocare entrambi (`turn` = "both"): non c'è un turno da rispettare.
+  if (!minigameAllows(card.minigame, action.seat)) return "Non tocca a te nel minigioco.";
 
-  const applied = minigame.applyMove(card.minigame, action.seat, action.move);
+  const applied = minigame.applyMove(card.minigame, action.seat, action.move, {
+    now: ctx.now(),
+    randomInt: ctx.randomInt,
+  });
   if (!applied.ok) return applied.error;
   card.minigame = applied.state;
   pushEvent(draft, { type: "MINIGAME_MOVED", seat: action.seat, minigame: minigame.id, move: action.move });

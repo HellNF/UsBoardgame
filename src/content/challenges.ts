@@ -4,10 +4,10 @@ import { challengeSchema, type ChallengeContent } from "./schema";
  * Carte sfida (task F4-01). Aggiungere una sfida = aggiungere un oggetto qui.
  *
  * Vincoli (docs/content.md, `challengeSchema`): prova ⇒ verdetto `judge`; duello ⇒ `automatic` (con `minigame`)
- * oppure `double_confirm`; sfida lampo ⇒ durata massima 30 secondi.
+ * oppure `double_confirm`; sfida lampo ⇒ durata massima 30 secondi; sfida esterna ⇒ `url`.
  *
- * `quiz` e `riflessi` sono minigiochi a tempo del motore (task F4-04): finché i loro moduli non esistono in
- * `src/engine/minigames`, la loro carta è un duello a doppia conferma (D-41), così una partita non si rompe.
+ * `quiz-lampo` e `riflessi` sono minigiochi a tempo del motore (task F4-04, D-55): il quiz porta le sue
+ * domande nel campo `quiz` (contenuto pubblico, non la scheda), i riflessi non hanno bisogno di contenuti.
  */
 const raw: ChallengeContent[] = [
   // --- Integrati ---------------------------------------------------------
@@ -52,24 +52,53 @@ const raw: ChallengeContent[] = [
     name: "Quiz a tempo",
     category: "builtin",
     mode: "duel",
-    verdict: "double_confirm",
+    verdict: "automatic",
     durationSeconds: { min: 60, max: 120 },
     instructions:
-      "Cinque domande a risposta rapida, a turno, con i secondi che scorrono: chi risponde giusto a più domande vince. Al ritorno dichiarate entrambi il punteggio.",
+      "Cinque domande a risposta rapida, a turno, con i secondi che scorrono: chi risponde giusto a più domande vince. In caso di pareggio si rigioca.",
     prize: 3,
     snakeFlash: false,
+    minigame: "quiz",
+    quiz: [
+      {
+        question: "Quante corde ha una chitarra classica?",
+        options: ["Quattro", "Sei", "Otto"],
+        correct: 1,
+      },
+      {
+        question: "In quale città si trova la Torre Eiffel?",
+        options: ["Parigi", "Lione", "Marsiglia"],
+        correct: 0,
+      },
+      {
+        question: "Qual è il pianeta più vicino al Sole?",
+        options: ["Venere", "Mercurio", "Marte"],
+        correct: 1,
+      },
+      {
+        question: "Quante ore dura un giorno?",
+        options: ["Dodici", "Ventiquattro", "Trentasei"],
+        correct: 1,
+      },
+      {
+        question: "Chi ha dipinto la Gioconda?",
+        options: ["Leonardo da Vinci", "Michelangelo", "Raffaello"],
+        correct: 0,
+      },
+    ],
   },
   {
     id: "riflessi",
     name: "Riflessi",
     category: "builtin",
     mode: "duel",
-    verdict: "double_confirm",
+    verdict: "automatic",
     durationSeconds: { min: 60, max: 120 },
     instructions:
-      "Un segnale parte a sorpresa, il primo che lo tocca prende il punto: si gioca al meglio di cinque e dichiarate entrambi il risultato.",
+      "Un segnale parte a sorpresa, il primo che lo tocca prende il punto: si gioca al meglio di cinque. Chi tocca troppo presto regala il punto all'altro.",
     prize: 3,
     snakeFlash: false,
+    minigame: "reflex",
   },
 
   // --- Videochiamata -----------------------------------------------------

@@ -2,6 +2,7 @@ import { ladderAt, snakeAt } from "./board";
 import { RULES } from "./config";
 import { gainCoins, loseCoins } from "./economy";
 import { MINIGAMES } from "./minigames";
+import type { QuizItem } from "./minigames/types";
 import { endTurn, movePlayer, pushEvent, type Draft } from "./turn";
 import {
   QUESTION_CATEGORIES,
@@ -135,6 +136,7 @@ export function drawChallengeCard(draft: Draft, ctx: EngineContext, snakeFlash: 
     disputed: false,
     minigameId: card.minigame,
     minigame: null,
+    quiz: card.quiz ?? null,
   };
   state.card = active;
   state.phase = "resolving";
@@ -147,18 +149,31 @@ export function drawChallengeCard(draft: Draft, ctx: EngineContext, snakeFlash: 
     snakeFlash: card.snakeFlash,
     deadlineAt: active.deadlineAt,
   });
-  if (card.verdict === "automatic") startMinigame(draft, ctx, card);
+  if (card.verdict === "automatic") startMinigame(draft, ctx, card, active.quiz);
 }
 
-/** Avvia (o riavvia) il minigioco della carta attiva. */
-export function startMinigame(draft: Draft, ctx: EngineContext, card: ChallengeCard): void {
+/**
+ * Avvia (o riavvia) il minigioco della carta attiva. `quiz` è il contenuto della carta
+ * per i minigiochi che ne hanno bisogno (il quiz-lampo): il resto lo ignora.
+ */
+export function startMinigame(
+  draft: Draft,
+  ctx: EngineContext,
+  card: ChallengeCard,
+  quiz: QuizItem[] | null = null,
+): void {
   const state = draft.state;
   if (!card.minigame) {
     throw new Error(`La sfida \`${card.id}\` ha verdetto automatico ma nessun minigioco.`);
   }
   const minigame = MINIGAMES[card.minigame];
   if (state.card?.type === "challenge") {
-    state.card.minigame = minigame.init({ randomInt: ctx.randomInt, firstSeat: state.turn });
+    state.card.minigame = minigame.init({
+      randomInt: ctx.randomInt,
+      firstSeat: state.turn,
+      now: ctx.now(),
+      content: quiz,
+    });
   }
   pushEvent(draft, { type: "MINIGAME_STARTED", seat: null, minigame: card.minigame });
 }
@@ -330,15 +345,21 @@ export function restartChallenge(draft: Draft, ctx: EngineContext): void {
   card.disputed = false;
   card.deadlineAt = new Date(ctx.now().getTime() + RULES.challenges.snakeFlashSeconds * 1000).toISOString();
   if (card.verdict === "automatic" && card.minigameId) {
-    startMinigame(draft, ctx, {
-      id: card.challengeId,
-      mode: card.mode,
-      verdict: card.verdict,
-      prize: card.prize,
-      durationSeconds: { min: 1, max: RULES.challenges.snakeFlashSeconds },
-      snakeFlash: card.snakeFlash,
-      minigame: card.minigameId,
-    });
+    startMinigame(
+      draft,
+      ctx,
+      {
+        id: card.challengeId,
+        mode: card.mode,
+        verdict: card.verdict,
+        prize: card.prize,
+        durationSeconds: { min: 1, max: RULES.challenges.snakeFlashSeconds },
+        snakeFlash: card.snakeFlash,
+        minigame: card.minigameId,
+        quiz: card.quiz,
+      },
+      card.quiz,
+    );
   }
   pushEvent(draft, {
     type: "CHALLENGE_REMATCH",

@@ -1,4 +1,4 @@
-import { otherSeat } from "@/engine";
+import { minigameTurn, otherSeat } from "@/engine";
 import type { ActiveCard, GameState, Seat } from "@/engine";
 
 /**
@@ -17,12 +17,16 @@ import type { ActiveCard, GameState, Seat } from "@/engine";
 /** Chi guarda una carta: un posto, oppure «tutti e due» (hot seat e pagina degli scenari). */
 export type Viewer = Seat | "all";
 
+/** Chi deve agire: un posto, oppure «tutti e due» (i riflessi: chi tocca per primo). */
+export type Actor = Seat | "both";
+
 /**
  * Il posto che deve agire adesso sulla carta aperta.
  * Domanda breve con la risposta già data: decide l'altro. Prova: decide l'altro.
- * Minigioco: tocca a chi ha il turno nel minigioco. Per gli altri casi agisce chi ha il turno.
+ * Minigioco: tocca a chi ha il turno nel minigioco (`"both"` nei riflessi).
+ * Per gli altri casi agisce chi ha il turno.
  */
-export function cardActor(state: GameState, card: ActiveCard): Seat {
+export function cardActor(state: GameState, card: ActiveCard): Actor {
   if (card.type === "question") {
     return card.kind === "short" && card.givenAnswer !== null ? otherSeat(state.turn) : state.turn;
   }
@@ -30,13 +34,14 @@ export function cardActor(state: GameState, card: ActiveCard): Seat {
     // Doppia conferma e disaccordo: ognuno ha il suo pezzo, nessuno aspetta.
     if (card.disputed || card.verdict === "double_confirm") return state.turn;
     if (card.verdict === "judge") return otherSeat(state.turn);
-    if (card.verdict === "automatic" && card.minigame !== null) return card.minigame.turn;
+    if (card.verdict === "automatic" && card.minigame !== null) return minigameTurn(card.minigame);
   }
   return state.turn;
 }
 
-/** Vero se chi guarda può usare i comandi destinati al posto `seat`. */
-export const viewerActs = (viewer: Viewer, seat: Seat): boolean => viewer === "all" || viewer === seat;
+/** Vero se chi guarda può usare i comandi destinati a `actor`. */
+export const viewerActs = (viewer: Viewer, actor: Actor): boolean =>
+  viewer === "all" || actor === "both" || viewer === actor;
 
 /**
  * La riga di attesa di chi non deve agire, oppure `null` quando chi guarda ha i comandi
@@ -51,6 +56,7 @@ export function waitingLine(
   if (viewer === "all") return null;
   const actor = cardActor(state, card);
   if (viewer === actor) return null;
+  if (actor === "both") return null;
   const who = names[actor];
 
   switch (card.type) {

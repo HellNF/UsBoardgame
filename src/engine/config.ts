@@ -56,6 +56,21 @@ export const RULES = {
 
   challenges: { snakeFlashSeconds: 30 },
 
+  /** Minigiochi a tempo (F4-04): quiz-lampo e riflessi. */
+  minigames: {
+    quiz: {
+      /** Domande usate in una partita di quiz-lampo (la carta ne porta cinque). */
+      items: 5,
+    },
+    reflex: {
+      /** Si gioca al meglio di: chi arriva a tre punti vince. */
+      bestOf: 5,
+      /** Finestra in cui può arrivare il segnale, in millisecondi. */
+      minDelayMs: 1200,
+      maxDelayMs: 5000,
+    },
+  },
+
   items: {
     max: 3,
     prices: {

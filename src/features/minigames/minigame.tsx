@@ -3,12 +3,14 @@
 import type { MinigameState, Seat } from "@/engine";
 import { ConnectFourBoard } from "@/features/minigames/forza-4";
 import { MemoryBoard } from "@/features/minigames/memory";
+import { QuizBoard } from "@/features/minigames/quiz";
+import { ReflexBoard } from "@/features/minigames/riflessi";
 import { TicTacToeBoard } from "@/features/minigames/tris";
 
 /**
- * Minigiochi integrati (D-26): i tre tabelloni condividono la stessa interfaccia.
- * Sono componenti puramente presentazionali — nessuno stato locale, nessun effetto:
- * disegnano lo stato ricevuto dal motore e traducono i clic in mosse.
+ * Minigiochi integrati (D-26): i tabelloni condividono la stessa interfaccia.
+ * Sono componenti puramente presentazionali — nessuno stato locale condiviso, nessun calcolo
+ * delle regole: disegnano lo stato ricevuto dal motore e traducono i clic in mosse.
  */
 
 export type MinigameViewProps = {
@@ -28,6 +30,10 @@ export function Minigame(props: MinigameViewProps) {
       return <ConnectFourBoard {...props} />;
     case "memory":
       return <MemoryBoard {...props} />;
+    case "quiz":
+      return <QuizBoard {...props} />;
+    case "reflex":
+      return <ReflexBoard {...props} />;
   }
 
   // MinigameState è una unione chiusa: qui non si arriva mai.

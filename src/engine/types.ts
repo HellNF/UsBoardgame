@@ -1,4 +1,4 @@
-import type { MinigameId, MinigameState } from "./minigames/types";
+import type { MinigameId, MinigameState, QuizItem } from "./minigames/types";
 
 /**
  * Contratto del motore di gioco.
@@ -137,6 +137,8 @@ export type ChallengeCard = {
   snakeFlash: boolean;
   /** Minigioco integrato, obbligatorio quando il verdetto è `automatic`. */
   minigame: MinigameId | null;
+  /** Domande del quiz-lampo (solo per il minigioco `quiz`), contenuto pubblico della carta. */
+  quiz?: QuizItem[] | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -221,6 +223,8 @@ export type ActiveCard =
       minigameId: MinigameId | null;
       /** Stato del minigioco integrato (`MinigameState`), quando il verdetto è automatico. */
       minigame: MinigameState | null;
+      /** Domande del quiz-lampo, quando il minigioco è il quiz (contenuto pubblico della carta). */
+      quiz: QuizItem[] | null;
     }
   | { type: "event"; eventId: EventCardId }
   | { type: "star_offer" }

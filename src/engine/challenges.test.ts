@@ -281,3 +281,91 @@ describe("sfida lampo del serpente (docs/rules.md § Turno 4, F4-06)", () => {
     expect(game.state.players[1].stats.challengesWon).toBe(0);
   });
 });
+
+describe("minigiochi a tempo: quiz-lampo e riflessi (F4-04, D-55)", () => {
+  const quizCard: ChallengeCard = {
+    id: "quiz-lampo",
+    mode: "duel",
+    verdict: "automatic",
+    prize: 3,
+    durationSeconds: { min: 60, max: 120 },
+    snakeFlash: false,
+    minigame: "quiz",
+    quiz: [
+      { question: "Quante corde ha una chitarra classica?", options: ["Quattro", "Sei"], correct: 1 },
+      { question: "In quale città si trova la Torre Eiffel?", options: ["Parigi", "Lione"], correct: 0 },
+      { question: "Qual è il pianeta più vicino al Sole?", options: ["Venere", "Mercurio"], correct: 1 },
+    ],
+  };
+
+  const reflexCard: ChallengeCard = {
+    id: "riflessi",
+    mode: "duel",
+    verdict: "automatic",
+    prize: 3,
+    durationSeconds: { min: 60, max: 120 },
+    snakeFlash: false,
+    minigame: "reflex",
+  };
+
+  const open = (card: ChallengeCard): TestGame => {
+    const game = createTestGame({ challenges: [card] });
+    game.place(1, 12);
+    game.test.setRandom([0, 0]);
+    game.do({ type: "ROLL", seat: 1 });
+    return game;
+  };
+
+  const challengeOf = (game: TestGame) => {
+    const card = game.state.card;
+    if (card?.type !== "challenge") throw new Error("Nessuna carta sfida aperta.");
+    return card;
+  };
+
+  it("il quiz parte dalle domande della carta e si chiude da solo", () => {
+    const game = open(quizCard);
+    expect(challengeOf(game).minigame?.kind).toBe("quiz");
+    expect(game.events.map((event) => event.type)).toContain("MINIGAME_STARTED");
+
+    // 1 risponde giusto, 2 sbaglia, 1 risponde giusto: vince il posto 1 senza dichiarazioni.
+    game.do({ type: "MINIGAME_MOVE", seat: 1, move: { option: 1 } });
+    game.do({ type: "MINIGAME_MOVE", seat: 2, move: { option: 1 } });
+    game.do({ type: "MINIGAME_MOVE", seat: 1, move: { option: 1 } });
+
+    expect(game.state.card).toBeNull();
+    expect(game.state.players[1].coins).toBe(quizCard.prize);
+    expect(game.state.players[1].stats.challengesWon).toBe(1);
+    expect(game.events.map((event) => event.type)).toContain("MINIGAME_FINISHED");
+  });
+
+  it("nel quiz l'altro posto non può rispondere al posto tuo", () => {
+    const game = open(quizCard);
+    expect(game.reject({ type: "MINIGAME_MOVE", seat: 2, move: { option: 0 } })).toBe(
+      "Non tocca a te nel minigioco.",
+    );
+  });
+
+  it("i riflessi li giocano tutti e due: chi tocca dopo il segnale prende il punto", () => {
+    const game = open(reflexCard);
+    const card = challengeOf(game);
+    if (card.minigame?.kind !== "reflex") throw new Error("Il minigioco non è quello dei riflessi.");
+    expect(card.minigame.scores).toEqual({ 1: 0, 2: 0 });
+
+    // Il segnale arriva entro pochi secondi: si aspetta la finestra dei RULES e si tocca.
+    game.test.advanceSeconds(RULES.minigames.reflex.maxDelayMs / 1000 + 1);
+    game.do({ type: "MINIGAME_MOVE", seat: 2, move: { press: true } });
+    const after = challengeOf(game).minigame;
+    if (after?.kind !== "reflex") throw new Error("Il minigioco non è quello dei riflessi.");
+    expect(after.scores).toEqual({ 1: 0, 2: 1 });
+    expect(after.round).toBe(2);
+  });
+
+  it("nei riflessi chi tocca prima del segnale regala il punto all'altro", () => {
+    const game = open(reflexCard);
+    game.do({ type: "MINIGAME_MOVE", seat: 1, move: { press: true } });
+    const after = challengeOf(game).minigame;
+    if (after?.kind !== "reflex") throw new Error("Il minigioco non è quello dei riflessi.");
+    expect(after.scores).toEqual({ 1: 0, 2: 1 });
+    expect(after.lastRound).toEqual({ winner: 2, falseStart: true });
+  });
+});

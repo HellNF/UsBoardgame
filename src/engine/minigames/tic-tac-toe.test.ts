@@ -6,9 +6,13 @@ import type { MinigameState, TicTacToeState } from "./types";
  * Tris (docs/rules.md § Sfide, D-26): modulo puro con `init`, `applyMove`, `result`.
  */
 
-const init = () => ticTacToe.init({ randomInt: () => 0, firstSeat: 1 }) as TicTacToeState;
+/** Orologio finto: i moduli non leggono mai il tempo da soli. */
+const CLOCK = { now: new Date("2026-09-17T21:00:00.000Z"), randomInt: () => 0 };
 
-const move = (state: MinigameState, seat: 1 | 2, cell: unknown) => ticTacToe.applyMove(state, seat, { cell });
+const init = () => ticTacToe.init({ ...CLOCK, firstSeat: 1 }) as TicTacToeState;
+
+const move = (state: MinigameState, seat: 1 | 2, cell: unknown) =>
+  ticTacToe.applyMove(state, seat, { cell }, CLOCK);
 
 const play = (state: MinigameState, moves: [1 | 2, number][]) =>
   moves.reduce((current, [seat, cell]) => {

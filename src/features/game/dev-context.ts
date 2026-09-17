@@ -69,6 +69,7 @@ export const HOTSEAT_CHALLENGES: ChallengeCard[] = [
     durationSeconds: challenge.durationSeconds,
     snakeFlash: challenge.snakeFlash,
     minigame: (challenge.minigame as MinigameId | undefined) ?? null,
+    quiz: challenge.quiz ?? null,
   })),
   ...HOTSEAT_CHALLENGE_CONTENT.map((challenge) => ({
     id: challenge.id,
@@ -78,6 +79,7 @@ export const HOTSEAT_CHALLENGES: ChallengeCard[] = [
     durationSeconds: challenge.durationSeconds,
     snakeFlash: challenge.snakeFlash,
     minigame: (challenge.minigame as MinigameId | undefined) ?? null,
+    quiz: challenge.quiz ?? null,
   })),
 ];
 
