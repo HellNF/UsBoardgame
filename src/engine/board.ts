@@ -1,5 +1,5 @@
 import { RULES } from "./config";
-import type { CellNumber } from "./types";
+import type { BoardLayout, CellNumber, Ladder, Snake } from "./types";
 
 /**
  * Coordinate di una casella sulla griglia a serpentina.
@@ -29,3 +29,35 @@ export function coordToCell(row: number, col: number): CellNumber {
 export const rowOf = (n: CellNumber): number => cellToCoord(n).row + 1;
 
 export const clampCell = (n: number): CellNumber => Math.min(RULES.board.cells, Math.max(1, n));
+
+// ---------------------------------------------------------------------------
+// Scale e serpenti
+// ---------------------------------------------------------------------------
+
+/** Scala con la base in `cell`, se c'è. */
+export const ladderAt = (board: BoardLayout, cell: CellNumber): Ladder | null =>
+  board.ladders.find((ladder) => ladder.from === cell) ?? null;
+
+/** Serpente con la testa in `cell`, se c'è. */
+export const snakeAt = (board: BoardLayout, cell: CellNumber): Snake | null =>
+  board.snakes.find((snake) => snake.from === cell) ?? null;
+
+/**
+ * Scala con la base più vicina davanti alla casella (base strettamente più avanti).
+ * Usata da Scala portatile e "Scala fortunata".
+ */
+export const nearestLadderAhead = (board: BoardLayout, cell: CellNumber): Ladder | null =>
+  board.ladders
+    .filter((ladder) => ladder.from > cell)
+    .sort((a, b) => a.from - b.from)
+    .at(0) ?? null;
+
+/**
+ * Serpente con la testa più vicina dietro la casella (testa strettamente più indietro).
+ * Usata da "Serpente improvviso".
+ */
+export const nearestSnakeHeadBehind = (board: BoardLayout, cell: CellNumber): Snake | null =>
+  board.snakes
+    .filter((snake) => snake.from < cell)
+    .sort((a, b) => b.from - a.from)
+    .at(0) ?? null;
