@@ -249,6 +249,25 @@ _Nota:_ **[D-41](decisions.md) (quiz e riflessi a doppia conferma), sul branch `
 stesso modo** il 2026-09-17: da sistemare quando i minigiochi a tempo arrivano con F4-04. Il file di quel branch non
 si tocca da qui.
 
+### D-43 · Hot seat: il motore gira nel browser, solo nelle pagine `/dev`
+
+**Derivata, dal pacchetto C.** La pagina `/dev/hotseat` fa girare `reduce` nel browser con un `EngineContext`
+finto, per poter giocare una partita intera senza Supabase. È l'unica **eccezione** alla regola 1 di AGENTS.md
+("le regole girano solo sul server") e vale solo per le pagine di sviluppo: la pagina chiama `notFound()` quando
+`NODE_ENV === "production"` (verificato: in `pnpm start` le pagine `/dev/*` rispondono 404).
+_Perché:_ senza Docker né Supabase l'unico modo di provare a occhio carte, timer e schermata finale è far girare
+il motore nel browser; tenerlo confinato a `/dev` e spento in produzione evita che l'eccezione finisca nell'app.
+
+### D-44 · Hot seat: scheda di prova e due sfide in più per i minigiochi
+
+**Derivata, dal pacchetto C.** In hot seat non ci sono schede vere (arrivano con F3-02), quindi il contesto finto
+risponde alle domande "quanto mi conosci" confrontando la risposta con la **prima opzione** di ogni domanda a
+scelta multipla. Inoltre la hot seat aggiunge due carte sfida di prova (`dev-forza-4`, `dev-memory`) perché il
+mazzo di `main` contiene solo il tris: servono a provare le tre interfacce dei minigiochi. Le due carte vivono in
+`src/features/game/dev-context.ts` e **non** entrano in `src/content`.
+_Perché:_ le schede di prova non devono toccare i contenuti versionati, e il pacchetto C non può importare il mazzo
+del pacchetto B (branch non ancora unito).
+
 ---
 
 ## Tabellone, estetica e contenuti

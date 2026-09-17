@@ -56,6 +56,34 @@ where id and version = expected`, insert in `game_events`, insert in `used_quest
 Per le `short` la risposta data dal giocatore è nello stato (serve all'altro per giudicare); la risposta
 "giusta" dell'interrogato non c'è mai.
 
+## Interfaccia: moduli e pagine di sviluppo
+
+La UI sta in `src/features`, un componente per area. Sono tutti componenti **presentazionali**: ricevono lo stato
+dal contenitore e restituiscono azioni, non calcolano mai l'esito di una mossa.
+
+| File / cartella                              | Cosa contiene                                                                                 |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `features/board/geometry.ts`                 | geometria del tabellone (unità SVG, centri, scale, serpenti, caselle multi-cella)             |
+| `features/board/board.tsx`                   | tabellone SVG: celle per tipo, decorazioni, segnaposto, pedine animate                        |
+| `features/board/pawn.tsx`                    | pedina segnaposto (cerchio del colore del posto + iniziale)                                   |
+| `features/dice/dice.tsx`                     | dadi (punti disegnati) e pulsante del tiro                                                    |
+| `features/cards/*`                           | `card-panel.tsx` instrada sulle cinque carte: domanda, sfida, imprevisto, stella, zaino pieno |
+| `features/minigames/*`                       | tris, forza 4, memory + `minigame.tsx` che sceglie dal `kind` dello stato                     |
+| `features/game/game-table.tsx`               | contenitore della partita: reducer, eventi, orologio di un secondo, strumenti di prova        |
+| `features/game/side-panel.tsx`               | turno, punteggi, negozio degli oggetti, uso degli oggetti attivi                              |
+| `features/game/final-screen.tsx`             | schermata finale con stelle bonus rivelate una alla volta                                     |
+| `features/game/dev-context.ts`               | `EngineContext` finto della hot seat (scheda di prova, mazzo di prova)                        |
+| `features/access`, `lobby`, `sheet`, `diary` | schermate su props e dati finti (Supabase nel pacchetto D)                                    |
+
+**Pagine di sviluppo** (rispondono 404 in produzione, D-43):
+
+- `/dev/hotseat` — partita completa per due giocatori su un solo schermo, col motore nel browser;
+- `/dev/ui` — accesso, lobby, scheda e diario su dati finti, per rivedere l'estetica senza database.
+
+Il timer delle sfide non è un componente a sé: il conto alla rovescia sta dentro
+`features/cards/challenge-card.tsx` (che manda `TIMER_EXPIRED` quando scade) e l'orologio di pagina è in
+`features/game/game-table.tsx`.
+
 ## Motore: moduli ed eventi
 
 `src/engine` è puro e senza I/O. Il reducer è l'unico punto d'ingresso, ma le regole sono divise per area:

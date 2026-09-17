@@ -67,3 +67,36 @@ Il proprietario compila **Esito**.
 3. `npx vitest run src/content/boards/boards.test.ts` e `npx vitest run src/engine/board-validation.test.ts` → verdi.
 
 **Esito:**
+
+### F1-05 · Partita in hot seat — branch hermes/c-ui
+
+1. `pnpm dev`, poi apri <http://localhost:3000/dev/hotseat>.
+2. Guarda il tabellone: 100 caselle con i numeri, domande con l'iniziale della categoria in corsivo, sfide nere
+   piene, imprevisti a metà diagonale, monete (cerchio pieno = +3, cerchio vuoto = −2), 3 stelle, 4 decorazioni
+   multi-cella; 7 scale a montanti e pioli, 6 serpenti sinuosi con la testa a occhi; pedine e anello del turno.
+3. Gioca: «Tira i dadi» → la pedina salta; sulle caselle escono le carte:
+   - domanda a scelta multipla → scegli un'opzione (il verdetto è automatico, scheda di prova: D-44);
+   - domanda breve → scrivi la risposta, poi l'altro preme «Giusta» / «Quasi» / «Sbagliata»;
+   - domanda aperta → «Ne abbiamo parlato» (+1 moneta);
+   - sfida con minigioco (tris, forza 4, memory) → gioca i turni, il motore decide;
+   - sfida a doppia conferma → dichiarano entrambi; se non coincidono, rivincita o moneta;
+   - prova (verdetto del giudice) → «Riuscita» / «Non riuscita»;
+   - imprevisto → «Continua»; stella → compra o rifiuta; zaino pieno → scegli cosa scartare.
+4. Prova gli oggetti dal pannello (compra, usa Dado singolo e Dado truccato) e il timer di una sfida.
+5. Per arrivare in fretta alla fine: «Strumenti di prova (solo sviluppo)» → «Avvicina alla 100», poi tira due
+   volte; nella schermata finale premi «Rivela la prossima stella» una volta per tipo (Sapientone, Campione).
+6. In produzione la pagina non deve esistere: `pnpm build && pnpm start`, poi
+   `curl -o /dev/null -w "%{http_code}" http://localhost:3000/dev/hotseat` → **404**.
+
+**Esito:**
+
+### F0-05 · F2-02 · F3-02 · F5-06 · Schermate su dati finti — branch hermes/c-ui
+
+1. `pnpm dev`, poi apri <http://localhost:3000/dev/ui>.
+2. Controlla a occhio: accesso (codice, password, stato dell'altro giocatore), lobby (disposizione, categorie di
+   sfida, durata massima, posta in palio, prontezza dei due posti, pedina e colore), scheda (blocchi per categoria,
+   contatore delle risposte, avviso se incompleta), diario (momenti della serata + archivio).
+3. Le stesse viste devono restare usabili su telefono (accesso, lobby e scheda): prova a restringere la finestra.
+4. In produzione anche `/dev/ui` deve rispondere 404 (come sopra).
+
+**Esito:**

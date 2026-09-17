@@ -65,3 +65,42 @@ Branch: hermes/a-engine (riparte dall'ultimo commit del pacchetto A) · Ultimo c
   dipende da `src/content` tranne che per la disposizione `classic`); le partite sono giocate da una strategia
   casuale, quindi non coprono le scelte furbe di un giocatore umano; il generatore casuale di disposizioni (F7-02)
   e il suo `TODO` restano aperti.
+
+## Pacchetto C · Interfaccia offline — 2026-09-17
+
+Branch: hermes/c-ui, partito da `hermes/a-engine` (dipende dal motore: il primo commit lo dice) · Ultimo commit:
+vedi `git log -1 hermes/c-ui`
+
+- **Fatto:** F1-05 `[x]` (pagina `/dev/hotseat`, partita completa per due giocatori su un solo schermo, tabellone
+  SVG, dadi, pannello laterale, tutte le carte, timer, schermata finale con le stelle bonus). `[~]` per la parte
+  visiva: F0-05, F2-02, F3-02, F5-06 (accesso, lobby, scheda, diario su dati finti in `/dev/ui`), F2-05
+  (animazioni: pedina che salta e segue il serpente, anello del turno, ingresso delle carte), F4-03 (UI di tris,
+  forza 4, memory). Quiz e riflessi (F4-04) fuori da questa sessione, come richiesto.
+- **Verificato da me:** comandi eseguiti davvero:
+  - `pnpm check` — verde: `next typegen && tsc --noEmit` pulito, `eslint` pulito, 15 file di test, 198 test passati.
+  - `pnpm build` — verde (pagine `/dev/hotseat` e `/dev/ui` compilate).
+  - `pnpm build && pnpm start` — in produzione `curl` su `/dev/hotseat` e `/dev/ui` risponde **404**, `/` risponde
+    200 (l'eccezione D-43 è spenta in produzione).
+  - `pnpm dev` con browser vero (Chrome via CDP): ho guardato e usato la pagina.
+- **Verificato a occhio nel browser** (`pnpm dev`, http://localhost:3000/dev/hotseat): tabellone con numeri,
+  decorazioni, 7 scale e 6 serpenti generati, pedine (scostate quando sono sulla stessa casella) e anello del
+  turno; tiro dei dadi e movimento; casella sfida con minigioco **tris** giocato fino alla risoluzione; **memory**
+  con carte che si scoprono e contatore delle coppie; **timer** che scende (3:00 → 2:48); casella domanda **breve**
+  con testo vero dei contenuti, risposta scritta, verdetto dell'altro («Giusta») e **+3 monete**; casella domanda
+  **aperta** con «Ne abbiamo parlato» e **+1 moneta**; schermata finale con «Rivela la prossima stella» una alla
+  volta (Sapientone, Campione) e vincitore corretto; pannello con negozio e oggetti; strumenti di prova.
+- **Non verificato a occhio** (da guardare in locale): domanda a scelta multipla con verdetto automatico, imprevisto
+  (`ACK_EVENT`), offerta della stella, zaino pieno, doppia conferma con disaccordo, sfida lampo del serpente,
+  acquisto e uso degli oggetti dal pannello, salto della pedina cella per cella, e una partita intera dall'inizio
+  alla fine senza usare gli strumenti di prova.
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), voci **F1-05** e
+  **F0-05 · F2-02 · F3-02 · F5-06**.
+- **Decisioni Derivate aggiunte:** D-43 (motore nel browser solo nelle pagine `/dev`, 404 in produzione), D-44
+  (scheda di prova e due sfide di prova per i minigiochi della hot seat).
+- **Domande per il proprietario:** il tabellone così va bene (numeri, celle nere, serpenti con corpo a macchie)?
+  La pedina-segnaposto (cerchio col colore e l'iniziale) va bene fino ai file Rive? Le carte e la schermata finale
+  vanno bene come disposizione? La pagina `/dev/hotseat` deve restare anche dopo il pacchetto D o la togliamo?
+- **Limiti noti / debito tecnico:** le animazioni saltano da una casella all'altra in un salto solo (il salto
+  cella per cella e le mosse dei minigiochi animate sono aperti); le schermate su dati finti non hanno ancora i
+  dati veri né i testi definitivi; i minigiochi girano nel browser solo in hot seat (i turni remoti sono del
+  pacchetto D); i pulsanti disabilitati usano il bordo tratteggiato invece del grigio, per restare nel bianco e nero.

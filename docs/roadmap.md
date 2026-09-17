@@ -31,7 +31,9 @@ Dopo la fase 3: **prima serata giocabile**.
 - [ ] **F0-03** `pnpm room:create`: crea stanza e due posti (password chiesta a terminale, mai negli argomenti).
 - [ ] **F0-04** `src/proxy.ts` per il refresh della sessione; `POST /api/rooms/join`; accesso anonimo; ritardo sui
       tentativi falliti. Test RLS: un posto non legge la scheda dell'altro né `rooms`.
-- [ ] **F0-05** Pagina di accesso (codice, password, scelta del posto) e lobby minima con indicatore "connesso".
+- [~] **F0-05** Pagina di accesso (codice, password, scelta del posto) e lobby minima con indicatore "connesso".
+  Nota: UI pronta e visibile in `/dev/ui` su dati finti (`src/features/access`), con lo stato dell'altro
+  giocatore; il collegamento a Supabase e la scelta del posto sono del pacchetto D.
 - [ ] **F0-06** Progetto Supabase remoto + progetto Vercel + variabili; deploy di prova.
 
 ## Fase 1 · Tabellone — _partita completa su un solo schermo_
@@ -55,22 +57,32 @@ Dopo la fase 3: **prima serata giocabile**.
 - [x] **F1-04** `EngineContext` finto per i test (RNG deterministico).
       Nota: `src/engine/testing.ts` (non esportato da `src/engine/index.ts`) con RNG a sequenza, orologio finto,
       domande e sfide finte, una seconda disposizione valida e un piccolo aiuto per giocare nei test.
-- [ ] **F1-05** Tabellone SVG con segnaposto geometrici, pedine, scale e serpenti generati, dadi, pannello laterale.
+- [x] **F1-05** Tabellone SVG con segnaposto geometrici, pedine, scale e serpenti generati, dadi, pannello laterale.
+      Nota: pagina `/dev/hotseat` (404 in produzione, D-43) con partita completa per due giocatori su un solo
+      schermo: tabellone, dadi, pannello, tutte le carte, timer, schermata finale. Verificato a occhio con
+      `pnpm dev` (voci F1-05 del Registro in [local-testing.md](local-testing.md)).
       Modalità "hot seat" (entrambi i posti sullo stesso schermo) per provare le regole senza Supabase.
 
 ## Fase 2 · Tempo reale — _partita a distanza sincronizzata_
 
 - [ ] **F2-01** `applyAction` + `POST /api/games/[gameId]/actions` (identità, versione, transazione, eventi).
-- [ ] **F2-02** Lobby completa: impostazioni, pronto, creazione della partita (`status` lobby → playing).
+- [~] **F2-02** Lobby completa: impostazioni, pronto, creazione della partita (`status` lobby → playing).
+  Nota: la parte visiva (disposizione, categorie, durata massima, posta, pronto dei due posti) è in
+  `src/features/lobby` e si vede in `/dev/ui`; `status` e la creazione della partita sono del pacchetto D.
 - [ ] **F2-03** Abbonamento Realtime a `games`/`game_events`, gestione dei `409`, riconnessione alla fase salvata.
 - [ ] **F2-04** Presence: indicatore dell'altro giocatore e `last_seen_at`.
-- [ ] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
+- [~] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
+  Nota: fatti il salto della pedina verso la casella nuova (con la curva del serpente quando lo spostamento è
+  una discesa), l'anello del turno e l'ingresso delle carte; manca il salto **cella per cella** e l'uso degli
+  eventi `MINIGAME_MOVED` per animare le pedine dei minigiochi.
 
 ## Fase 3 · Domande — _prima serata giocabile_
 
 - [ ] **F3-01** `drawQuestion` lato server (categoria, 60/40, livelli profonde, solo domande con risposta, registro
       per posto/coppia, azzeramento) + test.
-- [ ] **F3-02** Pagina scheda: blocchi per categoria, salvataggio automatico, avanzamento; stato `sheets` in lobby.
+- [~] **F3-02** Pagina scheda: blocchi per categoria, salvataggio automatico, avanzamento; stato `sheets` in lobby.
+  Nota: la scheda è in `src/features/sheet` (blocchi per categoria, contatore, avviso scheda incompleta) e si
+  vede in `/dev/ui`; le risposte private e lo stato `sheets` arrivano con il pacchetto D.
 - [~] **F3-03** Carta domanda: `multiple` (verdetto automatico), `short` (giudizio dell'altro), `open`;
   regola della scala con una sola domanda.
   Nota: motore completo e testato (pacchetto A); manca la carta della UI (pacchetto C).
@@ -83,7 +95,9 @@ Dopo la fase 3: **prima serata giocabile**.
 - [~] **F4-02** Carta sfida: duello/prova, giudice, doppia conferma, disputa, timer (`TIMER_EXPIRED`).
   Nota: motore completo e testato (pacchetto A, con D-33 e D-36); mancano la carta della UI e la route.
 - [~] **F4-03** Minigiochi nel motore + UI: tris, forza 4, memory.
-  Nota: i tre moduli puri sono in `src/engine/minigames` con test (pacchetto A); la UI arriva con il pacchetto C.
+  Nota: i tre moduli puri sono in `src/engine/minigames` con test (pacchetto A) e la UI è in
+  `src/features/minigames`, provabile in `/dev/hotseat` (la hot seat pesca anche due sfide di prova per forza 4
+  e memory, D-44); mancano i turni remoti e le mosse via API, che arrivano con il pacchetto D.
 - [ ] **F4-04** Minigiochi a tempo: quiz, riflessi.
 - [ ] **F4-05** Pausa per sfida esterna (link Lichess, skribbl.io) e ritorno con "Chi ha vinto?".
 - [~] **F4-06** Sfida lampo del serpente.
@@ -102,7 +116,9 @@ Dopo la fase 3: **prima serata giocabile**.
 - [~] **F5-05** Schermata finale: stelle bonus una alla volta, vincitore, posta in palio.
   Nota: motore delle stelle bonus e del vincitore fatto e testato (pacchetto A); la schermata arriva con il
   pacchetto C.
-- [ ] **F5-06** Diario della serata e archivio delle partite.
+- [~] **F5-06** Diario della serata e archivio delle partite.
+  Nota: la vista è in `src/features/diary` (momenti della serata + archivio) e si vede in `/dev/ui` su dati
+  finti; la lettura del diario dal database è del pacchetto D.
 
 ## Fase 6 · Illustrazioni — _estetica finale_ (in parallelo)
 
