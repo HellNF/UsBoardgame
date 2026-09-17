@@ -18,6 +18,7 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "content:seed": "tsx scripts/content-seed.ts",
+    "content:push": "tsx scripts/push-content.ts",
     "room:create": "tsx scripts/create-room.ts"
   },
   "dependencies": {
