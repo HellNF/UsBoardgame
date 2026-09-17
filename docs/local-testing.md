@@ -57,3 +57,13 @@ Il proprietario compila **Esito**.
 4. Atteso: in Studio, `player_sessions` ha due righe con utenti anonimi diversi.
 **Esito:** _
 -->
+
+### F1-01 · Disposizione `classic` dopo la correzione (D-42) — branch `hermes/a-engine`
+
+1. `pnpm dev` e apri la partita in hot seat (`/dev/hotseat`, dal pacchetto C). Su `hermes/a-engine` la pagina non
+   esiste ancora: in quel caso confronta `src/content/boards/classic.ts` con `docs/reference/board/boardReference.png`.
+2. Guarda le due geometrie corrette: la scala **28→72** e il serpente **87→37**, e verifica che nessuna scala o
+   serpente copra più di 5 file (7 scale e 6 serpenti, sparsi su tutto il tabellone).
+3. `npx vitest run src/content/boards/boards.test.ts` e `npx vitest run src/engine/board-validation.test.ts` → verdi.
+
+**Esito:**
