@@ -5,6 +5,7 @@ import { challenges } from "@/content/challenges";
 import { questions } from "@/content/questions";
 import { reduce, SEATS, type Action, type GameState } from "@/engine";
 import { CardPanel } from "@/features/cards/card-panel";
+import { plural } from "@/lib/plural";
 import { createHotseatContext, HOTSEAT_SETTINGS } from "./dev-context";
 import { SCENARIO_NAMES, startState, type Scenario } from "./dev-scenarios";
 import { FinalScreen } from "./final-screen";
@@ -33,9 +34,6 @@ const useMounted = () =>
     () => true,
     () => false,
   );
-
-/** «1 moneta», «2 monete»: i numeri della riga di controllo. */
-const plural = (count: number, one: string, many: string): string => (count === 1 ? one : many);
 
 /** Riquadro con titolo, riga di spiegazione e carta giocabile. */
 export function ScenarioCard({ scenario }: ScenarioCardProps) {
@@ -150,8 +148,7 @@ function ScenarioLive({ scenario }: ScenarioCardProps) {
           const player = state.players[seat];
           return (
             <span key={seat} className="font-sans text-xs text-ink/60">
-              {SCENARIO_NAMES[seat]}: casella {player.position} · {player.coins}{" "}
-              {plural(player.coins, "moneta", "monete")} · {player.stars}{" "}
+              {SCENARIO_NAMES[seat]}: casella {player.position} · {plural(player.coins, "moneta", "monete")} ·{" "}
               {plural(player.stars, "stella", "stelle")}
               {player.items.length > 0 && ` · ${plural(player.items.length, "oggetto", "oggetti")}`}
             </span>

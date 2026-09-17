@@ -2,6 +2,7 @@
 
 import { RULES } from "@/engine";
 import type { ActiveCard } from "@/engine";
+import { plural } from "@/lib/plural";
 import type { CardPanelProps } from "./card-panel";
 
 /** Pulsante pieno: nero su carta. */
@@ -24,7 +25,7 @@ export function StarOfferCard({
     <div className="flex flex-col gap-4">
       <p className="font-display text-2xl italic">Una stella è in vendita</p>
       <p className="text-sm">
-        La stella costa {price} monete; ne hai {coins}.
+        La stella costa {plural(price, "moneta", "monete")}; ne hai {coins}.
       </p>
       <div className="flex flex-wrap gap-2">
         <button
@@ -43,7 +44,11 @@ export function StarOfferCard({
           No, grazie
         </button>
       </div>
-      {!canBuy && <p className="text-xs">Ti servono altre {price - coins} monete.</p>}
+      {!canBuy && (
+        <p className="text-xs">
+          {price - coins === 1 ? "Ti serve un'altra moneta." : `Ti servono altre ${price - coins} monete.`}
+        </p>
+      )}
     </div>
   );
 }

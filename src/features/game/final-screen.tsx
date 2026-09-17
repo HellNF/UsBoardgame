@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { useState } from "react";
 import { RULES, type GameState, type PlayerColor, type Seat } from "@/engine";
+import { plural } from "@/lib/plural";
 
 /**
  * Schermata finale (task F1-05, rules.md § Fine partita): le stelle bonus si rivelano
@@ -45,9 +46,10 @@ export function FinalScreen({ state, names, colors, bonus, stake, onRestart }: F
             />
             <span className="font-display text-xl italic">{names[seat]}</span>
             <span className="ml-auto font-sans">
-              {state.players[seat].stars} stelle · {state.players[seat].coins} monete ·{" "}
-              {state.players[seat].stats.correctAnswers} risposte giuste ·{" "}
-              {state.players[seat].stats.challengesWon} sfide vinte
+              {plural(state.players[seat].stars, "stella", "stelle")} ·{" "}
+              {plural(state.players[seat].coins, "moneta", "monete")} ·{" "}
+              {plural(state.players[seat].stats.correctAnswers, "risposta giusta", "risposte giuste")} ·{" "}
+              {plural(state.players[seat].stats.challengesWon, "sfida vinta", "sfide vinte")}
             </span>
           </li>
         ))}

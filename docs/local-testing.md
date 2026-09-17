@@ -66,7 +66,10 @@ Il proprietario compila **Esito**.
    serpente copra più di 5 file (7 scale e 6 serpenti, sparsi su tutto il tabellone).
 3. `npx vitest run src/content/boards/boards.test.ts` e `npx vitest run src/engine/board-validation.test.ts` → verdi.
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, senza Docker). Le due geometrie corrette si vedono in
+`/dev/hotseat`: la scala 28→72 e il serpente 87→37, 7 scale e 6 serpenti, nessuno oltre 5 file. I due test sono
+verdi dentro `pnpm check`. L'impianto è **approvato**: `classic.ts` non si tocca più (le correzioni di leggibilità
+sono passate per il disegno, A1/A5).
 
 ### F1-05 · Partita in hot seat — branch hermes/c-ui
 
@@ -88,7 +91,12 @@ Il proprietario compila **Esito**.
 6. In produzione la pagina non deve esistere: `pnpm build && pnpm start`, poi
    `curl -o /dev/null -w "%{http_code}" http://localhost:3000/dev/hotseat` → **404**.
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, senza Docker) in Chrome a 1440 × 900 e 1024 × 768:
+partita giocata dall'inizio alla schermata finale, tutte le carte e i tre minigiochi, oggetti e timer, e le 209
+prove di `pnpm check` verdi. In produzione `/dev/hotseat` risponde **404** (`pnpm build && pnpm start`).
+Cinque rilievi (A1–A5: numeri coperti da scale e serpenti, due pedine con la stessa lettera, il "·" del turno, la
+carta sotto la piega a 1024 × 768, la stella della 15) sono stati corretti nel branch `hermes/e-ui-fix`, voce qui
+sotto.
 
 ### F0-05 · F2-02 · F3-02 · F5-06 · Schermate su dati finti — branch hermes/c-ui
 
@@ -99,7 +107,9 @@ Il proprietario compila **Esito**.
 3. Le stesse viste devono restare usabili su telefono (accesso, lobby e scheda): prova a restringere la finestra.
 4. In produzione anche `/dev/ui` deve rispondere 404 (come sopra).
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, senza Docker): le quattro viste di `/dev/ui` si leggono e
+restano usabili a finestra stretta; in produzione la pagina risponde **404**. Restano viste su dati finti: il
+collegamento a Supabase arriva col pacchetto D.
 
 ### F3-04 · Mazzo di ~150 domande — branch hermes/b-content
 
@@ -154,7 +164,12 @@ decisioni di tutti e due (i numeri D-31…D-40 arrivano dal pacchetto A, D-41 da
    te"; l'altro ha il bordo sottile.
 6. Prova anche a 1440 × 900 e a 1920 × 1080: la partita deve restare in una schermata sola.
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, senza Docker) in Chrome a 1024 × 768 su
+`origin/hermes/e-ui-fix` (ba05c19): `pnpm check` verde (16 file, 209 prove), `pnpm build` verde, la pagina non
+scorre (l'altezza del documento è quella della finestra) e scorre solo la colonna di destra. Numeri e simboli si
+leggono su tutte le caselle attraversate (12, 16, 17, 18, 51–56, 87, 89, 93, 96, 98) e la stella della 15 si vede
+intera sotto la scala 8→26: **A1 e A5 approvati**, la scala non va spostata. Pedine con "1" e "2", turno con bordo
+spesso, pallino pieno ed etichetta "Tocca a te". Branch unito in `main`.
 
 ### F1-05 · Pagina `/dev/scenari` (le carte rare) — branch `hermes/e-ui-fix`
 
@@ -178,4 +193,16 @@ decisioni di tutti e due (i numeri D-31…D-40 arrivano dal pacchetto A, D-41 da
 5. In produzione la pagina non deve esistere: `pnpm build && pnpm start`, poi
    `curl -o /dev/null -w "%{http_code}" http://localhost:3000/dev/scenari` → **404** (come `/dev/hotseat`).
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, senza Docker): 25 riquadri, indice senza collegamenti
+rotti, nessun messaggio in console. Carte provate a mano: zaino pieno (scarta il Dado truccato, la carta si chiude
+e il turno passa), offerta della stella con monete (12 → 2 monete e 1 stella) e senza monete (pulsante spento con
+"Ti servono altre 6 monete"), schermata finale del posto 1 (Sapientone, Campione, «Vince Leo» e la posta in palio).
+In produzione **404**. La pagina **resta** anche dopo il pacchetto D: è l'unico modo di rivedere le carte rare.
+Due difetti di concordanza corretti qui in locale (vedi sotto), il resto va bene.
+
+### Nota · concordanza dei numeri nei testi (2026-09-17, in locale)
+
+La schermata finale scriveva "1 stelle · 12 monete · 1 risposte giuste"; la riga di controllo degli scenari diceva
+"· oggetti" senza il numero. Corretto in `main` con `src/lib/plural.ts` (`plural(n, "stella", "stelle")` → "1 stella"),
+usato ora anche dal pannello laterale, dal diario, dalla carta della stella e dalla carta sfida. Nessun cambiamento
+di regole: solo testo.

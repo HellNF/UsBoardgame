@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { otherSeat, RULES, SEATS } from "@/engine";
 import type { ActiveCard, Seat } from "@/engine";
+import { plural } from "@/lib/plural";
 import type { CardPanelProps } from "./card-panel";
 import { Minigame } from "@/features/minigames/minigame";
 
@@ -59,7 +60,7 @@ export function ChallengeCard({
       {challenge && <p className="text-sm">{challenge.instructions}</p>}
 
       <p className="text-sm">
-        {card.mode === "duel" ? "Sfida a due" : "Prova"} — premio {card.prize} monete
+        {card.mode === "duel" ? "Sfida a due" : "Prova"} — premio {plural(card.prize, "moneta", "monete")}
       </p>
       {card.snakeFlash && (
         <p className="text-sm">

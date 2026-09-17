@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ITEMS } from "@/content/items";
 import { RULES, type GameState, type ItemId, type PlayerColor, type Seat } from "@/engine";
+import { plural } from "@/lib/plural";
 
 /**
  * Pannello laterale della partita (task F1-05): turno, punteggi, oggetti e negozio.
@@ -55,7 +56,8 @@ function PlayerRow({
           </span>
         )}
         <span className="ml-auto font-sans text-sm whitespace-nowrap">
-          casella {player.position} · {player.coins} monete · {player.stars} stelle
+          casella {player.position} · {plural(player.coins, "moneta", "monete")} ·{" "}
+          {plural(player.stars, "stella", "stelle")}
         </span>
       </div>
       <p className="mt-1 font-sans text-xs italic">

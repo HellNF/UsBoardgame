@@ -1,4 +1,5 @@
 import type { Seat } from "@/engine";
+import { plural } from "@/lib/plural";
 
 export type DiaryEntry = {
   id: string;
@@ -79,7 +80,8 @@ export function DiaryView({ names, entries, archive }: DiaryViewProps) {
                     <div key={seat} className="flex justify-between gap-4 border-t border-ink pt-2">
                       <dt>{names[seat]}</dt>
                       <dd>
-                        {game.stars[seat]} stelle · {game.coins[seat]} monete
+                        {plural(game.stars[seat], "stella", "stelle")} ·{" "}
+                        {plural(game.coins[seat], "moneta", "monete")}
                       </dd>
                     </div>
                   ))}
