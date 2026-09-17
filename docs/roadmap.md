@@ -80,8 +80,8 @@ Dopo la fase 3: **prima serata giocabile**.
 - [ ] **F6-01** Reference in `docs/reference/` e revisione di [design.md](design.md) accanto alle immagini.
 - [ ] **F6-02** ~35 illustrazioni delle domande + 3 stelle + decorazioni (SVG).
 - [ ] **F6-03** Scale e serpenti definitivi (montanti e pioli, corpo a macchie, testa con occhio).
-- [ ] **F6-04** Rive: pedine (6), dadi, carta.
-- [ ] **F6-05** Rive: mascotte (6) nel pannello laterale, finale.
+- [ ] **F6-04** Rive: wrapper e segnaposto per pedine (6), dadi, carta; file `.riv` creati a mano nell'editor Rive.
+- [ ] **F6-05** Rive: wrapper e segnaposto per mascotte (6) e finale; file `.riv` creati a mano nell'editor Rive.
 - [ ] **F6-06** Suoni opzionali.
 
 ## Fase 7 · Extra — _versione rifinita_

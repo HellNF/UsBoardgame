@@ -67,6 +67,10 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 Rive per i personaggi; tutto ciò che dipende dalla disposizione resta in SVG + Motion
 ([D-14](decisions.md#d-14--rive-per-i-personaggi)).
 
+**Chi fa cosa:** i file `.riv` si disegnano a mano nell'editor Rive e si esportano in `public/rive/`
+(nessun server MCP). Gli agenti non creano né modificano i `.riv`: scrivono i wrapper in `src/art/rive/` e i
+segnaposto, basandosi sulla tabella qui sotto.
+
 | File          | Artboard            | State machine | Input                                                                  | Segnaposto                  |
 | ------------- | ------------------- | ------------- | ---------------------------------------------------------------------- | --------------------------- |
 | `mascots.riv` | una per forma (6)   | `Mood`        | `mood` (number: 0 neutro, 1 felice, 2 sorpreso, 3 triste, 4 esultante) | SVG statico della forma     |

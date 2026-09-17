@@ -177,6 +177,8 @@ Fino alla fase 6 si usano segnaposto geometrici.
 **Intervista.** Rive (state machine) per mascotte, pedine, dadi, carta che si gira e schermata finale.
 SVG + Motion per tabellone, illustrazioni, scale e serpenti (dipendono dalla disposizione) e spostamenti.
 Ogni asset Rive ha un segnaposto: il gioco funziona anche senza.
+I file `.riv` si creano a mano nell'editor Rive, **senza server MCP**: gli agenti non generano né modificano
+i `.riv`, ma scrivono i wrapper React e i segnaposto rispettando il contratto di [design.md](design.md).
 
 ### D-20 · Font e colori
 
