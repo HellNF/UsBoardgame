@@ -137,3 +137,45 @@ committare il file prima di `pnpm db:reset`.
 
 Anche `docs/hermes-log.md` e `docs/decisions.md` sono toccati da entrambi i branch: al merge tenere le sezioni e le
 decisioni di tutti e due (i numeri D-31…D-40 arrivano dal pacchetto A, D-41 dal pacchetto B).
+
+### F1-05 · Correzioni all'interfaccia della partita — branch `hermes/e-ui-fix`
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/hotseat>. Riduci la finestra a **1024 × 768** (F12 → icona del
+   dispositivo, oppure ridimensiona la finestra): la misura minima della partita (D-16).
+2. Atteso, senza scorrere la pagina con la rotella: il tabellone resta quadrato e si rimpicciolisce per stare in
+   altezza; scorre **solo** la colonna di destra (dadi, carta attiva, pannello), con la barra visibile al bordo.
+   Con una carta aperta (sfida o domanda) la carta si vede senza scendere sotto la piega.
+3. Guarda i numeri delle caselle su cui passano scale e serpenti — 12, 16, 17, 18, 39, 51, 52, 53, 54, 55, 56, 93,
+   96, 98 — e la **stella della casella 15**, sotto la scala 8→26, e la stella della 53: numeri e simboli devono
+   leggersi, con un alone chiaro attorno. La scala 8→26 **non** è stata spostata: se la stella della 15 non si
+   legge, va spostata in `src/content/boards/classic.ts`.
+4. Le due pedine: cerchio rosso con "1" e cerchio blu con "2" (prima mostravano entrambe "G").
+5. Guarda il pannello: chi ha il turno ha la riga con il bordo spesso, il pallino pieno e l'etichetta nera "Tocca a
+   te"; l'altro ha il bordo sottile.
+6. Prova anche a 1440 × 900 e a 1920 × 1080: la partita deve restare in una schermata sola.
+
+**Esito:**
+
+### F1-05 · Pagina `/dev/scenari` (le carte rare) — branch `hermes/e-ui-fix`
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/scenari>.
+2. Atteso: 25 riquadri in due colonne, con l'indice in alto; ogni riquadro ha titolo, una riga che dice cosa si
+   deve vedere e la carta.
+3. Prova qualche clic per confermare che la carta è viva e non un disegno (la riga di controllo in fondo al
+   riquadro dice dove sono finiti i posti):
+   - "Domanda a scelta multipla · verdetto giusto" → premi la prima opzione ("Cinema"): +3 monete;
+   - "Domanda breve · giudizio «Quasi»" → "Quasi": +1 moneta;
+   - "Domanda su base di scala" → prima opzione: da casella 8 a casella 26, +3 monete;
+   - "Imprevisto · Vento a favore" → "Continua": 60 → 65; "Sentiero sbagliato" → 40 → 35; "Serpente improvviso" →
+     60 → 34; "Scala fortunata" → 60 → 92; "Regalo" → le monete passano da 5 a 8 e da 8 a 5;
+   - "Offerta della stella · con monete sufficienti" → "Compra la stella": da 12 a 2 monete e 1 stella; con 4
+     monete il pulsante "Compra" è spento;
+   - "Zaino pieno" → scegli cosa scartare (o scarta quello nuovo);
+   - "Doppia conferma · in disaccordo" → scegli rivincita o moneta per entrambi i posti;
+   - "Sfida lampo del serpente" → "Non riuscita": la pedina scende da 62 a 18;
+   - "Schermata finale · vince il posto 1" → "Rivela la prossima stella" tre volte: Sapientone, Campione, vincitore.
+4. "Ricomincia lo scenario" riporta il riquadro allo stato di partenza.
+5. In produzione la pagina non deve esistere: `pnpm build && pnpm start`, poi
+   `curl -o /dev/null -w "%{http_code}" http://localhost:3000/dev/scenari` → **404** (come `/dev/hotseat`).
+
+**Esito:**

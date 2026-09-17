@@ -8,6 +8,10 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 2. **Il colore è solo dei giocatori:** gettone della pedina, evidenziazione del turno e punteggi. Mai sul tabellone.
 3. **Geometria, non decorazione:** il tipo di casella si riconosce dalla forma (vedi tabella).
 4. **Tratto spesso e campiture nere** per le illustrazioni, come le stampe della reference.
+5. **Una schermata sola** (≥ 1024 × 768, D-16): la partita non fa scorrere la pagina; il tabellone si adatta
+   all'altezza disponibile e, se serve, scorre solo il pannello di destra. Chi ha il turno si riconosce a colpo
+   d'occhio — bordo pieno della riga, pallino pieno del colore del giocatore, etichetta "Tocca a te" — e non dal
+   solo colore.
 
 ## Token (`src/app/globals.css`)
 
@@ -28,7 +32,12 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   (riga 0 in basso: `y = (9 - row) * 100`).
 - Bordi delle celle sottili (≈ 2 unità); cornice esterna spessa (≈ 16) con angoli arrotondati; numero della
   casella piccolo in alto a sinistra (Space Grotesk).
-- Livelli, dal basso: celle → geometrie multi-cella (`decorations`) → illustrazioni → scale → serpenti → pedine.
+- Livelli, dal basso: celle → geometrie multi-cella (`decorations`) → illustrazioni → scale → serpenti →
+  cornice → **numeri e simboli delle caselle** → pedine.
+- **Numeri e simboli sopra scale e serpenti:** il numero della casella, il simbolo della stella, i cerchi delle
+  monete e l'iniziale della categoria si disegnano nell'ultimo strato, ognuno con un **alone del colore della
+  casella** (carta, o inchiostro sulle caselle sfida) frapposto fra il segno e ciò che c'è sotto. Dove una scala o
+  un serpente passano su una casella, numero e simbolo restano leggibili: senza l'alone finiscono sotto la linea.
 
 | Tipo di casella | Resa                                                                      |
 | --------------- | ------------------------------------------------------------------------- |
@@ -71,13 +80,13 @@ Rive per i personaggi; tutto ciò che dipende dalla disposizione resta in SVG + 
 (nessun server MCP). Gli agenti non creano né modificano i `.riv`: scrivono i wrapper in `src/art/rive/` e i
 segnaposto, basandosi sulla tabella qui sotto.
 
-| File          | Artboard            | State machine | Input                                                                  | Segnaposto                  |
-| ------------- | ------------------- | ------------- | ---------------------------------------------------------------------- | --------------------------- |
-| `mascots.riv` | una per forma (6)   | `Mood`        | `mood` (number: 0 neutro, 1 felice, 2 sorpreso, 3 triste, 4 esultante) | SVG statico della forma     |
-| `pawns.riv`   | una per animale (6) | `Pawn`        | trigger `hop`, `celebrate`; bool `active`                              | cerchio colorato + iniziale |
-| `dice.riv`    | `Die`               | `Roll`        | trigger `roll`; number `value` 1-6                                     | numero in un quadrato       |
-| `card.riv`    | `Card`              | `Flip`        | trigger `flip`                                                         | transizione CSS             |
-| `finale.riv`  | `Finale`            | `Reveal`      | trigger `revealStar`, `winner`                                         | testo                       |
+| File          | Artboard            | State machine | Input                                                                  | Segnaposto                          |
+| ------------- | ------------------- | ------------- | ---------------------------------------------------------------------- | ----------------------------------- |
+| `mascots.riv` | una per forma (6)   | `Mood`        | `mood` (number: 0 neutro, 1 felice, 2 sorpreso, 3 triste, 4 esultante) | SVG statico della forma             |
+| `pawns.riv`   | una per animale (6) | `Pawn`        | trigger `hop`, `celebrate`; bool `active`                              | cerchio colorato + numero del posto |
+| `dice.riv`    | `Die`               | `Roll`        | trigger `roll`; number `value` 1-6                                     | numero in un quadrato               |
+| `card.riv`    | `Card`              | `Flip`        | trigger `flip`                                                         | transizione CSS                     |
+| `finale.riv`  | `Finale`            | `Reveal`      | trigger `revealStar`, `winner`                                         | testo                               |
 
 - I nomi di artboard, state machine e input sono un **contratto**: cambiarli significa aggiornare questa tabella e il wrapper.
 - Ogni wrapper React (`src/art/rive/*.tsx`) carica il file con `@rive-app/react-canvas`, espone props tipizzate

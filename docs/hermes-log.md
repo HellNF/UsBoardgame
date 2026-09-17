@@ -131,3 +131,54 @@ Branch: hermes/b-content (partito da `main`) · Ultimo commit: vedi `git log -1 
   - `durationSeconds` di `quiz-lampo` e `riflessi` è indicativa finché non ci sono i minigiochi a tempo;
   - i filtri della serata (categorie attive, durata massima) sono dati di lobby, non ancora usati dalla UI
     (pacchetto D).
+
+## Correzioni all'interfaccia e scenari delle carte (task A e B) — 2026-09-17
+
+Branch: hermes/e-ui-fix (partito da `main` a 9f4477d: `main` conteneva già i pacchetti A, B e C) · Ultimo commit
+del pacchetto: e3ab31f (questo rapporto è in quel commit; l'aggiornamento di questa riga è l'unica modifica
+successiva).
+
+- **Fatto:** i cinque punti del task A (A1 numeri e simboli delle caselle sopra scale e serpenti con l'alone del
+  colore della carta; A2 pedina con il numero del posto; A3 indicatore del turno; A4 partita in una schermata sola
+  da 1024 × 768 in su; A5 stella della casella 15 leggibile senza spostare la scala) e il task B (`/dev/scenari`,
+  25 stati di carta fissati a mano). F1-05 resta `[x]`: non nasce nessun task nuovo. La pagina degli scenari è
+  registrata come derivata in D-45, la pedina e l'indicatore in D-46.
+- **Verificato da me:** comandi eseguiti davvero, con l'esito reale:
+  - `pnpm check` (typecheck + eslint + vitest) — verde: 16 file di test, **209 test passati**.
+  - `pnpm build` — verde (Next.js 16.3.5; fra le rotte anche `/dev/scenari`).
+  - `pnpm build && npx next start -p 3101` — in produzione `/dev/scenari`, `/dev/hotseat` e `/dev/ui` rispondono
+    **404**, `/` risponde **200**.
+  - `pnpm dev` con Chrome vero (CDP): a **1024 × 768** la pagina della hot seat ha `scrollHeight == innerHeight ==
+768`, cioè non scorre; il tabellone sta in 544 px di lato; con una carta aperta (sfida Memory) la pagina resta
+    ferma e scorre solo la colonna di destra. Idem a 1440 × 900 e a 1920 × 1080 (nessuno scorrimento di pagina).
+  - `/dev/scenari` a 1024 × 768: 25 riquadri, 22 con una carta viva (gli altri tre sono la schermata finale),
+    zero errori di console (`console.error` intercettato prima del caricamento, quindi anche eventuali disaccordi
+    di idratazione).
+- **Verificato a occhio** (`pnpm dev`, Chrome via CDP, viewport 1024 × 768 e 1280 × 900):
+  - i numeri delle caselle coperte da scale e serpenti (12, 16, 17, 18, 54, 55, 56, 93, 96, 98…) si leggono, con
+    l'alone chiaro attorno; **la stella della casella 15 si vede** sotto la scala 8→26 e la stella della 53 si vede
+    sotto il serpente — la scala non è stata spostata (A1, A5);
+  - le due pedine mostrano "1" e "2" (A2);
+  - chi ha il turno ha riga col bordo spesso, pallino pieno ed etichetta nera "Tocca a te" (A3), su una riga sola;
+  - la pagina degli scenari: indice, titoli, righe di spiegazione e carte; nessun testo tagliato o pulsante
+    sovrapposto.
+- **Verificato cliccando** su `/dev/scenari` (letture dopo il render, con la riga di controllo di ogni riquadro):
+  domanda multipla risposta giusta +3 monete; "Quasi" +1; domanda aperta +1; domanda su base di scala 8 → 26 con
+  +3 monete; vento a favore 60 → 65; sentiero sbagliato 40 → 35; regalo 5 ↔ 8 monete; tesoro +1 oggetto; serpente
+  improvviso 60 → 34; scala fortunata 60 → 92; pausa nessun effetto; stella da 12 a 2 monete e +1 stella; con 4
+  monete il pulsante "Compra" è spento; zaino pieno; tris giocabile; sfida lampo "Non riuscita" 62 → 18; finale con
+  le tre stelle rivelate una alla volta.
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), voci **F1-05 · Correzioni
+  all'interfaccia della partita** e **F1-05 · Pagina `/dev/scenari`**.
+- **Decisioni Derivate aggiunte:** D-45 (pagina `/dev/scenari`), D-46 (pedina con il numero del posto e turno
+  segnalato da tre indizi). D-43 e D-44 sono ora marcate «confermata dal proprietario il 2026-09-17»; D-42 lo era
+  già. La voce "Ancora aperte" sulle posizioni della disposizione `classic` è chiusa: il proprietario le ha
+  approvate.
+- **Domande per il proprietario:** le stesse di A1/A5 viste a occhio (basta un sì o un no per chiudere); se la
+  pagina `/dev/scenari` va tenuta anche dopo il pacchetto D, come `/dev/hotseat`.
+- **Limiti noti / debito tecnico:**
+  - a 1024 × 768 la colonna di destra scorre, quindi con una carta lunga (Memory, forza 4) il fondo della carta
+    richiede un piccolo scorrimento del pannello: la pagina non scorre, ma la carta non ci sta tutta. Se serve, si
+    accorcia la carta o si stringe il pannello;
+  - `/dev/scenari` non è collegata da nessun indice: si apre a mano;
+  - il salto della pedina resta "in un salto solo" (F2-05) e gli scenari non mostrano il tabellone, solo la carta.
