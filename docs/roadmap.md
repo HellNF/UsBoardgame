@@ -36,13 +36,19 @@ Dopo la fase 3: **prima serata giocabile**.
 
 ## Fase 1 · Tabellone — _partita completa su un solo schermo_
 
-- [~] **F1-01** Disposizione `classic` (100 celle, 7 scale, 6 serpenti, geometrie ispirate alla reference) +
+- [x] **F1-01** Disposizione `classic` (100 celle, 7 scale, 6 serpenti, geometrie ispirate alla reference) +
       validatore dei vincoli di [rules.md § Tabellone](rules.md#tabellone) con test.
-- [~] **F1-02** `createInitialState`.
-- [~] **F1-03** `reduce` per: tiro, rimonta, movimento, caselle libere/monete, scale e serpenti con **segnaposto**
+      Nota: la disposizione è una proposta in `src/content/boards/classic.ts` (posizioni e geometrie da rivedere a
+      occhio accanto alla reference); i vincoli sono verificati, le quantità stanno in `RULES.board.cellCounts`.
+- [x] **F1-02** `createInitialState`.
+- [x] **F1-03** `reduce` per: tiro, rimonta, movimento, caselle libere/monete, scale e serpenti con **segnaposto**
       per domanda e sfida (risolte con un pulsante "riuscita/fallita"), fine turno, round, fine partita, stelle bonus.
       Test per ogni regola.
-- [~] **F1-04** `EngineContext` finto per i test (RNG deterministico).
+      Nota: il pacchetto A ha implementato le regole complete al posto dei segnaposto (domande, sfide, oggetti,
+      imprevisti, minigiochi); i segnaposto servivano solo a provare il tabellone prima della fase 3.
+- [x] **F1-04** `EngineContext` finto per i test (RNG deterministico).
+      Nota: `src/engine/testing.ts` (non esportato da `src/engine/index.ts`) con RNG a sequenza, orologio finto,
+      domande e sfide finte, una seconda disposizione valida e un piccolo aiuto per giocare nei test.
 - [ ] **F1-05** Tabellone SVG con segnaposto geometrici, pedine, scale e serpenti generati, dadi, pannello laterale.
       Modalità "hot seat" (entrambi i posti sullo stesso schermo) per provare le regole senza Supabase.
 
@@ -59,27 +65,37 @@ Dopo la fase 3: **prima serata giocabile**.
 - [ ] **F3-01** `drawQuestion` lato server (categoria, 60/40, livelli profonde, solo domande con risposta, registro
       per posto/coppia, azzeramento) + test.
 - [ ] **F3-02** Pagina scheda: blocchi per categoria, salvataggio automatico, avanzamento; stato `sheets` in lobby.
-- [ ] **F3-03** Carta domanda: `multiple` (verdetto automatico), `short` (giudizio dell'altro), `open`;
-      regola della scala con una sola domanda.
+- [~] **F3-03** Carta domanda: `multiple` (verdetto automatico), `short` (giudizio dell'altro), `open`;
+  regola della scala con una sola domanda.
+  Nota: motore completo e testato (pacchetto A); manca la carta della UI (pacchetto C).
 - [ ] **F3-04** Mazzo iniziale: ~150 domande secondo [content.md](content.md) → revisione del proprietario.
 - [ ] **F3-05** `pnpm content:push` per pubblicare i contenuti in produzione.
 
 ## Fase 4 · Sfide — _tutte le categorie tranne l'emulatore_
 
 - [ ] **F4-01** Mazzo di sfide (integrati, videochiamata, esterni; ≥ 6 lampo) e filtri della serata.
-- [ ] **F4-02** Carta sfida: duello/prova, giudice, doppia conferma, disputa, timer (`TIMER_EXPIRED`).
-- [ ] **F4-03** Minigiochi nel motore + UI: tris, forza 4, memory.
+- [~] **F4-02** Carta sfida: duello/prova, giudice, doppia conferma, disputa, timer (`TIMER_EXPIRED`).
+  Nota: motore completo e testato (pacchetto A, con D-33 e D-36); mancano la carta della UI e la route.
+- [~] **F4-03** Minigiochi nel motore + UI: tris, forza 4, memory.
+  Nota: i tre moduli puri sono in `src/engine/minigames` con test (pacchetto A); la UI arriva con il pacchetto C.
 - [ ] **F4-04** Minigiochi a tempo: quiz, riflessi.
 - [ ] **F4-05** Pausa per sfida esterna (link Lichess, skribbl.io) e ritorno con "Chi ha vinto?".
-- [ ] **F4-06** Sfida lampo del serpente.
+- [~] **F4-06** Sfida lampo del serpente.
+  Nota: motore (30 s, Antidoto, vittoria = resta, altrimenti scende) e test fatti nel pacchetto A; UI in C.
 
 ## Fase 5 · Economia — _regole complete_
 
-- [ ] **F5-01** Monete da domande e sfide, raddoppio 71-100, mai sotto zero.
-- [ ] **F5-02** Casella stella e offerta.
-- [ ] **F5-03** Oggetti: acquisto, uso, limite di 3, scarto.
-- [ ] **F5-04** Imprevisti.
-- [ ] **F5-05** Schermata finale: stelle bonus una alla volta, vincitore, posta in palio.
+- [x] **F5-01** Monete da domande e sfide, raddoppio 71-100, mai sotto zero.
+      Nota: motore completo e testato (monete da domande, sfide e caselle, raddoppio da 71 in su, mai sotto zero).
+- [x] **F5-02** Casella stella e offerta.
+      Nota: motore completo e testato; l'offerta compare solo se il giocatore ha almeno 10 monete (D-35).
+- [x] **F5-03** Oggetti: acquisto, uso, limite di 3, scarto.
+      Nota: motore completo e testato (acquisto, uso di un solo oggetto attivo per turno, scarto al quarto).
+- [x] **F5-04** Imprevisti.
+      Nota: motore completo e testato (sette imprevisti equiprobabili, nessuna reazione a catena).
+- [~] **F5-05** Schermata finale: stelle bonus una alla volta, vincitore, posta in palio.
+  Nota: motore delle stelle bonus e del vincitore fatto e testato (pacchetto A); la schermata arriva con il
+  pacchetto C.
 - [ ] **F5-06** Diario della serata e archivio delle partite.
 
 ## Fase 6 · Illustrazioni — _estetica finale_ (in parallelo)

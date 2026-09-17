@@ -80,6 +80,29 @@ alla scadenza invia `TIMER_EXPIRED`, che il server accetta solo se `now ≥ dead
 (`MINIGAME_MOVE`); ogni minigioco è un modulo puro in `src/engine/minigames`. Quelli a tempo (riflessi, quiz)
 misurano in locale e inviano il risultato.
 
+### D-31 · Stato del motore per "ancora sulla casella d'arrivo"
+
+**Derivata da D-11.** Scala e serpente si applicano solo se il giocatore è ancora sulla casella d'arrivo del tiro.
+`GameState` porta perciò `arrivalCell` (la casella d'arrivo del tiro in corso, `null` quando non c'è) e
+`handled: { ladder, snake }` (quali dei due effetti sono già stati applicati). Uno spostamento da oggetto,
+imprevisto o serpente azzera o invalida l'arrivo, quindi nessun effetto si attiva a catena.
+_Perché:_ con i soli `position` e `card` non si distingue "sono qui perché ci sono appena arrivato" da
+"sono qui perché qualcosa mi ha spostato", e la regola dipende da quella differenza.
+
+### D-32 · `drawChallenge` fornisce la carta completa
+
+**Derivata da D-02.** `EngineContext.drawChallenge` non restituisce solo l'id: restituisce modalità, verdetto,
+premio, durata, `snakeFlash` e id del minigioco (tipo `ChallengeCard`). I contenuti stanno in `src/content`,
+che il motore non può importare, quindi i dati che servono alle regole arrivano dal contesto.
+_Perché:_ premio e verdetto li applica il motore; senza questi campi dovrebbe rileggere il catalogo da sé.
+
+### D-33 · Timer e rivincita delle sfide
+
+**Derivata da D-25.** Il momento di scadenza è `now + min(durata massima della carta, durata massima della serata)`.
+La rivincita dopo un disaccordo rigioca la stessa carta con una nuova scadenza (e, per i minigiochi, un nuovo
+inizio). Una sfida con verdetto `automatic` scaduta passa alla doppia conferma e il minigioco viene abbandonato.
+_Perché:_ serviva una durata unica e prevedibile quando la carta non dichiara un massimo compatibile con la serata.
+
 ---
 
 ## Regole di gioco
@@ -158,6 +181,60 @@ stessa fila; nessuna testa di serpente in 2-12); prova scaduta = fallita, duello
 Scala portatile non utilizzabile senza scale davanti; se il sottoinsieme di domande scelto è vuoto si pesca
 dall'altro; imprevisti equiprobabili; parità di stelle e monete = pareggio.
 
+### D-34 · Il raddoppio vale solo per i guadagni del gioco
+
+**Derivata.** Dalla 71 in su raddoppiano le monete guadagnate dal gioco: caselle, premi delle domande (compreso
+il "quasi") e premi delle sfide. Non raddoppiano i trasferimenti fra i due giocatori (Regalo, Ladro) né il prezzo
+della stella: spostare monete non crea monete nuove, e le perdite non raddoppiano comunque.
+_Perché:_ "ogni guadagno ottenuto mentre si è in una casella ≥ 71" non distingue le fonti; senza questa scelta il
+Ladro e il Regalo creerebbero monete dal nulla.
+
+### D-35 · L'offerta della stella appare solo con le monete in mano
+
+**Derivata.** Sulla casella stella l'offerta compare solo se il giocatore ha almeno `RULES.stars.price` monete;
+altrimenti la casella non ha effetto e il turno prosegue. Chi rifiuta non paga nulla.
+_Perché:_ la regola dice "se si hanno ≥ 10 monete, offerta facoltativa": senza monete non c'è offerta da mostrare.
+
+### D-36 · Prova senza "riuscita": nessun premio a nessuno
+
+**Derivata.** In una prova (`mode: trial`, verdetto `judge`) il premio va **solo** a chi ha giocato, quando l'altro
+dichiara la riuscita. Una dichiarazione di mancata riuscita, un pareggio o la scadenza del timer non danno premio
+a nessuno (e non contano per Campione). Nella sfida lampo del serpente "non dichiarato vincente" significa
+scendere alla coda.
+_Perché:_ "se riesce prende il premio" non diceva cosa succede negli altri casi; dare il premio all'altro
+premierebbe chi non ha giocato.
+
+### D-37 · Salta domanda consuma l'oggetto senza occupare il turno
+
+**Derivata.** `SKIP_QUESTION` richiede e consuma un oggetto Salta domanda; essendo un oggetto reattivo non occupa
+lo slot dell'unico oggetto attivo del turno (come l'Antidoto, che si consuma da solo). La carta si chiude senza
+monete, senza penalità e senza salita.
+_Perché:_ la regola descrive il Salta domanda fra gli oggetti reattivi, e gli oggetti attivi sono "al massimo uno
+per turno".
+
+### D-38 · Le stelle dell'arrivo vanno solo al primo che raggiunge la 100
+
+**Derivata da D-05.** Chi arriva per primo alla 100 prende `RULES.stars.finishBonus` stelle; chi ci arriva dopo,
+anche nello stesso round, completa il round ma non prende stelle dell'arrivo.
+_Perché:_ "il primo in ordine di turno" ammetteva due letture (primo in ordine di seduta o primo che arriva); la
+più semplice è la seconda, ed è quella che si vede giocando.
+
+### D-39 · Dettagli dei minigiochi integrati
+
+**Derivata da D-26.** Primo a muovere è chi ha pescato la carta. Memory: 12 carte e 6 coppie, chi trova una coppia
+continua a giocare, chi sbaglia passa la mano e le due carte scoperte restano visibili fino alla mossa successiva;
+vince chi ha più coppie, a parità di coppie è pareggio. Tris e forza 4: pareggio = rivincita automatica;
+vince chi allinea tre (tris) o quattro (forza 4) pedine.
+_Perché:_ il regolamento dice solo che i minigiochi hanno `init`, `applyMove`, `result` e che il pareggio fa
+ripartire; i dettagli interni servono alla UI e ai test.
+
+### D-40 · Chi ha già finito non gioca più nel round
+
+**Derivata da D-05.** Chi ha raggiunto la 100 salta i turni che restano nel round (`TURN_SKIPPED`). Con due
+giocatori la partita si chiude comunque alla fine del round in cui qualcuno è arrivato.
+_Perché:_ il regolamento lo dice ("chi ha già finito salta il turno"); va scritto nel motore perché i round
+si contano comunque completi.
+
 ---
 
 ## Tabellone, estetica e contenuti
@@ -190,7 +267,8 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 ## Ancora aperte
 
 - [ ] Elenco dei giochi DS/3DS posseduti e regole di ogni sfida (fase 7).
-- [ ] Posizioni di scale, serpenti e geometrie nella disposizione `classic` (task F1-01, da proporre ispirandosi a
-      `docs/reference/board/boardReference.png` e rivedere).
+- [ ] Posizioni di scale, serpenti e geometrie nella disposizione `classic`: la proposta è in
+      `src/content/boards/classic.ts` (verificata dal validatore) e va rivista a occhio accanto a
+      `docs/reference/board/boardReference.png` (task F1-01).
 - [ ] Revisione delle ~150 domande (task F3-04).
 - [ ] Valori esatti di verde bosco e ocra (proposta in `globals.css`, da validare accanto alla reference).
