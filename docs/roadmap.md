@@ -1,8 +1,15 @@
 # Roadmap
 
 Fasi da [specs.md § Piano di sviluppo](specs.md#piano-di-sviluppo). Ogni task ha un id (`F<fase>-<n>`) citato nei
-`TODO(...)` del codice. **Aggiorna lo stato qui quando inizi o chiudi un task** (`[ ]` da fare, `[~]` in corso,
-`[x]` fatto) e aggiungi in fondo al task, in una riga, cosa hai lasciato di non ovvio.
+`TODO(...)` del codice. **Aggiorna lo stato qui quando inizi o chiudi un task** e aggiungi in fondo al task, in una riga, cosa hai
+lasciato di non ovvio.
+
+| Stato | Significato                                                                                                             |
+| ----- | ----------------------------------------------------------------------------------------------------------------------- |
+| `[ ]` | da fare                                                                                                                 |
+| `[~]` | in corso                                                                                                                |
+| `[L]` | codice scritto e `pnpm check` verde, **da verificare in locale con Docker** (vedi [local-testing.md](local-testing.md)) |
+| `[x]` | fatto e verificato                                                                                                      |
 
 Dipendenze: 0 → 1 → 2 → 3 → (4, 5) → 7. La fase 6 può procedere in parallelo dalla fase 1.
 Dopo la fase 3: **prima serata giocabile**.

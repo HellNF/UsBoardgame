@@ -20,6 +20,8 @@ sfide ed economia di monete e stelle. Uso privato, Next.js su Vercel + Supabase.
 3. [docs/decisions.md](docs/decisions.md) prevale su [docs/specs.md](docs/specs.md). Se un caso non è coperto,
    non inventare in silenzio: scegli la soluzione più semplice e registrala come decisione **Derivata**, oppure chiedi.
 
+Se sei Hermes, o comunque lavori senza Docker e Supabase, segui anche [HERMES.md](HERMES.md).
+
 ## Comandi
 
 | Comando                              | Cosa fa                                                        |

@@ -190,6 +190,7 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 ## Ancora aperte
 
 - [ ] Elenco dei giochi DS/3DS posseduti e regole di ogni sfida (fase 7).
-- [ ] Posizioni di scale, serpenti e geometrie nella disposizione `classic` (task F1-01, da proporre e rivedere).
+- [ ] Posizioni di scale, serpenti e geometrie nella disposizione `classic` (task F1-01, da proporre ispirandosi a
+      `docs/reference/board/boardReference.png` e rivedere).
 - [ ] Revisione delle ~150 domande (task F3-04).
 - [ ] Valori esatti di verde bosco e ocra (proposta in `globals.css`, da validare accanto alla reference).

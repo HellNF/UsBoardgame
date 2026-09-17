@@ -7,7 +7,7 @@ import { publicEnv, serverEnv } from "@/lib/env";
  * verificato chi sta agendo. È l'unico modo in cui si scrive nel database.
  */
 export function createSupabaseAdminClient() {
-  return createClient(publicEnv.NEXT_PUBLIC_SUPABASE_URL, serverEnv().SUPABASE_SECRET_KEY, {
+  return createClient(publicEnv().NEXT_PUBLIC_SUPABASE_URL, serverEnv().SUPABASE_SECRET_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

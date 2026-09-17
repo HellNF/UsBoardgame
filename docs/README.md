@@ -14,5 +14,10 @@ Ordine di lettura per chi arriva sul progetto (persona o agente):
 | 8   | [design.md](design.md) + [reference/](reference/) | Prima di lavorare su UI, SVG o Rive.                                                     |
 | —   | [glossary.md](glossary.md)                        | Corrispondenze tra termini italiani e nomi nel codice.                                   |
 
+Altri documenti:
+
+- [local-testing.md](local-testing.md): verifica in locale con Docker del lavoro fatto dagli agenti (task `[L]`).
+- [../HERMES.md](../HERMES.md): istruzioni per l'agente Hermes, che costruisce senza Docker.
+
 **Regola di manutenzione:** se cambi una regola, un flusso o una tabella, aggiorna il documento corrispondente
 nello stesso commit. Se prendi una decisione nuova, aggiungila in `decisions.md`.
