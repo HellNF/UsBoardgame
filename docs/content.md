@@ -27,6 +27,9 @@ Domande, sfide, oggetti, imprevisti e disposizioni sono file nel repo ([D-15](de
 **Obiettivi del mazzo iniziale** (task F3-04): 30 domande per categoria = 150. Circa 8 per categoria nella scheda
 (`multiple` o `short`, ~40 in totale) e 22 aperte. Le profonde distribuite su tutti e tre i livelli (almeno 8 per livello).
 
+Il mazzo è controllato da `src/content/content.test.ts`: quantità per categoria, 8 domande da scheda e 22 aperte
+per categoria, profonde distribuite sui tre livelli, id unici e non rinumerati.
+
 **Stile:**
 
 - Italiano colloquiale, dare del tu. `text` in prima persona di chi è interrogato ("il mio", "ci siamo").

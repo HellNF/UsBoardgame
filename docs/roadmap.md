@@ -86,12 +86,18 @@ Dopo la fase 3: **prima serata giocabile**.
 - [~] **F3-03** Carta domanda: `multiple` (verdetto automatico), `short` (giudizio dell'altro), `open`;
   regola della scala con una sola domanda.
   Nota: motore completo e testato (pacchetto A); manca la carta della UI (pacchetto C).
-- [ ] **F3-04** Mazzo iniziale: ~150 domande secondo [content.md](content.md) → revisione del proprietario.
+- [L] **F3-04** Mazzo iniziale: ~150 domande secondo [content.md](content.md) → revisione del proprietario.
+  Nota: 150 domande (30 per categoria: 8 da scheda e 22 aperte; profonde dieci per livello) in
+  `src/content/questions/`, con i controlli di forma in `src/content/content.test.ts`. I testi sono una prima
+  bozza da rileggere: voce nel Registro di [local-testing.md](local-testing.md).
 - [ ] **F3-05** `pnpm content:push` per pubblicare i contenuti in produzione.
 
 ## Fase 4 · Sfide — _tutte le categorie tranne l'emulatore_
 
-- [ ] **F4-01** Mazzo di sfide (integrati, videochiamata, esterni; ≥ 6 lampo) e filtri della serata.
+- [L] **F4-01** Mazzo di sfide (integrati, videochiamata, esterni; ≥ 6 lampo) e filtri della serata.
+  Nota: 17 carte in `src/content/challenges.ts` (5 integrate, 10 in videochiamata di cui 6 lampo, 2 esterne).
+  `quiz-lampo` e `riflessi` sono duelli a doppia conferma finché F4-04 non aggiunge i loro moduli al motore
+  (D-41). La revisione dei testi è del proprietario.
 - [~] **F4-02** Carta sfida: duello/prova, giudice, doppia conferma, disputa, timer (`TIMER_EXPIRED`).
   Nota: motore completo e testato (pacchetto A, con D-33 e D-36); mancano la carta della UI e la route.
 - [~] **F4-03** Minigiochi nel motore + UI: tris, forza 4, memory.

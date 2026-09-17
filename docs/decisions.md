@@ -305,3 +305,20 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
       `docs/reference/board/boardReference.png` (task F1-01).
 - [ ] Revisione delle ~150 domande (task F3-04).
 - [ ] Valori esatti di verde bosco e ocra (proposta in `globals.css`, da validare accanto alla reference).
+
+---
+
+## Contenuti (pacchetto B)
+
+### D-41 · Quiz e riflessi sono duelli a doppia conferma finché non esistono i loro moduli
+
+**Derivata.** Le carte `quiz-lampo` e `riflessi` sono sfide integrate (`category: builtin`), ma il loro verdetto è
+`double_confirm` e non `automatic`: i moduli dei minigiochi a tempo arrivano con il task F4-04 e il motore non li
+conosce ancora, quindi una carta `automatic` con un minigioco inesistente romperebbe la partita. Al ritorno
+dichiarano entrambi il punteggio, come per le sfide esterne.
+_Perché:_ meglio una carta giocabile subito che una carta che si rompe; quando F4-04 registra i due moduli basta
+cambiare verdetto e `minigame` in `src/content/challenges.ts`.
+
+_Nota di numerazione:_ questa voce è stata scritta sul branch `hermes/b-content`, partito da `main`; le decisioni
+D-31…D-40 arrivano dal branch `hermes/a-engine` (pacchetto A). Al merge dei due branch l'ordine dei numeri resta
+questo.

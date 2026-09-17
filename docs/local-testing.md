@@ -100,3 +100,40 @@ Il proprietario compila **Esito**.
 4. In produzione anche `/dev/ui` deve rispondere 404 (come sopra).
 
 **Esito:**
+
+### F3-04 · Mazzo di ~150 domande — branch hermes/b-content
+
+1. `pnpm content:seed`: atteso `seed.sql: 150 domande, 17 sfide, …`.
+2. `pnpm db:reset`, poi in Studio:
+   `select category, kind, count(*) from public.questions group by 1, 2 order by 1, 2;`
+   → 30 domande per categoria, di cui 8 `multiple`/`short` (da scheda) e 22 `open`.
+3. `select level, count(*) from public.questions where category = 'deep' group by 1 order by 1;`
+   → 10 domande per ognuno dei tre livelli.
+4. Rilettura dei testi (è il motivo per cui il task è `[L]`): italiano colloquiale con gli accenti giusti, `text` in
+   prima persona, `sheetText` in seconda, aperte senza domande sì/no, livello 3 intimo ma mai imbarazzante o
+   doloroso (niente salute, ex, denaro).
+5. `pnpm dev` → scheda (quando esiste la pagina, task F3-02): le domande escono nei blocchi giusti, senza ripetizioni.
+
+**Esito:**
+
+### F4-01 · Mazzo di sfide — branch hermes/b-content
+
+1. `pnpm content:seed` e `pnpm db:reset`, poi in Studio:
+   `select id, data->>'category' as categoria, data->>'mode' as modalita, data->>'verdict' as verdetto, data->>'snakeFlash' as lampo from public.challenges order by 1;`
+   → 5 `builtin`, 10 `videocall`, 2 `external` con `url`; nessuna `emulator`.
+2. `select count(*) from public.challenges where (data->>'snakeFlash')::boolean;` → almeno 6, tutte con durata
+   massima ≤ 30 s.
+3. Rilettura delle istruzioni delle carte: devono essere comprensibili senza spiegazioni.
+4. Nota: `quiz-lampo` e `riflessi` sono duelli a doppia conferma (D-41), non minigiochi automatici: quando arriva
+   F4-04 si cambiano verdetto e `minigame` in `src/content/challenges.ts`.
+
+**Esito:**
+
+### Nota di merge · `supabase/seed.sql`
+
+`supabase/seed.sql` è generato: i branch `hermes/a-engine` (aggiunge la disposizione `classic`) e `hermes/b-content`
+(aggiunge domande e sfide) lo toccano entrambi. Dopo il merge dei due branch rilanciare `pnpm content:seed` e
+committare il file prima di `pnpm db:reset`.
+
+Anche `docs/hermes-log.md` e `docs/decisions.md` sono toccati da entrambi i branch: al merge tenere le sezioni e le
+decisioni di tutti e due (i numeri D-31…D-40 arrivano dal pacchetto A, D-41 dal pacchetto B).
