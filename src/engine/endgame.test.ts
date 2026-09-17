@@ -55,7 +55,9 @@ describe("arrivo alla 100 (docs/rules.md § Fine partita)", () => {
     expect(game.state.phase).toBe("finished");
     expect(game.state.winner).toBe(1);
     expect(winnerEvent(game)).toMatchObject({ winner: 1, reason: "finish" });
-    expect(game.state.round).toBe(2);
+    // A partita finita `round` è l'ultimo round giocato (docs/rules.md § Fine partita).
+    expect(game.state.round).toBe(1);
+    expect(game.state.round).toBe(game.state.players[1].finishedAtRound);
   });
 
   it("non si agisce più a partita finita", () => {
@@ -76,7 +78,8 @@ describe("limite di round (docs/rules.md § Fine partita)", () => {
       quietTurn(game, 2);
     }
     expect(game.state.phase).toBe("finished");
-    expect(game.state.round).toBe(RULES.maxRounds + 1);
+    // `round` non supera mai il limite: il round successivo non è mai iniziato.
+    expect(game.state.round).toBe(RULES.maxRounds);
     expect(winnerEvent(game)).toMatchObject({ reason: "maxRounds" });
   });
 

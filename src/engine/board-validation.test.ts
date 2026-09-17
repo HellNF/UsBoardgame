@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { validateBoard, assertValidBoard } from "./board-validation";
+import { RULES } from "./config";
 import { testBoard, TEST_BOARD } from "./testing";
 import type { BoardLayout } from "./types";
 
 /**
  * Validatore dei vincoli di una disposizione (docs/rules.md § Tabellone, F1-01):
- * un test per ognuno dei sei vincoli.
+ * un test per ognuno dei sette vincoli.
  */
 
 const errorsOf = (board: BoardLayout): string[] => {
@@ -126,6 +127,27 @@ describe("vincolo 5: verso e fila di scale e serpenti", () => {
   it("le quantità dichiarate di scale e serpenti sono quelle di RULES", () => {
     expect(broken((board) => board.ladders.pop())).toContain("Scale: attese 7, trovate 6.");
     expect(broken((board) => board.snakes.pop())).toContain("Serpenti: attesi 6, trovate 5.");
+  });
+});
+
+describe("vincolo 7: scale e serpenti coprono al massimo 5 file", () => {
+  it("una scala lunga più di cinque file è rifiutata", () => {
+    expect(broken((board) => board.ladders.push({ from: 2, to: 74 }))).toContain(
+      `Scala 2→74: copre 7 file, il massimo è ${RULES.board.maxSpanRows}.`,
+    );
+  });
+
+  it("un serpente lungo più di cinque file è rifiutato", () => {
+    expect(broken((board) => board.snakes.push({ from: 95, to: 29 }))).toContain(
+      `Serpente 95→29: copre 7 file, il massimo è ${RULES.board.maxSpanRows}.`,
+    );
+  });
+
+  it("cinque file esatte sono ammesse", () => {
+    const board = testBoard();
+    // Sostituisce una scala corta con una che copre esattamente 5 file: il conteggio resta quello di RULES.
+    board.ladders[0] = { from: 12, to: 62 };
+    expect(errorsOf(board)).toEqual([]);
   });
 });
 

@@ -11,6 +11,11 @@ export const RULES = {
     cells: 100,
     ladders: 7,
     snakes: 6,
+    /**
+     * File (righe) massime coperte da una scala o da un serpente: |row(to) − row(from)| ≤ questo valore
+     * (docs/rules.md § Tabellone). Tiene le geometrie leggibili e le scale "credibili" sul tabellone.
+     */
+    maxSpanRows: 5,
     /** Quantità di caselle per tipo di una disposizione valida (docs/rules.md § Tabellone). */
     cellCounts: {
       question: 35,

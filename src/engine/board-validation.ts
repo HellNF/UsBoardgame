@@ -84,6 +84,20 @@ export function validateBoard(board: BoardLayout): BoardValidation {
       errors.push(`Serpente ${from}→${to}: resta nella stessa fila (${rowOf(from)}).`);
   }
 
+  // 5-bis. Scala e serpente coprono al massimo `maxSpanRows` file (docs/rules.md § Tabellone).
+  for (const { from, to } of board.ladders) {
+    const span = Math.abs(rowOf(to) - rowOf(from));
+    if (span > RULES.board.maxSpanRows) {
+      errors.push(`Scala ${from}→${to}: copre ${span} file, il massimo è ${RULES.board.maxSpanRows}.`);
+    }
+  }
+  for (const { from, to } of board.snakes) {
+    const span = Math.abs(rowOf(to) - rowOf(from));
+    if (span > RULES.board.maxSpanRows) {
+      errors.push(`Serpente ${from}→${to}: copre ${span} file, il massimo è ${RULES.board.maxSpanRows}.`);
+    }
+  }
+
   // 6. Nessun serpente con la testa nelle caselle 2-12.
   for (const { from } of board.snakes) {
     if (from >= 2 && from <= 12) errors.push(`Serpente con la testa in ${from}: vietato fra la 2 e la 12.`);

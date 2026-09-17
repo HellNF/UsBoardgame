@@ -40,12 +40,18 @@ Dopo la fase 3: **prima serata giocabile**.
       validatore dei vincoli di [rules.md § Tabellone](rules.md#tabellone) con test.
       Nota: la disposizione è una proposta in `src/content/boards/classic.ts` (posizioni e geometrie da rivedere a
       occhio accanto alla reference); i vincoli sono verificati, le quantità stanno in `RULES.board.cellCounts`.
+      Il proprietario ha approvato le posizioni con una correzione: vincolo 7, scale e serpenti entro 5 file
+      (D-42). La scala 28→84 è diventata 28→72, il serpente 87→24 è diventato 87→37.
 - [x] **F1-02** `createInitialState`.
 - [x] **F1-03** `reduce` per: tiro, rimonta, movimento, caselle libere/monete, scale e serpenti con **segnaposto**
       per domanda e sfida (risolte con un pulsante "riuscita/fallita"), fine turno, round, fine partita, stelle bonus.
       Test per ogni regola.
       Nota: il pacchetto A ha implementato le regole complete al posto dei segnaposto (domande, sfide, oggetti,
       imprevisti, minigiochi); i segnaposto servivano solo a provare il tabellone prima della fase 3.
+      Da questa sessione: `src/engine/simulation.test.ts` gioca 200 partite casuali sul tabellone `classic`
+      (RNG per seme) e verifica che nessuna si blocchi, che `version` cresca di 1 per azione, gli invarianti
+      (monete, stelle, oggetti, posizione) e il limite di round. A partita finita `round` è l'ultimo round
+      giocato: non compare più il "round 26" (rules.md § Fine partita).
 - [x] **F1-04** `EngineContext` finto per i test (RNG deterministico).
       Nota: `src/engine/testing.ts` (non esportato da `src/engine/index.ts`) con RNG a sequenza, orologio finto,
       domande e sfide finte, una seconda disposizione valida e un piccolo aiuto per giocare nei test.

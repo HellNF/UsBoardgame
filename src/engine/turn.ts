@@ -119,7 +119,11 @@ function advance(draft: Draft, ctx: EngineContext): void {
     // Ha giocato il secondo: il round è completo (D-05).
     state.round += 1;
     if (shouldFinish(state)) {
-      finalizeGame(draft, state.round > RULES.maxRounds ? "maxRounds" : "finish");
+      const reason = state.round > RULES.maxRounds ? "maxRounds" : "finish";
+      // A partita finita `round` è l'**ultimo round giocato**: il round appena incrementato non è mai
+      // iniziato, quindi non va mostrato (docs/rules.md § Fine partita).
+      state.round -= 1;
+      finalizeGame(draft, reason);
       return;
     }
     state.turn = state.firstSeat;

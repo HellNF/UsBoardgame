@@ -28,6 +28,8 @@ Vince chi ha più **stelle** a fine partita. A parità di stelle vince chi ha pi
 4. Nessuna casella è estremo di più di una scala o serpente (niente scala che finisce sulla testa di un serpente).
 5. Scala: `to > from`; serpente: `to < from`; nessuno dei due resta nella stessa fila.
 6. Nessun serpente con la testa nelle caselle 2-12 (non si può scendere appena partiti).
+7. Scala e serpente coprono al massimo [`board.maxSpanRows` = 5] file: |`rowOf(to)` − `rowOf(from)`| ≤ 5,
+   così restano leggibili e le scale non tagliano mezzo tabellone.
 
 ## Preparazione
 
@@ -190,6 +192,9 @@ Pescati a caso con uguale probabilità. Nessuno spostamento attiva effetti, scal
 - Il round in corso si completa ([D-05](decisions.md#d-05--si-completa-il-round)): chi ha già finito salta il turno
   ([D-40](decisions.md#d-40--chi-ha-già-finito-non-gioca-più-nel-round)).
 - La partita finisce a fine round se qualcuno ha raggiunto la 100, oppure dopo [`maxRounds` = 25] round completi.
+- `state.round` è il round **in corso** (da 1 a [`maxRounds` = 25]). A partita finita è **l'ultimo round giocato**:
+  il round successivo non viene mai iniziato, quindi non compare mai un «round 26», e `finishedAtRound` di chi
+  arriva alla 100 coincide sempre con il round in cui è arrivato.
 - **Stelle bonus**, rivelate una alla volta:
   - Sapientone (+[`stars.knowItAllBonus` = 1]): più `correctAnswers`;
   - Campione (+[`stars.championBonus` = 1]): più `challengesWon`;

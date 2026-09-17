@@ -41,7 +41,6 @@ const drawEvent = (
   return game;
 };
 
-
 describe("pesca (docs/rules.md § Imprevisti)", () => {
   it("la carta si pesca a caso e resta aperta finché non si conferma", () => {
     const game = drawEvent("snack_break");
