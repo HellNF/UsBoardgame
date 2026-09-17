@@ -36,3 +36,32 @@ l'aggiornamento di questa riga è l'unica modifica successiva).
   - i minigiochi sono pronti nel motore ma senza UI: si vedono solo nei test (F4-03, pacchetto C).
   - `F1-05` (hot seat) e tutte le carte restano ai pacchetti C e D.
   - `TODO(F7-02)` (generatore di disposizioni da seme) resta aperto, come previsto.
+
+## Correzioni post-verifica al motore — 2026-09-17
+
+Branch: hermes/a-engine (riparte dall'ultimo commit del pacchetto A) · Ultimo commit delle correzioni: f4bc6df
+(questo rapporto è nel commit successivo).
+
+- **Fatto:** vincolo 7 di una disposizione valida (scale e serpenti entro 5 file, D-42) con test; disposizione
+  `classic` corretta (scala 28→84 → 28→72, serpente 87→24 → 87→37, 7 scale e 6 serpenti mantenuti e sparsi);
+  `src/engine/simulation.test.ts` con 200 partite casuali sul tabellone `classic`; a fine partita `round` è
+  l'ultimo round giocato (non più 26 su 25), documentato in rules.md § Fine partita.
+  Task F1-01 e F1-03 restano `[x]`; nessun task nuovo aperto.
+- **Verificato da me:**
+  - `pnpm check` — verde: 15 file di test, 198 test passati (erano 194).
+  - `pnpm build` — verde.
+  - `npx vitest run src/engine/simulation.test.ts --reporter=verbose` — verde in 4,0 s, con questo riepilogo reale:
+    `200 partite · round medi 17.2 (min 7, max 25) · fine per arrivo 183, per limite di round 17 · passi medi 105`.
+    Nessuno stallo in nessuna delle 200 partite (l'assert è per partita).
+- **Da verificare in locale:** rigiocare/riguardare la disposizione `classic` con le due geometrie nuove; la voce è
+  nel Registro di [local-testing.md](local-testing.md) (F1-01, "disposizione classic dopo la correzione").
+- **Decisioni Derivate aggiunte:** D-42 (limite di 5 file per scale e serpenti). D-31…D-40 sono ora marcate
+  «Derivata, confermata dal proprietario il 2026-09-17»; D-41 (branch `hermes/b-content`) risulta confermata allo
+  stesso modo, con una nota nel file, ma quel branch non è stato toccato.
+- **Domande per il proprietario:** la scala 28→72 e il serpente 87→37 vanno bene anche a occhio, come disegno, o
+  preferisci altre caselle? Nella simulazione 17 partite su 200 finiscono per limite di round (round medi 17,2):
+  va bene, o vuoi un limite diverso da 25?
+- **Limiti noti / debito tecnico:** la simulazione usa i contenuti finti di `src/engine/testing.ts` (il motore non
+  dipende da `src/content` tranne che per la disposizione `classic`); le partite sono giocate da una strategia
+  casuale, quindi non coprono le scelte furbe di un giocatore umano; il generatore casuale di disposizioni (F7-02)
+  e il suo `TODO` restano aperti.
