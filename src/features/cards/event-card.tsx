@@ -3,6 +3,8 @@
 import { EVENTS } from "@/content/events";
 import type { ActiveCard } from "@/engine";
 import type { CardPanelProps } from "./card-panel";
+import { waitingLine } from "./viewer";
+import { WaitingRow } from "./waiting-row";
 
 /** Pulsante pieno: nero su carta. */
 const SOLID_BUTTON =
@@ -12,22 +14,29 @@ export function EventCard({
   state,
   card,
   act,
+  names,
+  viewerSeat,
 }: CardPanelProps & { card: Extract<ActiveCard, { type: "event" }> }) {
   const event = EVENTS[card.eventId];
+  const waiting = waitingLine(state, card, viewerSeat, names);
 
   return (
     <div className="flex flex-col gap-4">
       <p className="font-display text-2xl italic">{event.name}</p>
       <p className="text-sm">{event.effect}</p>
-      <div>
-        <button
-          type="button"
-          className={SOLID_BUTTON}
-          onClick={() => act({ type: "ACK_EVENT", seat: state.turn })}
-        >
-          Continua
-        </button>
-      </div>
+      {waiting === null ? (
+        <div>
+          <button
+            type="button"
+            className={SOLID_BUTTON}
+            onClick={() => act({ type: "ACK_EVENT", seat: state.turn })}
+          >
+            Continua
+          </button>
+        </div>
+      ) : (
+        <WaitingRow text={waiting} />
+      )}
     </div>
   );
 }

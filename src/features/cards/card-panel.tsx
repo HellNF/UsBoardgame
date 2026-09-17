@@ -1,7 +1,6 @@
 "use client";
 
 import type * as React from "react";
-import { otherSeat } from "@/engine";
 import type { Action, ActiveCard, GameState, Seat } from "@/engine";
 import type { ChallengeContent, QuestionContent } from "@/content/schema";
 import { ChallengeCard } from "./challenge-card";
@@ -9,6 +8,7 @@ import { EventCard } from "./event-card";
 import { ItemOverflowCard } from "./item-overflow-card";
 import { QuestionCard } from "./question-card";
 import { StarOfferCard } from "./star-offer-card";
+import { cardActor, type Viewer } from "./viewer";
 
 /** Manda un'azione al motore: la cabla il contenitore della partita. */
 export type CardAct = (action: Action) => void;
@@ -23,6 +23,11 @@ export type CardPanelProps = {
   /** Adesso in millisecondi epoch, aggiornato ogni secondo dal chiamante. */
   now: number;
   names: Record<Seat, string>;
+  /**
+   * Il posto di chi guarda questa carta: in una partita vera ognuno vede i comandi suoi,
+   * nella hot seat e negli scenari `"all"` (li vedono tutti e due, comportamento di prima).
+   */
+  viewerSeat: Viewer;
 };
 
 /** Titolo della cornice: il tipo di carta si legge subito. */
@@ -46,9 +51,8 @@ export function CardPanel(props: CardPanelProps): React.ReactElement | null {
   const card = state.card;
   if (card === null) return null;
 
-  // In una prova a decidere è l'altro posto: l'intestazione dice chi deve agire.
-  const actor: Seat =
-    card.type === "challenge" && card.verdict === "judge" ? otherSeat(state.turn) : state.turn;
+  // Chi deve agire adesso (in una prova a decidere è l'altro posto): l'intestazione lo dice.
+  const actor: Seat = cardActor(state, card);
   const actorLabel = card.type === "challenge" ? (card.verdict === "judge" ? "Giudica" : "Gioca") : "Tocca a";
 
   return (

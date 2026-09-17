@@ -4,6 +4,8 @@ import { useState } from "react";
 import { otherSeat } from "@/engine";
 import type { ActiveCard, QuestionCategory, Seat } from "@/engine";
 import type { CardPanelProps } from "./card-panel";
+import { viewerActs, waitingLine } from "./viewer";
+import { WaitingRow } from "./waiting-row";
 
 /** Etichette italiane delle categorie (docs/specs.md § Domande). */
 const CATEGORY_LABELS: Record<QuestionCategory, string> = {
@@ -31,15 +33,20 @@ export function QuestionCard({
   card,
   act,
   names,
+  viewerSeat,
 }: CardPanelProps & { card: Extract<ActiveCard, { type: "question" }> }) {
   // Risposta breve in scrittura: l'unico stato locale della carta.
   const [answer, setAnswer] = useState("");
 
-  // Chi giudica una risposta breve è sempre l'altro posto (src/engine/cards.ts).
+  // Chi risponde è chi ha il turno; chi giudica una risposta breve è sempre l'altro posto
+  // (src/engine/cards.ts). `viewerSeat` decide quali comandi si vedono (viewer.ts).
   const judge = otherSeat(state.turn);
   // Con la risposta già data si aspetta il giudizio: lì i pulsanti di risposta si spengono.
   const awaitingJudge = card.givenAnswer !== null;
-  const canSkip = state.players[state.turn].items.includes("skip_question");
+  const canSkip = viewerActs(viewerSeat, state.turn) && state.players[state.turn].items.includes("skip_question");
+  const waiting = waitingLine(state, card, viewerSeat, names);
+  const seesJudge = viewerActs(viewerSeat, judge);
+  const seesAnswer = viewerActs(viewerSeat, state.turn);
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,14 +54,13 @@ export function QuestionCard({
       <p className="font-display text-2xl italic">{question?.text ?? card.questionId}</p>
       {card.forLadder && <p className="text-sm">Questa domanda vale anche per la scala</p>}
 
-      {card.kind === "multiple" && (
+      {card.kind === "multiple" && seesAnswer && (
         <div className="flex flex-col gap-2">
           {(question?.options ?? []).map((option, index) => (
             <button
               key={`${option}-${index}`}
               type="button"
               className={`${OUTLINE_BUTTON} text-left`}
-              disabled={awaitingJudge}
               onClick={() => act({ type: "ANSWER_QUESTION", seat: state.turn, answer: option })}
             >
               {option}
@@ -63,7 +69,7 @@ export function QuestionCard({
         </div>
       )}
 
-      {card.kind === "short" && card.givenAnswer === null && (
+      {card.kind === "short" && card.givenAnswer === null && seesAnswer && (
         <div className="flex flex-col gap-3">
           <label className="text-sm" htmlFor="card-short-answer">
             La tua risposta
@@ -93,36 +99,40 @@ export function QuestionCard({
             Risposta di <span className={`font-semibold ${SEAT_TEXT[state.turn]}`}>{names[state.turn]}</span>:{" "}
             <span className="font-display font-medium italic">«{card.givenAnswer}»</span>
           </p>
-          <p className="text-sm">
-            Decide <span className={`font-semibold ${SEAT_TEXT[judge]}`}>{names[judge]}</span>.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className={SOLID_BUTTON}
-              onClick={() => act({ type: "JUDGE_ANSWER", seat: judge, verdict: "correct" })}
-            >
-              Giusta
-            </button>
-            <button
-              type="button"
-              className={OUTLINE_BUTTON}
-              onClick={() => act({ type: "JUDGE_ANSWER", seat: judge, verdict: "almost" })}
-            >
-              Quasi
-            </button>
-            <button
-              type="button"
-              className={OUTLINE_BUTTON}
-              onClick={() => act({ type: "JUDGE_ANSWER", seat: judge, verdict: "wrong" })}
-            >
-              Sbagliata
-            </button>
-          </div>
+          {seesJudge && (
+            <>
+              <p className="text-sm">
+                Decide <span className={`font-semibold ${SEAT_TEXT[judge]}`}>{names[judge]}</span>.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className={SOLID_BUTTON}
+                  onClick={() => act({ type: "JUDGE_ANSWER", seat: judge, verdict: "correct" })}
+                >
+                  Giusta
+                </button>
+                <button
+                  type="button"
+                  className={OUTLINE_BUTTON}
+                  onClick={() => act({ type: "JUDGE_ANSWER", seat: judge, verdict: "almost" })}
+                >
+                  Quasi
+                </button>
+                <button
+                  type="button"
+                  className={OUTLINE_BUTTON}
+                  onClick={() => act({ type: "JUDGE_ANSWER", seat: judge, verdict: "wrong" })}
+                >
+                  Sbagliata
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
-      {card.kind === "open" && (
+      {card.kind === "open" && seesAnswer && (
         <div>
           <button
             type="button"
@@ -139,7 +149,6 @@ export function QuestionCard({
           <button
             type="button"
             className={OUTLINE_BUTTON}
-            disabled={awaitingJudge}
             onClick={() => act({ type: "SKIP_QUESTION", seat: state.turn })}
           >
             Salta domanda
@@ -147,6 +156,8 @@ export function QuestionCard({
           <p className="mt-1 text-xs">Consuma l&apos;oggetto «Salta domanda».</p>
         </div>
       )}
+
+      {waiting !== null && <WaitingRow text={waiting} />}
     </div>
   );
 }

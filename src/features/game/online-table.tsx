@@ -236,6 +236,8 @@ export function OnlineTable(props: OnlineTableProps) {
                 act={(action) => void act(action)}
                 now={now}
                 names={props.names}
+                /* Partita vera: ogni schermo vede i comandi del posto che guarda. */
+                viewerSeat={props.seat}
               />
             </>
           )}

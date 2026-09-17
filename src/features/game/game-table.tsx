@@ -179,6 +179,8 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
               act={act}
               now={now}
               names={names}
+              /* Hot seat: i due giocatori sono davanti allo stesso schermo e vedono tutti i comandi. */
+              viewerSeat="all"
             />
           </>
         )}

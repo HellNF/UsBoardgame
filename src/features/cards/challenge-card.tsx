@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { otherSeat, RULES, SEATS } from "@/engine";
 import type { ActiveCard, Seat } from "@/engine";
 import { plural } from "@/lib/plural";
 import type { CardPanelProps } from "./card-panel";
+import { viewerActs, type Viewer } from "./viewer";
+import { WaitingRow } from "./waiting-row";
 import { Minigame } from "@/features/minigames/minigame";
 
 /** Il colore è solo dei giocatori: posto 1 rosso, posto 2 blu (docs/design.md § Token). */
@@ -30,6 +32,9 @@ function winnerLabel(winner: Seat | "draw", names: Record<Seat, string>): string
   return winner === "draw" ? "pareggio" : names[winner];
 }
 
+/** Vero se chi guarda ha il suo pezzo da dichiarare (doppia conferma e disaccordo). */
+const owns = (viewer: Viewer, seat: Seat): boolean => viewer === "all" || viewer === seat;
+
 export function ChallengeCard({
   state,
   challenge,
@@ -37,14 +42,20 @@ export function ChallengeCard({
   act,
   now,
   names,
+  viewerSeat,
 }: CardPanelProps & { card: Extract<ActiveCard, { type: "challenge" }> }) {
   const judge = otherSeat(state.turn);
   const deadline = card.deadlineAt;
   const deadlineMs = deadline === null ? null : new Date(deadline).getTime();
   // Un solo TIMER_EXPIRED per scadenza; il ref si riarma quando cambiano sfida o timer.
+  // La scadenza la può annunciare chiunque abbia la schermata aperta: se l'altro è
+  // disconnesso, la partita deve andare avanti lo stesso (il secondo annuncio riceve 409).
   const expiredRef = useRef<string | null>(null);
   // Costante locale: la narrowing regge anche dentro la callback di `onMove`.
   const minigame = card.minigame;
+  // Sfida esterna: si va a giocare fuori e si torna a dichiarare (F4-05). La pausa è della
+  // schermata, non della partita: lo stato condiviso resta quello del server.
+  const [away, setAway] = useState(false);
 
   useEffect(() => {
     if (deadlineMs === null || Number.isNaN(deadlineMs) || now < deadlineMs) return;
@@ -54,10 +65,26 @@ export function ChallengeCard({
     act({ type: "TIMER_EXPIRED", seat: state.turn });
   }, [act, card.challengeId, deadline, deadlineMs, now, state.turn]);
 
+  const isExternal = challenge?.category === "external";
+
   return (
     <div className="flex flex-col gap-4">
       <p className="font-display text-2xl italic">{challenge?.name ?? card.challengeId}</p>
       {challenge && <p className="text-sm">{challenge.instructions}</p>}
+      {isExternal && challenge.url && (
+        <p className="text-sm">
+          Si gioca fuori:{" "}
+          <a
+            className="underline decoration-2 underline-offset-2"
+            href={challenge.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            apri {challenge.name}
+          </a>
+          , poi tornate qui a dichiarare chi ha vinto.
+        </p>
+      )}
 
       <p className="text-sm">
         {card.mode === "duel" ? "Sfida a due" : "Prova"} — premio {plural(card.prize, "moneta", "monete")}
@@ -72,19 +99,54 @@ export function ChallengeCard({
         <p className="font-display text-3xl italic">{formatRemaining(deadlineMs - now)}</p>
       )}
 
+      {/* Sfida esterna in pausa: la partita resta ferma finché non si torna (F4-05). */}
+      {isExternal && away && (
+        <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">
+          <p className="text-sm">
+            In pausa: la partita aspetta il risultato di {challenge?.name ?? card.challengeId}.
+          </p>
+          <div>
+            <button type="button" className={SOLID_BUTTON} onClick={() => setAway(false)}>
+              Siamo tornati: chi ha vinto?
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isExternal && !away && !card.disputed && (
+        <div>
+          <button type="button" className={OUTLINE_BUTTON} onClick={() => setAway(true)}>
+            Andiamo a giocare
+          </button>
+        </div>
+      )}
+
       {/* Doppia conferma andata storta: si sceglie come sciogliere il nodo (D-27). */}
-      {card.disputed && (
+      {card.disputed && !away && (
         <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">
           <p className="text-sm">Le dichiarazioni non coincidono: scegliete come sciogliere il nodo.</p>
           {SEATS.map((seat) => {
             const choice = card.disputeChoices[seat];
+            if (!owns(viewerSeat, seat)) {
+              return (
+                <p key={seat} className="text-sm text-ink/70">
+                  <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+                  {choice === undefined
+                    ? " deve ancora scegliere."
+                    : ` ha scelto: ${choice === "rematch" ? "rivincita" : "lancio di moneta"}.`}
+                </p>
+              );
+            }
             return (
               <div key={seat} className="flex flex-col gap-2">
                 <p className="text-sm">
-                  <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+                  {viewerSeat === "all" && (
+                    <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+                  )}
+                  {viewerSeat === "all" ? " " : "Tocca a te: "}
                   {choice === undefined
-                    ? " deve scegliere."
-                    : ` ha scelto: ${choice === "rematch" ? "rivincita" : "lancio di moneta"}.`}
+                    ? "scegli come sciogliere il nodo."
+                    : `hai scelto: ${choice === "rematch" ? "rivincita" : "lancio di moneta"}.`}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -113,42 +175,57 @@ export function ChallengeCard({
 
       {card.verdict === "judge" && !card.disputed && (
         <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">
-          <p className="text-sm">
-            Giudica <span className={`font-semibold ${SEAT_TEXT[judge]}`}>{names[judge]}</span>: la prova è
-            riuscita?
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className={SOLID_BUTTON}
-              onClick={() => act({ type: "CLAIM_CHALLENGE_RESULT", seat: judge, winner: state.turn })}
-            >
-              Riuscita
-            </button>
-            <button
-              type="button"
-              className={OUTLINE_BUTTON}
-              onClick={() => act({ type: "CLAIM_CHALLENGE_RESULT", seat: judge, winner: judge })}
-            >
-              Non riuscita
-            </button>
-          </div>
-          <p className="text-xs">Se non è riuscita, nessuno prende il premio.</p>
+          {viewerActs(viewerSeat, judge) ? (
+            <>
+              <p className="text-sm">
+                Giudica <span className={`font-semibold ${SEAT_TEXT[judge]}`}>{names[judge]}</span>: la prova è
+                riuscita?
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className={SOLID_BUTTON}
+                  onClick={() => act({ type: "CLAIM_CHALLENGE_RESULT", seat: judge, winner: state.turn })}
+                >
+                  Riuscita
+                </button>
+                <button
+                  type="button"
+                  className={OUTLINE_BUTTON}
+                  onClick={() => act({ type: "CLAIM_CHALLENGE_RESULT", seat: judge, winner: judge })}
+                >
+                  Non riuscita
+                </button>
+              </div>
+              <p className="text-xs">Se non è riuscita, nessuno prende il premio.</p>
+            </>
+          ) : (
+            <WaitingRow text={`${names[judge]} sta giudicando la prova.`} />
+          )}
         </div>
       )}
 
-      {card.verdict === "double_confirm" && !card.disputed && (
+      {card.verdict === "double_confirm" && !card.disputed && !away && (
         <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">
           <p className="text-sm">Chi ha vinto? Dichiarano entrambi.</p>
           {SEATS.map((seat) => {
             const claim = card.claims[seat];
+            if (!owns(viewerSeat, seat)) {
+              return (
+                <p key={seat} className="text-sm text-ink/70">
+                  <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+                  {claim === undefined ? " non ha ancora dichiarato." : ` ha dichiarato: ${winnerLabel(claim, names)}.`}
+                </p>
+              );
+            }
             return (
               <div key={seat} className="flex flex-col gap-2">
                 <p className="text-sm">
-                  <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
-                  {claim === undefined
-                    ? " non ha ancora dichiarato."
-                    : ` ha dichiarato: ${winnerLabel(claim, names)}.`}
+                  {viewerSeat === "all" && (
+                    <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+                  )}
+                  {viewerSeat === "all" ? " " : "Tocca a te: "}
+                  {claim === undefined ? "chi ha vinto?" : `hai dichiarato: ${winnerLabel(claim, names)}.`}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -186,13 +263,20 @@ export function ChallengeCard({
       )}
 
       {card.verdict === "automatic" && minigame !== null && (
-        <div className="border-t-2 border-ink pt-4">
-          <Minigame
-            state={minigame}
-            seat={minigame.turn}
-            onMove={(move) => act({ type: "MINIGAME_MOVE", seat: minigame.turn, move })}
-            names={names}
-          />
+        <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">
+          {viewerActs(viewerSeat, minigame.turn) ? (
+            <Minigame
+              state={minigame}
+              seat={minigame.winner === null ? minigame.turn : null}
+              onMove={(move) => act({ type: "MINIGAME_MOVE", seat: minigame.turn, move })}
+              names={names}
+            />
+          ) : (
+            <>
+              <Minigame state={minigame} seat={null} onMove={() => {}} names={names} />
+              <WaitingRow text={`Tocca a ${names[minigame.turn]} muovere.`} />
+            </>
+          )}
         </div>
       )}
     </div>
