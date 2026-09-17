@@ -1,0 +1,53 @@
+import type { ItemId, QuestionLevel } from "./types";
+
+/**
+ * Parametri di bilanciamento. Ogni numero delle regole vive qui e non nel
+ * codice. Modificarli non richiede di toccare il reducer.
+ * Riferimento: docs/rules.md.
+ */
+export const RULES = {
+  board: { size: 10, cells: 100, ladders: 7, snakes: 6 },
+
+  dice: { count: 2, faces: 6 },
+  maxRounds: 25,
+
+  comeback: { minGap: 20, bonus: 2 },
+  /** Guadagni di monete raddoppiati mentre si è in queste caselle. */
+  doubleCoinsFrom: 71,
+
+  coins: {
+    cellGain: 3,
+    cellLoss: 2,
+    multipleCorrect: 3,
+    shortCorrect: 3,
+    shortAlmost: 1,
+    openQuestion: 1,
+  },
+
+  stars: { price: 10, finishBonus: 3, knowItAllBonus: 1, championBonus: 1 },
+
+  questions: {
+    /** Probabilità che una casella domanda peschi una "quanto mi conosci" invece di una aperta. */
+    knowMeRatio: 0.6,
+    /** Livello massimo delle profonde in base alla casella (vale solo per la categoria "deep"). */
+    deepLevelByCell: (cell: number): QuestionLevel => (cell <= 30 ? 1 : cell <= 70 ? 2 : 3),
+  },
+
+  challenges: { snakeFlashSeconds: 30 },
+
+  items: {
+    max: 3,
+    prices: {
+      single_die: 3,
+      loaded_die: 8,
+      skip_question: 4,
+      antidote: 7,
+      portable_ladder: 12,
+      thief: 6,
+      swap: 10,
+    } satisfies Record<ItemId, number>,
+    thiefAmount: 5,
+  },
+
+  events: { tailwindSteps: 5, wrongPathSteps: 5, giftCoins: 3, snackBreakSeconds: 120 },
+} as const;

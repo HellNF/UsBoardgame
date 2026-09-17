@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/*
+ * Design token. Fonte: docs/design.md § Palette.
+ * Bianco e nero puro: il colore compare solo sulle pedine dei giocatori.
+ */
+@theme {
+  --color-paper: #f2f2f0;
+  --color-ink: #1a1a1a;
+
+  --color-player-red: #d83b2c;
+  --color-player-blue: #2f4b9e;
+  --color-player-green: #2e5e3e;
+  --color-player-ochre: #c08a2b;
+
+  --font-display: var(--font-playfair), Georgia, serif;
+  --font-sans: var(--font-space-grotesk), system-ui, sans-serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

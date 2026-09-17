@@ -1,0 +1,4 @@
+pnpm-lock.yaml
+supabase/seed.sql
+docs/specs.md
+.next

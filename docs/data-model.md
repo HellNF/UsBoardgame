@@ -1,0 +1,30 @@
+# Modello dati
+
+Fonte di verità: `supabase/migrations/*.sql`. Questo file spiega il perché. I tipi TypeScript del database si
+generano con `pnpm db:types` (`src/lib/supabase/database.types.ts`); lo stato di gioco in `games.state` è
+tipizzato da `GameState` in `src/engine/types.ts`.
+
+| Tabella (specs) | Tabella           | Contenuto                                                                | Letture client (RLS)     | Scritture            |
+| --------------- | ----------------- | ------------------------------------------------------------------------ | ------------------------ | -------------------- |
+| stanze          | `rooms`           | codice, `password_hash` (scrypt)                                         | nessuna                  | script `room:create` |
+| giocatori       | `players`         | posto 1/2, nome, pedina, colore, `last_seen_at`                          | membri della stanza      | server               |
+| —               | `player_sessions` | sessione anonima Supabase → posto                                        | solo la propria          | server (join)        |
+| domande         | `questions`       | catalogo: categoria, livello, tipo, testo, testo per la scheda, opzioni  | tutti gli autenticati    | seed                 |
+| sfide           | `challenges`      | carta sfida intera in `data` (jsonb, schema in `src/content/schema.ts`)  | tutti gli autenticati    | seed                 |
+| tabelloni       | `boards`          | disposizione intera in `layout` (`BoardLayout`)                          | tutti gli autenticati    | seed                 |
+| schede          | `sheet_answers`   | risposta di un giocatore a una domanda                                   | **solo il proprietario** | server               |
+| domande_usate   | `used_questions`  | domanda uscita, a quale posto (null per le aperte)                       | membri della stanza      | server               |
+| partite         | `games`           | stato della serata, impostazioni, `state` (GameState), `version`, pronti | membri della stanza      | server               |
+| eventi          | `game_events`     | registro di ogni azione accettata, per diario e animazioni               | membri della stanza      | server               |
+
+## Note
+
+- **Id dei contenuti stabili:** `questions.id` (es. `deep-004`) è referenziato da schede e domande usate.
+  Non rinumerare mai; per ritirare una domanda si imposta `active = false` (colonna già nel database; il campo va aggiunto allo
+  schema Zod e al seed quando serve).
+- **Risposte `multiple`:** `sheet_answers.answer` contiene il testo esatto dell'opzione scelta. Cambiare il testo di
+  un'opzione invalida le risposte date: in quel caso si crea una nuova domanda.
+- **Una partita aperta per stanza:** indice univoco parziale su `games(room_id)` per gli stati `lobby`, `sheets`, `playing`.
+- **Diario:** si costruisce da `game_events` (tipi evento definiti in `src/engine`) più `questions` per i testi.
+  Le risposte date alle `short` sono nel payload dell'evento; le risposte della scheda no.
+- **Realtime:** `games`, `game_events` e `players` sono nella publication `supabase_realtime`; RLS filtra gli eventi.
