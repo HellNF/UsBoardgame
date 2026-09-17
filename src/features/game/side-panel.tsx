@@ -38,19 +38,23 @@ function PlayerRow({
   const isTurn = state.turn === seat;
   return (
     <div
-      className={`rounded-lg border-2 px-3 py-2 ${isTurn ? "border-ink" : "border-ink/30"}`}
+      className={`rounded-lg px-3 py-2 ${isTurn ? "border-4 border-ink" : "border-2 border-ink/30"}`}
       aria-current={isTurn ? "true" : undefined}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span
-          className="h-3 w-3 rounded-full border border-ink"
+          className={`shrink-0 rounded-full border-2 ${isTurn ? "h-4 w-4 border-ink" : "h-3 w-3 border-ink/40"}`}
           style={{ background: `var(--color-player-${color})` }}
         />
-        <span className="font-display text-lg italic">
-          {name}
-          {isTurn && <span aria-hidden="true"> ·</span>}
-        </span>
-        <span className="ml-auto font-sans text-sm">
+        <span className="shrink-0 font-display text-lg whitespace-nowrap italic">{name}</span>
+        {/* Chi ha il turno si riconosce a colpo d'occhio: bordo pieno, pallino pieno
+            e questa etichetta (bianco e nero, più il colore del giocatore). */}
+        {isTurn && (
+          <span className="shrink-0 rounded-full border-2 border-ink bg-ink px-2 py-0.5 font-sans text-xs whitespace-nowrap text-paper">
+            Tocca a te
+          </span>
+        )}
+        <span className="ml-auto font-sans text-sm whitespace-nowrap">
           casella {player.position} · {player.coins} monete · {player.stars} stelle
         </span>
       </div>
