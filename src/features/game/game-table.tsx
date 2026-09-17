@@ -145,14 +145,14 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
       : `Tocca a ${names[state.turn]}.`;
 
   return (
-    <div className="grid w-full gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
-      <div className="flex flex-col gap-4">
-        <div className="mx-auto w-full max-w-[38rem] lg:max-w-none">
+    <div className="grid w-full gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_26rem] lg:grid-rows-[minmax(0,1fr)] lg:gap-4">
+      <div className="flex flex-col gap-4 lg:min-h-0">
+        <div className="mx-auto w-full max-w-[38rem] lg:flex lg:min-h-0 lg:max-w-none lg:flex-1">
           <Board board={ctx.board} state={state} names={names} colors={allSettings.colors} moves={moves} />
         </div>
       </div>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 lg:min-h-0 lg:overflow-y-auto">
         {finished ? (
           <FinalScreen
             state={state}

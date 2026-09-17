@@ -80,7 +80,7 @@ export function Dice({ roll, canRoll, onRoll, blockedReason, singleDie }: DicePr
         type="button"
         onClick={onRoll}
         disabled={!canRoll}
-        className="rounded-full border-4 border-ink bg-ink px-6 py-3 font-sans text-lg text-paper disabled:cursor-not-allowed disabled:border-dashed disabled:bg-paper disabled:text-ink"
+        className="rounded-full border-4 border-ink bg-ink px-6 py-3 font-sans text-lg whitespace-nowrap text-paper disabled:cursor-not-allowed disabled:border-dashed disabled:bg-paper disabled:text-ink"
       >
         Tira i dadi
       </button>
