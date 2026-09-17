@@ -55,7 +55,9 @@ export function StarOfferCard({
           </div>
           {!canBuy && (
             <p className="text-xs">
-              {price - coins === 1 ? "Ti serve un'altra moneta." : `Ti servono altre ${price - coins} monete.`}
+              {price - coins === 1
+                ? "Ti serve un'altra moneta."
+                : `Ti servono altre ${price - coins} monete.`}
             </p>
           )}
         </>

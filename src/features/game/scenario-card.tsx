@@ -61,7 +61,11 @@ function ViewerSwitch({ viewer, onChange }: { viewer: Viewer; onChange: (viewer:
     { value: "all", label: "Tutti e due (hot seat)" },
   ];
   return (
-    <div role="group" aria-label="Chi guarda la carta" className="flex flex-wrap items-center gap-2 font-sans text-xs">
+    <div
+      role="group"
+      aria-label="Chi guarda la carta"
+      className="flex flex-wrap items-center gap-2 font-sans text-xs"
+    >
       {options.map((option) => (
         <button
           key={String(option.value)}

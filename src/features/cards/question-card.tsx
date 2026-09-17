@@ -43,7 +43,8 @@ export function QuestionCard({
   const judge = otherSeat(state.turn);
   // Con la risposta già data si aspetta il giudizio: lì i pulsanti di risposta si spengono.
   const awaitingJudge = card.givenAnswer !== null;
-  const canSkip = viewerActs(viewerSeat, state.turn) && state.players[state.turn].items.includes("skip_question");
+  const canSkip =
+    viewerActs(viewerSeat, state.turn) && state.players[state.turn].items.includes("skip_question");
   const waiting = waitingLine(state, card, viewerSeat, names);
   const seesJudge = viewerActs(viewerSeat, judge);
   const seesAnswer = viewerActs(viewerSeat, state.turn);

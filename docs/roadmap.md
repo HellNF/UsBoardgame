@@ -98,14 +98,16 @@ Dopo la fase 3: **prima serata giocabile**.
   `apply-action.ts` (sessione → posto, stanza, versione attesa, `reduce`, `apply_game_action` in una transazione) e
   gli adattatori del contesto in `context.ts`. Risposte 400/401/403/404/409/422/500; il `409` porta lo stato fresco
   con cui il client si riallinea. Verifica nel Registro (F2-01), **compreso il doppio clic**.
-- [~] **F2-02** Lobby completa: impostazioni, pronto, creazione della partita (`status` lobby → playing).
+- [L] **F2-02** Lobby completa: impostazioni, pronto, creazione della partita (`status` lobby → playing).
   Nota: la parte visiva (disposizione, categorie, durata massima, posta, pronto dei due posti) è in
   `src/features/lobby` e si vede in `/dev/ui`; `status` e la creazione della partita sono del pacchetto D.
   Dal pacchetto D: `POST /api/rooms/[code]/games` (impostazioni, pronto, `start`, `new`) con le regole pure in
   `src/server/room/lobby.ts` (test); con entrambi pronti si passa a `sheets` se una scheda è incompleta (D-28),
   altrimenti a `playing`; `LobbyContainer` collega `LobbyView` all'API e a Realtime.
-  Verificato in locale il 2026-09-17, ma resta `[~]`: il passaggio "pronto → si parte" non è atomico (due clic
-  simultanei possono bloccare la lobby o dare un 500 al secondo), vedi Registro.
+  Verificato in locale il 2026-09-17; il difetto trovato allora (il passaggio "pronto → si parte" non era atomico)
+  è corretto dal pacchetto E con una transazione (D-53): `set_lobby_ready` e `start_lobby_game` nella migrazione
+  `20260918120000_lobby_atomic.sql`, con `supabase/tests/lobby.sql` da eseguire in Studio. Resta `[L]`: la doppia
+  chiamata vera la prova il proprietario (voce F2-02 del Registro).
 - [x] **F2-03** Abbonamento Realtime a `games`/`game_events`, gestione dei `409`, riconnessione alla fase salvata.
   Nota: `src/features/presence/use-room-realtime.ts` (un canale per stanza, `games` e `game_events` filtrati per
   partita) e `OnlineTable`, che manda le azioni all'API e sul `409` prende lo stato del server senza ricalcolarlo.
@@ -113,10 +115,13 @@ Dopo la fase 3: **prima serata giocabile**.
 - [x] **F2-04** Presence: indicatore dell'altro giocatore e `last_seen_at`.
   Nota: Presence sul canale della stanza (`{ seat, screen }`) alimenta l'indicatore in lobby e in partita;
   `players.last_seen_at` si aggiorna a ogni caricamento di pagina della stanza (lato server).
-- [~] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
-  Nota: fatti il salto della pedina verso la casella nuova (con la curva del serpente quando lo spostamento è
-  una discesa), l'anello del turno e l'ingresso delle carte; manca il salto **cella per cella** e l'uso degli
-  eventi `MINIGAME_MOVED` per animare le pedine dei minigiochi.
+- [L] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
+  Nota: dal pacchetto E il percorso della pedina è **cella per cella** (`src/features/board/route.ts`: un saltello
+  per ogni casella, gradino per gradino sulle scale, lungo il corpo sui serpenti) e gli eventi di spostamento si
+  **accodano** e si animano in ordine, uno per volta (`src/features/board/use-move-queue.ts`), anche nella partita
+  online, dove gli eventi arrivano dal tempo reale. Anche l'ingresso della carta è un'animazione (D-57). Manca
+  l'animazione delle pedine dei minigiochi dagli eventi `MINIGAME_MOVED` (tris, forza 4 e memory cambiano stato
+  senza animazione). Resta `[L]`: l'occhio del proprietario in due finestre (voce F2-05 del Registro).
 
 ## Fase 3 · Domande — _prima serata giocabile_
 
@@ -133,9 +138,11 @@ Dopo la fase 3: **prima serata giocabile**.
   Dal pacchetto D: la pagina `/r/[code]/sheet` legge le domande del catalogo e **solo** le proprie risposte (RLS),
   il salvataggio passa da `PUT /api/sheet/[questionId]` con la risposta controllata contro la domanda, lo stato
   `sheets` nasce dal pronto in lobby (F2-02) e la lobby offre "Gioca lo stesso" (D-28).
-- [~] **F3-03** Carta domanda: `multiple` (verdetto automatico), `short` (giudizio dell'altro), `open`;
+- [L] **F3-03** Carta domanda: `multiple` (verdetto automatico), `short` (giudizio dell'altro), `open`;
   regola della scala con una sola domanda.
-  Nota: motore completo e testato (pacchetto A); manca la carta della UI (pacchetto C).
+  Nota: motore completo e testato (pacchetto A), carta della UI dal pacchetto C, e dal pacchetto E ogni schermo
+  vede **solo i comandi del posto che guarda** (D-56): chi aspetta legge «Leo sta scrivendo la risposta…» o
+  «Marta sta giudicando la tua risposta…». Resta `[L]`: due finestre vere (voce F3-03 del Registro).
 - [L] **F3-04** Mazzo iniziale: ~150 domande secondo [content.md](content.md) → revisione del proprietario.
   Nota: 150 domande (30 per categoria: 8 da scheda e 22 aperte; profonde dieci per livello) in
   `src/content/questions/`, con i controlli di forma in `src/content/content.test.ts`. I testi sono una prima
@@ -151,16 +158,29 @@ Dopo la fase 3: **prima serata giocabile**.
   Nota: 17 carte in `src/content/challenges.ts` (5 integrate, 10 in videochiamata di cui 6 lampo, 2 esterne).
   `quiz-lampo` e `riflessi` sono duelli a doppia conferma finché F4-04 non aggiunge i loro moduli al motore
   (D-41). La revisione dei testi è del proprietario.
-- [~] **F4-02** Carta sfida: duello/prova, giudice, doppia conferma, disputa, timer (`TIMER_EXPIRED`).
-  Nota: motore completo e testato (pacchetto A, con D-33 e D-36); mancano la carta della UI e la route.
-- [~] **F4-03** Minigiochi nel motore + UI: tris, forza 4, memory.
-  Nota: i tre moduli puri sono in `src/engine/minigames` con test (pacchetto A) e la UI è in
-  `src/features/minigames`, provabile in `/dev/hotseat` (la hot seat pesca anche due sfide di prova per forza 4
-  e memory, D-44); mancano i turni remoti e le mosse via API, che arrivano con il pacchetto D.
-- [ ] **F4-04** Minigiochi a tempo: quiz, riflessi.
-- [ ] **F4-05** Pausa per sfida esterna (link Lichess, skribbl.io) e ritorno con "Chi ha vinto?".
-- [~] **F4-06** Sfida lampo del serpente.
-  Nota: motore (30 s, Antidoto, vittoria = resta, altrimenti scende) e test fatti nel pacchetto A; UI in C.
+- [L] **F4-02** Carta sfida: duello/prova, giudice, doppia conferma, disputa, timer (`TIMER_EXPIRED`).
+  Nota: motore completo e testato (pacchetto A, con D-33 e D-36), carta e route dal pacchetto D. Dal pacchetto E
+  la carta è per posto (D-56): nella prova giudica solo l'altro, nella doppia conferma e nel disaccordo ognuno ha
+  il suo pezzo e legge se l'altro ha già dichiarato. Resta `[L]`: due finestre vere (voce F4-02 del Registro).
+- [L] **F4-03** Minigiochi nel motore + UI: tris, forza 4, memory.
+  Nota: i tre moduli puri sono in `src/engine/minigames` con test (pacchetto A), la UI è in
+  `src/features/minigames` (provabile in `/dev/hotseat`: D-44) e le mosse passano dal server via `MINIGAME_MOVE`
+  (pacchetto D). Dal pacchetto E ogni schermo mostra i **propri** comandi quando tocca a lui e una riga di attesa
+  quando tocca all'altro (D-56). Resta `[L]`: i turni alternati veri fra due finestre (voce F4-03 del Registro).
+- [L] **F4-04** Minigiochi a tempo: quiz, riflessi.
+  Nota: fatti nel pacchetto E (D-55). `quiz` e `reflex` sono moduli del motore (`src/engine/minigames`) con test:
+  il quiz usa le domande della carta (contenuto pubblico in `src/content/challenges.ts`), i riflessi prendono il
+  momento del segnale dall'orologio del server. Le carte `quiz-lampo` e `riflessi` sono diventate `automatic`
+  (D-41 superata) e si possono provare in `/dev/scenari` (due riquadri nuovi) e in `/dev/hotseat`. Resta `[L]`:
+  la partita vera su due schermi (voce F4-04 del Registro).
+- [L] **F4-05** Pausa per sfida esterna (link Lichess, skribbl.io) e ritorno con "Chi ha vinto?".
+  Nota: dal pacchetto E la carta delle sfide esterne mostra il link, ha il pulsante «Andiamo a giocare» che mette
+  la partita in pausa (le dichiarazioni spariscono finché non si torna) e al ritorno chiede «Siamo tornati: chi ha
+  vinto?» e riapre le dichiarazioni di entrambi. La pausa è della schermata, non dello stato condiviso: la serata
+  resta ferma sulla carta. Resta `[L]`: da provare in due finestre (voce F4-05 del Registro).
+- [L] **F4-06** Sfida lampo del serpente.
+  Nota: motore (30 s, Antidoto, vittoria = resta, altrimenti scende) e test fatti nel pacchetto A; UI in C e dal
+  pacchetto E la vista è per posto (D-56). Resta `[L]`: due finestre vere (voce F4-06 del Registro).
 
 ## Fase 5 · Economia — _regole complete_
 
@@ -172,15 +192,19 @@ Dopo la fase 3: **prima serata giocabile**.
       Nota: motore completo e testato (acquisto, uso di un solo oggetto attivo per turno, scarto al quarto).
 - [x] **F5-04** Imprevisti.
       Nota: motore completo e testato (sette imprevisti equiprobabili, nessuna reazione a catena).
-- [~] **F5-05** Schermata finale: stelle bonus una alla volta, vincitore, posta in palio.
-  Nota: motore delle stelle bonus e del vincitore fatto e testato (pacchetto A); la schermata arriva con il
-  pacchetto C.
-- [x] **F5-06** Diario della serata e archivio delle partite.
+- [L] **F5-05** Schermata finale: stelle bonus una alla volta, vincitore, posta in palio.
+  Nota: motore delle stelle bonus e del vincitore fatto e testato (pacchetto A), schermata dal pacchetto C
+  (provabile in `/dev/scenari`, tre riquadri). Resta `[L]`: la serata intera fino in fondo (voce F5-05 del
+  Registro).
+- [L] **F5-06** Diario della serata e archivio delle partite.
   Nota: la vista è in `src/features/diary` (momenti della serata + archivio) e si vede in `/dev/ui` su dati
   finti; la lettura del diario dal database è del pacchetto D.
   Dal pacchetto D: la pagina `/r/[code]/diary` legge i momenti da `game_events` con `src/server/diary/read-diary.ts`
   (mappa evento → momento pura, con test: round, monete, oggetti, scale, serpenti, stelle) e l'archivio dalle
   partite concluse; le risposte della scheda non entrano mai nel diario.
+  Dal pacchetto E il diario scrive il **testo** della domanda e il **nome** della sfida dal catalogo nel bundle
+  (D-54), non registra le monete a zero e i testi sono stati riletti (voce F5-06 del Registro). Resta `[L]`: la
+  rilettura dal vivo è del proprietario.
 
 ## Fase 6 · Illustrazioni — _estetica finale_ (in parallelo)
 

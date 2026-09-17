@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "motion/react";
 import type * as React from "react";
 import type { Action, ActiveCard, GameState, Seat } from "@/engine";
 import type { ChallengeContent, QuestionContent } from "@/content/schema";
@@ -30,6 +31,22 @@ export type CardPanelProps = {
   viewerSeat: Viewer;
 };
 
+/** Identità della carta: l'ingresso si ripete quando cambia la carta, non a ogni ritocco. */
+function cardKey(card: ActiveCard): string {
+  switch (card.type) {
+    case "question":
+      return `question:${card.questionId}`;
+    case "challenge":
+      return `challenge:${card.challengeId}`;
+    case "event":
+      return `event:${card.eventId}`;
+    case "star_offer":
+      return "star_offer";
+    case "item_overflow":
+      return `item_overflow:${card.incoming}`;
+  }
+}
+
 /** Titolo della cornice: il tipo di carta si legge subito. */
 const CARD_TITLES: Record<ActiveCard["type"], string> = {
   question: "Domanda",
@@ -56,7 +73,14 @@ export function CardPanel(props: CardPanelProps): React.ReactElement | null {
   const actorLabel = card.type === "challenge" ? (card.verdict === "judge" ? "Giudica" : "Gioca") : "Tocca a";
 
   return (
-    <section className="border-4 border-ink bg-paper font-sans text-ink" aria-label={CARD_TITLES[card.type]}>
+    <motion.section
+      key={cardKey(card)}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="border-4 border-ink bg-paper font-sans text-ink"
+      aria-label={CARD_TITLES[card.type]}
+    >
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-4 border-ink px-5 py-3">
         <h2 className="font-display text-2xl italic">{CARD_TITLES[card.type]}</h2>
         <p className="text-sm">
@@ -82,6 +106,6 @@ export function CardPanel(props: CardPanelProps): React.ReactElement | null {
           <ItemOverflowCard {...props} card={card} />
         )}
       </div>
-    </section>
+    </motion.section>
   );
 }

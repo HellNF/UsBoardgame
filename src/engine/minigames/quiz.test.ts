@@ -20,7 +20,8 @@ const CLOCK = { now: new Date("2026-09-17T21:00:00.000Z"), randomInt: () => 0 };
 const init = (items: QuizItem[] = ITEMS) =>
   quiz.init({ ...CLOCK, firstSeat: 1, content: items }) as QuizState;
 
-const answer = (state: MinigameState, seat: 1 | 2, option: number) => quiz.applyMove(state, seat, { option }, CLOCK);
+const answer = (state: MinigameState, seat: 1 | 2, option: number) =>
+  quiz.applyMove(state, seat, { option }, CLOCK);
 
 /** Gioca una sequenza di risposte, una per posto. */
 const play = (state: MinigameState, answers: [1 | 2, number][]): QuizState =>

@@ -210,19 +210,35 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
         );
         break;
       case "CLIMBED_LADDER":
-        push("event", "La scala", `Su, dalla ${asNumber(event.payload.from)} alla ${asNumber(event.payload.to)}.`);
+        push(
+          "event",
+          "La scala",
+          `Su, dalla ${asNumber(event.payload.from)} alla ${asNumber(event.payload.to)}.`,
+        );
         break;
       case "SLID_DOWN_SNAKE":
-        push("event", "Il serpente", `Giù, dalla ${asNumber(event.payload.from)} alla ${asNumber(event.payload.to)}.`);
+        push(
+          "event",
+          "Il serpente",
+          `Giù, dalla ${asNumber(event.payload.from)} alla ${asNumber(event.payload.to)}.`,
+        );
         break;
       case "STAR_BOUGHT":
-        push("star", "Stella comprata", `Pagata ${plural(asNumber(event.payload.price), "moneta", "monete")}.`);
+        push(
+          "star",
+          "Stella comprata",
+          `Pagata ${plural(asNumber(event.payload.price), "moneta", "monete")}.`,
+        );
         break;
       case "STAR_DECLINED":
         push("star", "Stella rifiutata", "Nessuna moneta spesa: le monete restano in tasca.");
         break;
       case "FINISH_REACHED":
-        push("star", "Arrivo alla 100", `Round ${asNumber(event.payload.round, round)}: la partita si chiude alla fine del giro.`);
+        push(
+          "star",
+          "Arrivo alla 100",
+          `Round ${asNumber(event.payload.round, round)}: la partita si chiude alla fine del giro.`,
+        );
         break;
       default:
         break;

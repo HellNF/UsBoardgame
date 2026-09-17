@@ -82,14 +82,23 @@ export const challengeSchema = z
     }
     // Il quiz-lampo senza domande non si può giocare: il motore non ha da dove pescarle.
     if (c.minigame === "quiz" && (!c.quiz || c.quiz.length === 0)) {
-      ctx.addIssue({ code: "custom", message: `${c.id}: il minigioco "quiz" richiede le domande nel campo quiz` });
+      ctx.addIssue({
+        code: "custom",
+        message: `${c.id}: il minigioco "quiz" richiede le domande nel campo quiz`,
+      });
     }
     if (c.minigame !== "quiz" && c.quiz) {
-      ctx.addIssue({ code: "custom", message: `${c.id}: il campo quiz è ammesso solo con il minigioco "quiz"` });
+      ctx.addIssue({
+        code: "custom",
+        message: `${c.id}: il campo quiz è ammesso solo con il minigioco "quiz"`,
+      });
     }
     for (const item of c.quiz ?? []) {
       if (item.correct >= item.options.length) {
-        ctx.addIssue({ code: "custom", message: `${c.id}: una risposta del quiz punta a un'opzione che non c'è` });
+        ctx.addIssue({
+          code: "custom",
+          message: `${c.id}: una risposta del quiz punta a un'opzione che non c'è`,
+        });
       }
     }
     // Le sfide esterne si giocano fuori: serve il link.

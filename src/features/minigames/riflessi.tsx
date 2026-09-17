@@ -22,12 +22,7 @@ export function ReflexBoard(props: MinigameViewProps) {
   return <ReflexLive key={props.state.goAt} {...props} state={props.state} />;
 }
 
-function ReflexLive({
-  state,
-  seat,
-  onMove,
-  names,
-}: MinigameViewProps & { state: ReflexState }) {
+function ReflexLive({ state, seat, onMove, names }: MinigameViewProps & { state: ReflexState }) {
   // Si accende esattamente all'istante del segnale: un conto alla rovescia a intervalli
   // mostrerebbe il segnale con un ritardo a caso (e i riflessi si misurano in decine di ms).
   const [signalOn, setSignalOn] = useState(() => Date.now() >= Date.parse(state.goAt));

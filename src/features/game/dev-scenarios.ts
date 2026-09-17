@@ -132,7 +132,12 @@ function challengeCard(
     disputed: false,
     minigameId,
     minigame: minigameId
-      ? MINIGAMES[minigameId].init({ ...SCENARIO_CLOCK, randomInt: scriptedRandomInt(), firstSeat: 1, content: quiz })
+      ? MINIGAMES[minigameId].init({
+          ...SCENARIO_CLOCK,
+          randomInt: scriptedRandomInt(),
+          firstSeat: 1,
+          content: quiz,
+        })
       : null,
     quiz,
     ...overrides,
@@ -482,7 +487,11 @@ export function startState(scenario: Scenario): GameState {
     copy.card.deadlineAt = new Date(Date.now() + scenario.deadlineSeconds * 1000).toISOString();
   }
   // I riflessi: il segnale parte poco dopo l'apertura, così si vede anche l'attesa.
-  if (scenario.signalSeconds !== undefined && copy.card?.type === "challenge" && copy.card.minigame?.kind === "reflex") {
+  if (
+    scenario.signalSeconds !== undefined &&
+    copy.card?.type === "challenge" &&
+    copy.card.minigame?.kind === "reflex"
+  ) {
     copy.card.minigame.goAt = new Date(Date.now() + scenario.signalSeconds * 1000).toISOString();
   }
   return copy;

@@ -3,8 +3,6 @@
 import { motion } from "motion/react";
 import { useMemo } from "react";
 import {
-  ladderAt,
-  snakeAt,
   type BoardLayout,
   type Cell,
   type CellNumber,
@@ -13,8 +11,9 @@ import {
   type QuestionCategory,
   type Seat,
 } from "@/engine";
-import { BOARD, CELL, cellCenter, cellsBounds, ladderGeometry, snakeGeometry, type Point } from "./geometry";
+import { BOARD, CELL, cellCenter, cellsBounds, ladderGeometry, snakeGeometry } from "./geometry";
 import { Pawn } from "./pawn";
+import { pawnRouteFor, type PawnRoute as PawnRouteForBoard } from "./route";
 
 /**
  * Tabellone SVG (task F1-05, docs/design.md § Tabellone).
@@ -39,7 +38,7 @@ const CATEGORY_INITIAL: Record<QuestionCategory, string> = {
 };
 
 /** Percorso di una pedina: casella di partenza e punti da seguire. */
-type PawnRoute = { cell: CellNumber; points: Point[]; duration: number };
+type PawnRoute = PawnRouteForBoard;
 
 export type BoardProps = {
   board: BoardLayout;
@@ -200,27 +199,6 @@ function DecorationShape({ shape, cells }: { shape: string; cells: CellNumber[] 
 }
 
 /** Punti che la pedina segue quando si sposta da una casella all'altra. */
-function routeFor(
-  board: BoardLayout,
-  from: CellNumber,
-  to: CellNumber,
-): { points: Point[]; duration: number } {
-  const start = cellCenter(from);
-  const end = cellCenter(to);
-  if (from === to) return { points: [start], duration: 0 };
-
-  const ladder = ladderAt(board, from);
-  if (ladder && ladder.to === to) return { points: [start, end], duration: 0.7 };
-
-  const snake = snakeAt(board, from);
-  if (snake && snake.to === to) {
-    return { points: snakeGeometry(from, to).points, duration: 0.9 };
-  }
-
-  // Salto normale: un arco verso l'alto, come una pedina che salta le caselle.
-  const middle = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 - 34 };
-  return { points: [start, middle, end], duration: 0.45 };
-}
 
 export function Board({ board, state, names, colors, moves }: BoardProps) {
   const ladders = useMemo(
@@ -232,13 +210,14 @@ export function Board({ board, state, names, colors, moves }: BoardProps) {
     [board.snakes],
   );
 
-  // Il percorso della pedina arriva dall'esterno: chi possiede gli eventi dice da dove
-  // viene ogni posto, così il tabellone non tiene stato proprio (niente ref, niente effetti).
+  // Il percorso della pedina arriva dall'esterno: chi possiede gli eventi dice da dove viene
+  // ogni posto (e accoda i movimenti, F2-05), così il tabellone non tiene stato proprio.
+  // Senza movimento in corso la pedina sta sulla casella dello stato.
   const route = (seat: Seat): PawnRoute => {
-    const cell = state.players[seat].position;
     const move = moves?.[seat];
-    if (move && move.to === cell) return { cell, ...routeFor(board, move.from, move.to) };
-    return { cell, points: [cellCenter(cell)], duration: 0 };
+    if (move) return pawnRouteFor(board, move.from, move.to);
+    const cell = state.players[seat].position;
+    return { from: cell, to: cell, points: [cellCenter(cell)], duration: 0 };
   };
   const routes: Record<Seat, PawnRoute> = { 1: route(1), 2: route(2) };
   // Sulla stessa casella le due pedine si coprirebbero: si scostano di lato.

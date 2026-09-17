@@ -189,8 +189,8 @@ export function ChallengeCard({
           {viewerActs(viewerSeat, judge) ? (
             <>
               <p className="text-sm">
-                Giudica <span className={`font-semibold ${SEAT_TEXT[judge]}`}>{names[judge]}</span>: la prova è
-                riuscita?
+                Giudica <span className={`font-semibold ${SEAT_TEXT[judge]}`}>{names[judge]}</span>: la prova
+                è riuscita?
               </p>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -225,7 +225,9 @@ export function ChallengeCard({
               return (
                 <p key={seat} className="text-sm text-ink/70">
                   <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
-                  {claim === undefined ? " non ha ancora dichiarato." : ` ha dichiarato: ${winnerLabel(claim, names)}.`}
+                  {claim === undefined
+                    ? " non ha ancora dichiarato."
+                    : ` ha dichiarato: ${winnerLabel(claim, names)}.`}
                 </p>
               );
             }

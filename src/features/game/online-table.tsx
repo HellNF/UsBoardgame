@@ -16,6 +16,7 @@ import type {
   Seat,
 } from "@/engine";
 import { Board } from "@/features/board/board";
+import { useMoveQueue } from "@/features/board/use-move-queue";
 import { CardPanel } from "@/features/cards/card-panel";
 import { Dice } from "@/features/dice/dice";
 import { FinalScreen } from "@/features/game/final-screen";
@@ -155,13 +156,8 @@ export function OnlineTable(props: OnlineTableProps) {
 
   const bonus = lastBonusStars(events);
 
-  const moves = useMemo(() => {
-    const result: Partial<Record<Seat, { from: number; to: number }>> = {};
-    for (const event of events) {
-      if (event.type === "MOVED") result[event.seat] = { from: event.from, to: event.to };
-    }
-    return result;
-  }, [events]);
+  // Un movimento per volta, in ordine: dal tempo reale possono arrivare due righe insieme (F2-05).
+  const moves = useMoveQueue(props.board, events);
 
   const finished = state.phase === "finished";
   const myTurn = state.turn === props.seat && !finished;

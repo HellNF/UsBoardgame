@@ -234,3 +234,87 @@ ripescare, non da unire**.
   - **Presence** alimenta l'indicatore "connesso", non ancora "connesso ma in un'altra schermata";
   - **`quiz-lampo` e `riflessi`** restano duelli a doppia conferma (D-41); F4-04, i file `.riv`, l'emulatore e gli
     account Vercel/Supabase restano fuori da questa sessione, come richiesto.
+
+## Pacchetto E · La partita su due schermi — 2026-09-17
+
+Branch: `hermes/e-two-screens` (da `main` a `2b2983d`) · Un commit per punto, ognuno con `pnpm check` verde prima
+del push: `e6e3675` (E1, le carte per posto), `7c74a20` (E2, lobby atomica), `58770c2` (E4, diario), `91fae50`
+(E3, minigiochi a tempo e pausa esterna), più il commit di questa documentazione (E5 dentro).
+
+- **Fatto:**
+  - **E1 (F3-03, F4-02, F4-06, F5-05)** `[L]`: `CardPanel` riceve il posto di chi guarda (`viewerSeat`), le regole
+    stanno in `src/features/cards/viewer.ts` (puro, 12 prove) e ogni carta mostra i comandi propri oppure una
+    riga di attesa. Hot seat e `/dev/scenari` passano `"all"` (comportamento di prima); `/dev/scenari` ha
+    l'interruttore «Guarda come posto 1 / posto 2 / Tutti e due» (D-56).
+  - **E2 (F2-02)** `[L]`: il pronto è una transazione SQL (`set_lobby_ready`, `start_lobby_game`, migrazione
+    `20260918120000_lobby_atomic.sql`); `readyOutcome` in TypeScript con 5 prove sulla doppia chiamata;
+    `supabase/tests/lobby.sql` per il controllo in Studio (D-53). Da F2-02 è sparito `.single()`.
+  - **E3 (F4-03, F4-04, F4-05)** `[L]`: quiz-lampo e riflessi sono minigiochi a tempo del motore (D-55, D-41
+    superata): `src/engine/minigames/quiz.ts` (domande nelle carte, contenuto pubblico) e `reflex.ts` (segnale
+    dall'orologio del server, partenza falsa = punto all'altro, meglio di cinque); moduli con orologio
+    (`MinigameClock`) e `turn` che può valere `"both"`. UI in `src/features/minigames/quiz.tsx` e `riflessi.tsx`.
+    Sfide esterne: link, pausa e «Chi ha vinto?» (F4-05). `pnpm content:seed` rigenerato (quiz nelle sfide).
+  - **E4 (F5-06)** `[L]`: il diario scrive il testo della domanda e il nome della sfida dal catalogo nel bundle,
+    non registra le monete a zero, testi riletti (D-54).
+  - **E5 (F2-05)** `[L]`: percorso della pedina cella per cella (`src/features/board/route.ts`, 7 prove) e coda
+    dei movimenti (`use-move-queue.ts`) usata da hot seat e partita online; ingresso della carta animato (D-57).
+- **Verificato da me:** comandi eseguiti davvero, con l'esito reale:
+  - `pnpm check` — verde: da 269 prove (26 file di `main`) a **318 prove su 30 file**.
+  - `pnpm build` — verde, con tutte le rotte (comprese `/dev/scenari`, `/dev/hotseat`, `/dev/ui`).
+  - `npx next start -p 3101` + `curl`: `/` → **200**, `/dev/scenari`, `/dev/hotseat`, `/dev/ui` → **404**.
+  - `pnpm content:seed` — verde: `seed.sql: 150 domande, 17 sfide, 1 tabelloni` (le due sfide a tempo portano il
+    loro minigioco e il quiz le sue domande).
+  - `pnpm dev` con Chrome vero (CDP): `/dev/scenari` con i **27 riquadri**, l'interruttore «chi guarda» provato su
+    11 riquadri (domanda multipla, breve, aperta, imprevisto, stella, zaino pieno, tris, prova a giudizio, doppia
+    conferma, disaccordo, e i due nuovi a tempo), zero errori in console; successivamente quiz giocato fino al
+    terzo turno (punti e turno corretti, riga di attesa per l'altro posto) e riflessi con «Tocca!» dopo il
+    segnale («Punto a Leo.») e partenza falsa («Partenza falsa: il punto va a Marta.»).
+  - Animazione della pedina campionata in hot seat ogni 40 ms durante un tiro da 4 caselle: **quattro saltelli**
+    (~160 ms l'uno, uno per casella), non un arco solo.
+- **Non verificato da me** (serve Docker e Supabase, cioè le voci del Registro): la migrazione applicata e
+  `supabase/tests/lobby.sql`, i due «Sono pronto» quasi simultanei su due finestre, i minigiochi a turni online,
+  la pausa della sfida esterna in due finestre, il diario letto dal database, la coda delle animazioni con due
+  righe di tempo reale insieme.
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), sezione «Pacchetto E»:
+  F2-02 (lobby atomica), F3-03 · F4-02 · F4-06 · F5-05 (le due viste), F4-03 · F4-04 (minigiochi), F4-05 (pausa
+  esterna), F5-06 (diario), F2-05 (animazioni), più la voce finale sulle pagine `/dev`.
+  **Prima di tutto:** `pnpm db:reset`, poi `pnpm db:types` e commit del file rigenerato (i tipi guadagnano le due
+  funzioni nuove).
+- **Decisioni Derivate aggiunte:** D-53 (lobby atomica), D-54 (testi del diario dal catalogo nel bundle),
+  D-55 (quiz-lampo e riflessi minigiochi a tempo, sostituisce D-41), D-56 (la carta sa chi la guarda),
+  D-57 (animazioni cella per cella e in coda). Chiuse nelle «Ancora aperte»: carte per due schermi, diario con
+  l'id della domanda e monete a zero, `[analytics]` in `config.toml`.
+- **Domande per il proprietario:**
+  1. Nei **riflessi** il pulsante è sempre acceso e chi tocca prima del segnale regala il punto all'altro: è la
+     regola che ho scelto (D-55). Va bene, o preferisci che il pulsante si accenda solo col segnale (e allora non
+     si può sbagliare)?
+  2. Nel **quiz-lampo** le cinque domande sono di cultura generale e stanno nella carta: vanno bene, o preferisci
+     domande sulla coppia (servirebbe un'altra strada: la risposta giusta non può stare nel bundle)?
+  3. Nella hot seat i **riflessi** non hanno due schermi: preme il posto di turno. Va bene per la prova, o la
+     carta va nascosta fuori dalla partita online?
+  4. Il diario non registra le monete a zero: resta così anche per gli **oggetti** comprati a zero monete (non
+     succede nel gioco, ma il caso esiste nel registro)?
+  5. `/dev/scenari` ha ora 27 riquadri e l'interruttore «chi guarda»: la pagina resta anche dopo questo pacchetto?
+- **Limiti noti / debito tecnico:**
+  - **le pedine dei minigiochi non si animano**: gli eventi `MINIGAME_MOVED` arrivano ma tris, forza 4 e memory
+    ridisegnano lo stato senza transizione (resta aperto in F2-05);
+  - i **riflessi** dipendono dall'orologio del browser per *mostrare* il segnale (il giudizio è del server): con
+    due dispositivi con orologi diversi di qualche secondo la sfida resta corretta, ma il segnale può apparire
+    prima a uno dei due;
+  - la **coda delle animazioni** è per posto: se due movimenti riguardano lo stesso posto si animano uno dopo
+    l'altro, quindi un tiro che finisce su una scala dura due animazioni (~2 s);
+  - il **diario** legge l'intero catalogo delle domande all'avvio del server (150 righe in memoria: va bene ora);
+  - `quiz-lampo` e `riflessi` hanno una durata della carta (`durationSeconds`) che resta indicativa: il quiz lo
+    chiudono le domande, i riflessi i cinque round;
+  - l'accesso con ritardo crescente (D-50), la presenza non protetta e i valori di verde bosco e ocra restano
+    come erano: fuori da questo pacchetto.
+
+## Pulizia dei branch — 2026-09-17
+
+`hermes/d-wip` (commit `b366b5b`, "Save the work in progress on the online wiring") è stato **cancellato** da
+GitHub e in locale, come indicato dal proprietario. Controllato prima di buttarlo: il commit dice di sé che non
+compila ("saved as a workbench to pick from, not to merge") e tocca sei file — `online-table.tsx`,
+`lobby-container.tsx`, `use-room-realtime.ts`, `sheet-container.tsx`, `room/current.ts`, la route dei giochi —
+che in `main` esistono in versione riscritta e verificata dal vivo (pacchetto D). Nessun pezzo rimasto indietro:
+niente da ripescare. Stessa pulizia per i branch locali ormai uniti (`hermes/a-engine`, `hermes/b-content`,
+`hermes/c-ui`, `hermes/d-server`, `hermes/e-ui-fix`).
