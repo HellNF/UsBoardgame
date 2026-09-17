@@ -18,8 +18,13 @@ import { Pawn } from "./pawn";
 
 /**
  * Tabellone SVG (task F1-05, docs/design.md § Tabellone).
- * Un solo `<svg viewBox="0 0 1000 1000">`: celle → decorazioni → segnaposto delle
- * illustrazioni → scale → serpenti → cornice → pedine.
+ * Un solo `<svg viewBox="0 0 1000 1000">`, a strati dal basso: celle → decorazioni →
+ * scale → serpenti → cornice → numeri e simboli delle caselle → pedine.
+ *
+ * I numeri e i simboli stanno **sopra** scale e serpenti e hanno un alone del colore
+ * della casella (docs/design.md § Tabellone): dove una scala o un serpente passano su
+ * una casella, il numero e il simbolo restano leggibili.
+ *
  * Le forme di scale e serpenti si generano dagli estremi della disposizione, quindi
  * non cambiano mai per lo stesso tabellone.
  */
@@ -61,43 +66,26 @@ function starPath(cx: number, cy: number, outer = 34, inner = 14): string {
   return `M ${points.join(" L ")} Z`;
 }
 
-function CellShape({ cell }: { cell: Cell }) {
+/** Fondo della casella: nero per le sfide, carta per tutto il resto. */
+const cellBackground = (cell: Cell): string =>
+  cell.kind === "challenge" ? "var(--color-ink)" : "var(--color-paper)";
+
+/** Colore del numero e del simbolo: leggibile sul fondo della casella. */
+const cellForeground = (cell: Cell): string =>
+  cell.kind === "challenge" ? "var(--color-paper)" : "var(--color-ink)";
+
+/**
+ * Strato di fondo della casella: rettangolo, geometria del tipo (diagonale degli
+ * imprevisti) e bordo. Numeri e simboli stanno in `CellMarks`, più sopra.
+ */
+function CellBase({ cell }: { cell: Cell }) {
   const { x, y } = cellsBounds([cell.n]);
-  const center = cellCenter(cell.n);
-  const tooDark = cell.kind === "challenge";
 
   return (
     <g>
-      <rect
-        x={x}
-        y={y}
-        width={CELL}
-        height={CELL}
-        fill={tooDark ? "var(--color-ink)" : "var(--color-paper)"}
-      />
+      <rect x={x} y={y} width={CELL} height={CELL} fill={cellBackground(cell)} />
       {cell.kind === "event" && (
         <polygon points={`${x},${y + CELL} ${x + CELL},${y + CELL} ${x},${y}`} fill="var(--color-ink)" />
-      )}
-      {cell.kind === "coins" &&
-        (cell.sign === "gain" ? (
-          <circle cx={center.x} cy={center.y} r={26} fill="var(--color-ink)" />
-        ) : (
-          <circle cx={center.x} cy={center.y} r={24} fill="none" stroke="var(--color-ink)" strokeWidth={9} />
-        ))}
-      {cell.kind === "star" && <path d={starPath(center.x, center.y)} fill="var(--color-ink)" />}
-      {cell.kind === "question" && (
-        <text
-          x={center.x}
-          y={center.y}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={52}
-          fontStyle="italic"
-          fill="var(--color-ink)"
-          fontFamily="var(--font-display)"
-        >
-          {CATEGORY_INITIAL[cell.category]}
-        </text>
       )}
       <rect
         x={x}
@@ -109,12 +97,65 @@ function CellShape({ cell }: { cell: Cell }) {
         strokeWidth={2}
         vectorEffect="non-scaling-stroke"
       />
+    </g>
+  );
+}
+
+/**
+ * Numero e simbolo della casella (stella, monete, iniziale della categoria).
+ * Disegnati dopo scale e serpenti, ognuno con un alone del colore della casella:
+ * dove una scala o un serpente passano sulla casella, restano leggibili.
+ */
+function CellMarks({ cell }: { cell: Cell }) {
+  const { x, y } = cellsBounds([cell.n]);
+  const center = cellCenter(cell.n);
+  const background = cellBackground(cell);
+  const foreground = cellForeground(cell);
+  // L'alone si ottiene dipingendo prima il tratto e poi il riempimento.
+  const halo = {
+    stroke: background,
+    strokeLinejoin: "round",
+    paintOrder: "stroke",
+  } as const;
+
+  return (
+    <g pointerEvents="none">
+      {cell.kind === "coins" &&
+        (cell.sign === "gain" ? (
+          <circle cx={center.x} cy={center.y} r={26} fill={foreground} {...halo} strokeWidth={14} />
+        ) : (
+          <>
+            <circle cx={center.x} cy={center.y} r={24} fill="none" stroke={background} strokeWidth={26} />
+            <circle cx={center.x} cy={center.y} r={24} fill="none" stroke={foreground} strokeWidth={9} />
+          </>
+        ))}
+      {cell.kind === "star" && (
+        <path d={starPath(center.x, center.y)} fill={foreground} {...halo} strokeWidth={14} />
+      )}
+      {cell.kind === "question" && (
+        <text
+          x={center.x}
+          y={center.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={52}
+          fontStyle="italic"
+          fill={foreground}
+          fontFamily="var(--font-display)"
+          {...halo}
+          strokeWidth={10}
+        >
+          {CATEGORY_INITIAL[cell.category]}
+        </text>
+      )}
       <text
         x={x + 18}
         y={y + 38}
         fontSize={22}
-        fill={tooDark ? "var(--color-paper)" : "var(--color-ink)"}
+        fill={foreground}
         fontFamily="var(--font-sans)"
+        {...halo}
+        strokeWidth={12}
       >
         {cell.n}
       </text>
@@ -216,7 +257,7 @@ export function Board({ board, state, names, colors, moves }: BoardProps) {
       <rect x={0} y={0} width={BOARD} height={BOARD} fill="var(--color-paper)" />
 
       {board.cells.map((cell) => (
-        <CellShape key={cell.n} cell={cell} />
+        <CellBase key={cell.n} cell={cell} />
       ))}
 
       <g aria-hidden="true">
@@ -292,6 +333,13 @@ export function Board({ board, state, names, colors, moves }: BoardProps) {
         stroke="var(--color-ink)"
         strokeWidth={13}
       />
+
+      {/* Numeri e simboli: sopra scale e serpenti, con l'alone del colore della casella. */}
+      <g aria-hidden="true">
+        {board.cells.map((cell) => (
+          <CellMarks key={cell.n} cell={cell} />
+        ))}
+      </g>
 
       {/* Pedine: il turno è evidenziato con un anello. */}
       {([1, 2] as Seat[]).map((seat) => {
