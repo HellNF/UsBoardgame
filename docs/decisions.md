@@ -306,6 +306,14 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
       serpenti con l'alone del colore della carta, quindi la stella della casella 15 resta visibile e la scala
       8→26 non è stata spostata.
 - [ ] Revisione delle ~150 domande (task F3-04).
+- [ ] Carte di gioco per due schermi: `CardPanel` è ancora quella della hot seat e mostra a entrambi i comandi di
+      tutti e due i posti (chi guarda vede il campo di risposta dell'altro). Il server rifiuta comunque le azioni
+      non proprie, quindi è un problema di chiarezza, non di sicurezza: va passato il posto di chi guarda.
+- [ ] Presenza non protetta: chi conosce l'id di una stanza può iscriversi al suo canale e vedere la presenza
+      (i dati di gioco no, li filtra RLS). Si chiude con i canali privati e RLS su `realtime.messages`.
+- [ ] `pnpm db:start` non arriva in fondo: il container dei log (`vector`) non diventa "healthy". Per ora si parte
+      con `pnpm exec supabase start -x vector,logflare`; da decidere se spegnere `[analytics]` in `config.toml`.
+- [ ] Il diario mostra l'id della domanda invece del testo, e registra anche le monete a zero.
 - [ ] Valori esatti di verde bosco e ocra (proposta in `globals.css`, da validare accanto alla reference).
 - [ ] Tentativi di accesso: il contatore del ritardo è in memoria del processo (D-50); se il sito diventasse
       pubblico va spostato su Postgres (una tabella di tentativi per stanza).
@@ -401,3 +409,28 @@ della funzione (Vercel) ogni istanza conta per sé: è un ostacolo all'automazio
 _Perché:_ per due giocatori la password della stanza è il vero controllo, e una tabella di tentativi nel database
 sarebbe un'altra scrittura da gestire per un guadagno nullo; se un giorno il sito diventasse pubblico andrà
 spostato su Postgres (riga in "Ancora aperte").
+
+---
+
+## Verifica in locale col database (2026-09-17)
+
+### D-51 · Il tempo reale vuole il token della sessione, passato a mano
+
+**Derivata, dalla verifica in locale.** Prima di `channel.subscribe()` bisogna chiamare
+`await supabase.realtime.setAuth()`. Senza, il canale si collega con la sola publishable key: la **presenza**
+funziona, ma i `postgres_changes` non arrivano, perché `anon` non ha nessun privilegio sulle tabelle e RLS non
+consegna niente. Il caso normale è proprio quello rotto: la sessione anonima si crea nella pagina di accesso e in
+tutte le pagine successive arriva dal cookie, senza nessun evento di autenticazione che passi il token al canale.
+_Perché:_ è un guasto silenzioso — nessun errore in console, il canale risulta `SUBSCRIBED` e la presenza si vede,
+quindi sembra tutto collegato mentre la schermata dell'altro resta ferma. Chi tocca
+`src/features/presence/use-room-realtime.ts` non deve togliere quella chiamata.
+
+### D-52 · Conflitto di versione: la funzione SQL "ritorna null" come riga di campi nulli
+
+**Derivata, dalla verifica in locale.** `apply_game_action` fa `return null` quando la versione non combacia, ma
+PostgREST non consegna `null`: manda la riga composita di `public.games` **con tutti i campi a `null`**. Il
+conflitto si riconosce quindi da `row.version === null`, non dall'assenza dell'oggetto. La route delle azioni
+cattura inoltre le eccezioni e risponde 500 **con un messaggio**: un 500 dal corpo vuoto non dà al client niente da
+mostrare.
+_Perché:_ con il controllo sbagliato il secondo di due clic simultanei riceveva un 500 vuoto invece del `409` con
+lo stato fresco, e la UI non si riallineava — cioè proprio il caso per cui esiste la concorrenza ottimistica (D-23).

@@ -7,8 +7,9 @@ del proprietario, con Supabase locale in Docker.
 
 1. Avvia Docker Desktop.
 2. `pnpm install`
-3. `pnpm db:start` — alla prima esecuzione scarica le immagini (alcuni minuti). Stampa URL, publishable key e
-   secret key.
+3. `pnpm db:start` — alla prima esecuzione scarica le immagini (una decina di minuti). Stampa URL, publishable key
+   e secret key. I servizi dei log sono spenti in `supabase/config.toml` (`[analytics] enabled = false`): con essi
+   accesi l'avvio falliva perché il container `vector` non diventa "healthy".
 4. `cp .env.example .env.local` e incolla i valori.
 
 ## Verifica di un branch
@@ -26,7 +27,8 @@ pnpm dev
 
 - Studio di Supabase (tabelle, log, SQL): http://127.0.0.1:54323
 - Due giocatori: una finestra normale e una in incognito (sessioni anonime separate).
-- Stanza di prova: `pnpm room:create` (quando il task F0-03 esiste).
+- Stanza di prova: `pnpm room:create --code COPPIA42 --name1 Leo --name2 Marta` (la password si scrive a
+  terminale). **Senza** `--` prima delle opzioni: con pnpm 11 il separatore arriva allo script e lo fa fallire.
 
 Se tutto torna: segna i task `[x]` nella roadmap, fai il merge del branch in `main` e pusha.
 Se qualcosa non va: annota il problema sotto la voce del Registro (`**Esito:** …`) così l'agente può correggerlo.
@@ -233,7 +235,16 @@ test puri. Le voci seguono l'ordine di lettura: prima la base, poi le azioni, po
 8. Incolla `supabase/tests/rls.sql` nel SQL editor ed eseguilo: attesi i NOTICE `ok: …` di ogni controllo e nessun
    ERROR. Lo script chiude con ROLLBACK, quindi non lascia righe.
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker). La migrazione si applica su database vuoto e il seed entra
+(150 domande, 17 sfide, 1 tabellone). Controllato in `psql`: RLS attiva su tutte e dieci le tabelle, una policy per
+ognuna e **nessuna** su `rooms`; `anon` non ha alcun privilegio, `authenticated` solo `select` e mai su `rooms`;
+`apply_game_action` è `security definer` ed eseguibile solo da `service_role`; `replica identity full` e
+pubblicazione realtime su `games`, `game_events`, `players`. `pnpm db:types` genera 517 righe (con
+`apply_game_action`) e il file è ora committato.
+**Intoppo da sapere:** `pnpm db:start` è fallito al primo avvio perché il container dei log (`supabase_vector`) non
+diventa "healthy" e la CLI ferma tutto (`LegacyHealthCheckTimeoutError`). Il giro funzionante è
+`pnpm exec supabase start -x vector,logflare`; in alternativa `[analytics] enabled = false` in
+`supabase/config.toml`. Da decidere quale delle due mettere nel comando di `package.json`.
 
 ### F0-03 · `pnpm room:create`
 
@@ -248,7 +259,12 @@ test puri. Le voci seguono l'ordine di lettura: prima la base, poi le azioni, po
 6. `pnpm room:create -- --code COPPIA42 --name1 A --name2 B --pawn1 fox --pawn2 fox` → rifiuta pedine o colori
    uguali **prima** di chiedere la password.
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker): crea la stanza e i due posti, la password è chiesta a
+terminale e salvata come hash scrypt; `--help` e gli argomenti sbagliati stampano l'uso.
+**Due difetti:** (1) l'invocazione scritta nell'aiuto — `pnpm room:create -- --code …` — **non funziona** con pnpm
+11.25: il `--` arriva allo script e risponde "Argomento inatteso". Va scritta senza `--`
+(`pnpm room:create --code COPPIA42 --name1 Leo --name2 Marta`): correggere il messaggio di aiuto e i documenti.
+(2) la password digitata resta visibile a terminale mentre si scrive.
 
 ### F0-04 · Accesso alla stanza, posto legato al browser, uscita
 
@@ -268,7 +284,10 @@ test puri. Le voci seguono l'ordine di lettura: prima la base, poi le azioni, po
 7. `supabase/tests/rls.sql` nel SQL editor: tutte le voci `ok:` (in particolare `rooms` non leggibile e
    `sheet_answers` solo la propria).
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker) con due sessioni anonime distinte: i due posti
+entrano e restano separati (`player_sessions` con due utenti diversi). Password sbagliata → 401 con ritardo
+crescente misurato: 0,6 s → 1,0 s → 1,8 s → 3,4 s. Codice inesistente → stesso messaggio e tempo simile.
+`POST /api/rooms/leave` cancella la riga della sessione e da quel momento il client non vede più nulla.
 
 ### F0-05 · F2-02 · Lobby con i dati veri
 
@@ -283,7 +302,13 @@ test puri. Le voci seguono l'ordine di lettura: prima la base, poi le azioni, po
    `select id, status, created_at from public.games order by created_at;` → la vecchia resta con stato `abandoned`.
 7. Indicatore "l'altro è collegato": compare quando l'altra finestra è aperta e sparisce chiudendola (F2-04).
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker) in Chrome: stanza, posto, presenza, fase
+("Prima le schede"), avviso di scheda incompleta con «Gioca lo stesso» e «Vai alla scheda», impostazioni della
+serata (disposizione, categorie di sfida, durata massima) e i due posti con pedina, colore e stato di pronto.
+Il passaggio pronto + pronto → `sheets` → «Gioca lo stesso» → `playing` funziona.
+**Da sistemare:** il passaggio non è atomico. `ready` si legge, si modifica e si riscrive senza controllo di
+versione, e `startGame` chiude con `.single()`: con due clic su «pronto» quasi simultanei si può restare in lobby
+con entrambi pronti, oppure il secondo prende un 500.
 
 ### F2-01 · Azione di gioco, versione e conflitto (`409`)
 
@@ -308,7 +333,14 @@ test puri. Le voci seguono l'ordine di lettura: prima la base, poi le azioni, po
 6. Le due righe di `game_events` dell'azione sono in Studio: `select id, version, seat, type from public.game_events
 order by id desc limit 10;` → una riga per evento, con `seat` giusto (null per gli eventi di partita).
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker) chiamando le route vere. Identità: un posto che
+manda un'azione dell'altro → **403**; nel turno dell'altro → **422** con lo stato fresco; tiro regolare → **200**
+con eventi e carta pescata dal catalogo vero.
+**Difetto trovato e corretto:** due azioni simultanee con la stessa versione davano **200 e 500 (corpo vuoto)**
+invece di 200 e 409. `apply_game_action` in conflitto ritorna NULL, ma PostgREST consegna la riga composita **con
+tutti i campi a `null`**: il controllo `if (!row)` non scattava mai e `parseGameState(null)` sollevava un'eccezione.
+Corretto in `src/server/game/apply-action.ts` (il conflitto si riconosce da `row.version === null`) e nella route,
+che ora cattura le eccezioni e risponde con un messaggio. Riprovato: **200 e 409 con lo stato fresco**.
 
 ### F2-03 · Riconnessione alla fase salvata
 
@@ -322,7 +354,16 @@ order by id desc limit 10;` → una riga per evento, con `seat` giusto (null per
 4. Spegni il wi-fi per qualche secondo e riaccendilo: la schermata resta usabile e al primo aggiornamento Realtime
    torna allineata (lo stato non vive mai solo nel browser).
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker) in Chrome: con una carta aperta, ricaricando la
+pagina torna la stessa carta (lo stato sta nel database, non nel browser).
+**Difetto grave trovato e corretto:** i `postgres_changes` non arrivavano mai a una pagina appena caricata. La
+sessione viene ripresa dal cookie e nessun evento di autenticazione la passa al canale, quindi il tempo reale si
+collegava come `anon`: RLS non consegnava nessuna riga e la schermata dell'altro restava ferma (la presenza invece
+funzionava, quindi il guasto era silenzioso). Riprodotto anche fuori dal browser. Corretto in
+`src/features/presence/use-room-realtime.ts` con `await supabase.realtime.setAuth()` **prima** di `subscribe`.
+Riprovato in Chrome: la carta pescata dall'altro posto compare senza ricaricare.
+Aggiunta anche una guardia in `online-table.tsx`: una riga più vecchia di quella mostrata non riporta indietro il
+tabellone.
 
 ### F2-04 · Presence e `last_seen_at`
 
@@ -332,7 +373,12 @@ order by id desc limit 10;` → una riga per evento, con `seat` giusto (null per
    quel `last_seen_at` si aggiorna (è il battito "lento": la presenza viva è il canale Realtime).
 4. Con la partita in corso l'indicatore c'è anche nel gioco (in alto, accanto al turno).
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker): collegando il secondo posto l'indicatore passa da
+«L'altro non è collegato» a «L'altro è collegato» senza ricaricare, e torna indietro quando l'altro chiude.
+**Da sapere:** la presenza **non** è protetta da RLS. Un client di un'altra stanza che conosca l'id della stanza può
+iscriversi al canale `room:<id>`, vedere la presenza e annunciarsi. I dati di gioco invece non passano: provato con
+una sessione di un'altra stanza, che non ha ricevuto nessuna riga di `games` né di `game_events` mentre l'altro
+posto le riceveva tutte. Per chiudere anche la presenza servono i canali privati con RLS su `realtime.messages`.
 
 ### F3-01 · Pesca delle domande: registro e niente ripetizioni
 
@@ -349,7 +395,13 @@ order by id desc limit 10;` → una riga per evento, con `seat` giusto (null per
 6. Le domande ritirate non escono: `update public.questions set active = false where id = '<una domanda>';` → non
    compare più in partita (e in Studio non è più visibile dal client). Rimettila `active = true` alla fine.
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker): le domande escono dal catalogo vero e il registro
+`used_questions` si scrive nella stessa transazione dell'azione, per posto per le "quanto mi conosci" e con `seat`
+nullo per le aperte. Nessuna riga doppia (controllo per stanza, posto e domanda). Escono solo le domande a cui
+l'altro ha risposto nella scheda (D-28): con cinque risposte messe a mano, la domanda a scelta multipla pescata era
+una di quelle.
+**Non provato dal vivo:** l'esaurimento del mazzo e l'azzeramento del registro (troppe partite per farlo a mano);
+restano coperti dai test di `src/server/game/question-draw.test.ts`.
 
 ### F3-02 · Scheda: salvataggio automatico e segretezza
 
@@ -366,7 +418,12 @@ seat = 1);` → cresce con le risposte date (una riga per domanda, mai due).
 5. Le domande aperte non stanno nella scheda (non compaiono in pagina) e le risposte a scelta multipla accettate
    sono solo quelle fra le opzioni: se dal browser mandi un testo inventato, la route risponde `400`.
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker) in Chrome: la pagina mostra "5 di 40 risposte",
+l'avviso di scheda incompleta, i blocchi per categoria e l'etichetta «privata, la vede solo chi la compila».
+Premendo un'opzione la risposta finisce subito nel database (`tastes-002` → «Montagna»).
+**Segretezza confermata dal vivo:** la risposta della scheda dell'altro non compare in nessuna risposta HTTP delle
+azioni né in nessun evento salvato (cercata la stringa esatta in entrambi: zero risultati). Al motore arriva solo il
+verdetto: in `checkMultipleChoice` il confronto avviene dentro una chiusura lato server.
 
 ### F3-05 · `pnpm content:push`
 
@@ -377,7 +434,8 @@ seat = 1);` → cresce con le risposte date (una riga per domanda, mai due).
 3. Il push non tocca le partite: `select count(*) from public.games;` e `select count(*) from public.sheet_answers;`
    restano quelli di prima.
 
-**Esito:**
+**Esito:** **non verificato:** serve un progetto Supabase remoto, che non esiste ancora (task F0-06). In locale lo script si
+ferma con il messaggio sulle variabili mancanti, che è il comportamento giusto. Resta `[L]`.
 
 ### F5-06 · Diario e archivio
 
@@ -390,7 +448,11 @@ seat = 1);` → cresce con le risposte date (una riga per domanda, mai due).
 4. La partita conclusa non blocca la serata successiva: "Nuova serata" dalla lobby crea una partita nuova e
    l'archivio continua a elencare le vecchie.
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker) in Chrome: «Momenti della serata» racconta gli eventi
+in ordine e «Partite passate» mostra data, vincitore, stelle e monete dei due posti.
+**Due cose da sistemare:** il diario scrive «Domanda deep-004», cioè l'**id** invece del testo della domanda (per un
+ricordo da rileggere non va); e compare una voce «+0 monete», che non è un momento della serata. Le concordanze
+(«+1 moneta» invece di «+1 monete») le ho corrette io.
 
 ### Prima di chiudere un pacchetto · `/dev/scenari` e `/dev/hotseat` restano vivi
 
@@ -400,4 +462,15 @@ seat = 1);` → cresce con le risposte date (una riga per domanda, mai due).
 3. Questo controllo va rifatto **prima di chiudere ogni pacchetto**: le pagine di sviluppo devono continuare a
    funzionare anche dopo il collegamento a Supabase (F0-05, F2-01, F3-01 non le toccano, ma i componenti sì).
 
-**Esito:**
+**Esito:** verificato il 2026-09-17 (Opus, con Docker): entrambe le pagine funzionano ancora con il
+pacchetto D dentro, e `pnpm check` (26 file, 269 prove) e `pnpm build` restano verdi.
+
+### Nota · come si prova in due senza due browser (2026-09-17)
+
+Per la verifica del pacchetto D il secondo giocatore è stato fatto **via HTTP**: una sessione anonima creata con la
+libreria vera (`@supabase/ssr`, così il cookie ha il formato che il server si aspetta) e poi le stesse route
+dell'applicazione. Così i due posti sono davvero due utenti diversi, e in più si possono mandare due azioni
+simultanee per provare il `409`. Per il tempo reale è stato usato un secondo client `@supabase/supabase-js` con il
+token del posto. Gli script stanno fuori dal repository (cartella di lavoro della sessione), non sono codice del
+progetto: se servono di nuovo si riscrivono in mezz'ora, o si aprono semplicemente due finestre del browser, una in
+incognito.
