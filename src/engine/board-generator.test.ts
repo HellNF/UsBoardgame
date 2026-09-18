@@ -9,10 +9,12 @@ import {
   RULES,
   cellToCoord,
   crossedCells,
+  elementAngle,
   fitsBudget,
   generateBoard,
   isBorderCell,
   measureReadability,
+  rowOf,
   validateBoard,
   type BoardLayout,
   type CellKind,
@@ -154,22 +156,21 @@ describe("generateBoard: le decorazioni e D-65", () => {
   it("non si decora mai una casella di bordo: la cornice si mangia il margine", () => {
     for (const seed of SEEDS) {
       const board = generate(seed);
-      expect(board.decorations.length).toBeGreaterThan(0);
       for (const decoration of board.decorations) {
         for (const cell of decoration.cells) expect(isBorderCell(cell)).toBe(false);
       }
     }
   });
 
-  it("le decorazioni sono al massimo quattro, una per forma, e almeno una", () => {
+  it("le decorazioni sono al massimo quattro, una per forma", () => {
     for (const seed of SEEDS) {
       const decorations = generate(seed).decorations;
-      expect(decorations.length).toBeGreaterThan(0);
       expect(decorations.length).toBeLessThanOrEqual(DECORATION_SHAPES.length);
+      for (const decoration of decorations) expect(decoration.cells.length).toBeGreaterThanOrEqual(1);
     }
   });
 
-  it("non si mettono più decorazioni delle caselle decorabili (la regola viene prima del numero)", () => {
+  it("si decora ogni volta che una casella decorabile c'è, e mai più di quelle (la regola prima del numero)", () => {
     for (const seed of SEEDS) {
       const board = generate(seed);
       const crossed = crossedCells(board);
@@ -178,11 +179,12 @@ describe("generateBoard: le decorazioni e D-65", () => {
       );
       const decorated = board.decorations.flatMap((decoration) => decoration.cells);
       // Le caselle legali sono poche — il bordo ne toglie 36 e le linee ne coprono altre — e questa
-      // è la ragione per cui un tabellone generato può portare due o tre forme invece di quattro.
+      // è la ragione per cui un tabellone generato può portare due o tre forme invece di quattro, o
+      // nessuna (il seme 1, dopo la soglia di inclinazione: le linee ripide coprono più caselle).
       expect(decorated.length).toBeLessThanOrEqual(dec.length);
+      if (dec.length > 0) expect(decorated.length).toBeGreaterThan(0);
       for (const decoration of board.decorations) {
         expect(decoration.cells.length).toBeLessThanOrEqual(2);
-        expect(decoration.cells.length).toBeGreaterThanOrEqual(1);
       }
     }
   });
@@ -222,6 +224,31 @@ describe("generateBoard: quando i disegni non bastano", () => {
       expect(pool[category].length).toBeGreaterThanOrEqual(7);
     }
     expect(pool.stars.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("generateBoard: l'inclinazione minima delle linee (J1)", () => {
+  it("nessuna scala o serpente generato sta sotto la soglia", () => {
+    for (const seed of SEEDS) {
+      const board = generate(seed);
+      for (const { from, to } of [...board.ladders, ...board.snakes]) {
+        expect(elementAngle(from, to)).toBeGreaterThanOrEqual(RULES.board.minAngleDegrees);
+      }
+    }
+  });
+
+  it("la soglia viene dalla classic: la sua linea più piatta è la scala 51→67, 18,4°", () => {
+    const angles = [...classic.ladders, ...classic.snakes].map(({ from, to }) => elementAngle(from, to));
+    expect(Math.min(...angles)).toBeCloseTo(18.43, 1);
+    expect(Math.min(...angles)).toBeGreaterThanOrEqual(RULES.board.minAngleDegrees);
+  });
+
+  it("le scale continuano a salire e i serpenti a scendere di almeno una fila", () => {
+    for (const seed of SEEDS) {
+      const board = generate(seed);
+      for (const { from, to } of board.ladders) expect(rowOf(to)).toBeGreaterThan(rowOf(from));
+      for (const { from, to } of board.snakes) expect(rowOf(to)).toBeLessThan(rowOf(from));
+    }
   });
 });
 

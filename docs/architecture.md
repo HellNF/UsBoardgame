@@ -151,6 +151,12 @@ risposta **data** dal giocatore, che serve all'altro per giudicare.
 - **Stato:** il client si abbona ai cambi di `games` (riga della partita aperta) e di `game_events`.
 - **Presenza:** canale Realtime `room:<roomId>` con Presence (`{ seat, screen }`); alimenta l'indicatore
   "l'altro è connesso" e `players.last_seen_at`.
+- **Canale privato (J3):** il canale è `private: true`, e le policy su `realtime.messages`
+  (`supabase/migrations/20260918180000_private_realtime.sql`) ammettono solo chi ha una sessione in **quella** stanza:
+  prima bastava conoscere l'id della stanza per iscriversi e vedere la presenza (i dati di gioco no, li filtrava già
+  la RLS delle tabelle). Sul canale passano **anche** le mosse e gli eventi, quindi la policy va provata con due
+  sessioni vere: se è troppo stretta non si perde la presenza, si ferma la partita a distanza (Registro J3 di
+  [local-testing.md](local-testing.md)).
 - **Riconnessione:** al caricamento di qualsiasi pagina della stanza il client legge la partita aperta
   (`status in lobby | sheets | playing`) e va alla schermata della fase. Nessuno stato importante vive solo nel browser.
 - **Stato della serata** (`games.status`): `lobby` → `sheets` (se una scheda è incompleta) → `playing` → `finished`.

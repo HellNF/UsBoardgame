@@ -1259,12 +1259,143 @@ quella regola, scritta nello script.
 
 ### Note su come sono state fatte queste prove
 
-- **I numeri dei semi da 1 a 20 (prima e dopo)** sono misurati con la stessa formula del modulo
-  (`cellsAlongPath` con l'inchiostro intero, casella non ritirata) sul generatore **di `main`** e su quello nuovo:
-  il script temporaneo non è rimasto nel repository, ma la misura è nel modulo (`measureReadability`) e i numeri
-  sono nel log del pacchetto I.
+- **I numeri dei semi da 1 a 20 (prima e dopo)** sono misurati con la stessa formula del modulo (`cellsAlongPath`
+  con l'inchiostro intero, casella non ritirata) sul generatore **di `main`** e su quello nuovo: lo script
+  temporaneo non è rimasto nel repository, ma la misura è nel modulo (`measureReadability`) e i numeri sono nel log
+  del pacchetto I.
 - **Il tetto impossibile** (0 incroci, 0 linee) è la prova che il generatore si ferma **dicendo** a quanto e con
   che tetto: è un caso che non si vede in pagina, solo nei test.
 - **Il congelamento** è stato provato per davvero prima di consegnarlo: congelati tre semi di prova, guardati in
   `/dev/disposizioni` (con `pnpm check` verde sul file nuovo, `prettier --check` pulito, zero messaggi in console
   all'idratazione), poi cancellati e l'elenco rigenerato — nel branch non è congelata nessuna disposizione.
+
+## Registro · Pacchetto J (l'inclinazione minima, un tabellone pubblicato non cambia più, il canale privato) — branch `hermes/j-integrita`
+
+Due cose da sapere prima di iniziare:
+
+- **J1 e J2 si verificano senza Docker** (`pnpm dev` per J1, il terminale per J2).
+- **J3 ha bisogno di Docker e Supabase** (due sessioni vere) ed è la voce che conta: la migrazione nuova
+  `20260918180000_private_realtime.sql` va applicata con `pnpm db:reset` (o `supabase migration up`), e il canale
+  della partita passa dalle policy. Il task resta `[L]` finché non l'hai provato tu.
+
+### J1 · L'inclinazione minima delle linee (F7-02)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/disposizioni>.
+2. In ogni riepilogo c'è la riga **Inclinazione**: è la linea **più piatta** del tabellone, in gradi
+   sull'orizzontale, con la soglia accanto.
+3. Atteso: **≥ 18° su tutti i tabelloni** (sui semi 1-4 la più piatta sta fra 18,4° e 26,6°), con la spunta ✓. Prima
+   di questo pacchetto il seme 1 aveva una scala a 8,1° e il minimo assoluto era 6,3°.
+4. **Guarda i tabelloni** (Registro I2, stesso posto): le scale che salgono di una sola fila — quelle che si
+   leggevano come sbarre orizzontali — non ci sono più. Quello lo giudichi tu.
+5. Nessun seme resta corto: su 200 semi sempre 7 scale e 6 serpenti (è la stessa cosa che dice la riga Scale e
+   Serpenti del riepilogo).
+6. `npx vitest run src/engine/board-geometry.test.ts src/engine/board-generator.test.ts` → verdi (fra le prove:
+   «nessuna scala o serpente generato sta sotto la soglia» e la `classic`, che sta a 18,4° sulla scala 51→67).
+
+**Esito:** verificato il 2026-09-18 (Opus), con una misura mia indipendente su 200 semi:
+**zero** linee sotto soglia su 2600, minima **18,4°** su tutte, e nessun seme che si ferma sotto 7 scale e 6
+serpenti. La soglia di `RULES.board.minAngleDegrees` combacia con quella che avevo misurato sulla `classic`
+(la scala 51→67 è il caso limite). `elementAngle` è la misura giusta: l'angolo fra i centri delle due caselle,
+cioè quello che si vede, non la lunghezza della linea.
+
+Sul costo dichiarato — le linee più ripide coprono più caselle, quindi restano meno caselle decorabili — la
+decisione è mia e la soglia **resta 18°**: un tabellone si legge per le sue linee, non per le decorazioni, e sui
+200 semi tre o più decorazioni ci stanno in **185**. Quando scelgo i semi da congelare scarto quelli poveri: il
+seme 1, che ne ha zero, semplicemente non lo scelgo. La correzione di prova dichiarata («se una casella decorabile
+c'è, si decora», al posto di «almeno una») è quella giusta, perché è la proprietà del meccanismo e non del caso.
+
+### J2 · Un tabellone pubblicato non si riscrive (F3-05)
+
+Si prova in locale, contro il database di Docker: qui il rischio da vedere è che lo script si fermi **prima** di
+scrivere.
+
+1. `pnpm db:start` e `pnpm db:reset` (il database locale riceve i contenuti dal seed), poi `pnpm content:push`.
+2. Atteso: **non si ferma** e stampa `Tabelloni: 1 già identici · nessun tabellone nuovo · nessuno riscritto.`
+3. Ora rompi apposta il tabellone locale: in `src/content/boards/classic.ts` cambia una decorazione (per esempio il
+   collo da `{ shape: "hill", cells: [46] }` a `cells: [47]`), e rilancia `pnpm content:push`.
+4. Atteso: **esce con codice 3** (non 0) e stampa il messaggio: `Tabelloni già pubblicati con un layout diverso da
+quello locale: • classic (Classico)`, la regola e le due strade. **Niente è stato scritto**: il database ha ancora
+   il tabellone di prima (ricontrollalo in Studio: `select id, name from public.boards` — una riga sola, e le
+   decorazioni sono ancora quelle vecchie).
+5. Prova la scappatoia: `pnpm content:push -- --force` (il `--` **serve**: `pnpm content:push --force` non arriva
+   allo script, pnpm si tiene i flag). Atteso: `Riscritto con --force: classic` e `1 riscritti`. Ora in Studio la
+   decorazione è quella nuova.
+6. Rimetti a posto la `classic` (`git checkout src/content/boards/classic.ts`) e rilancia `pnpm content:push`: si
+   ferma di nuovo (adesso il database ha la versione rotta) — è il comportamento giusto: sono **due id diversi per
+   contenuto**, e la regola dice che non si sceglie da sola quale delle due vince. Per riallineare:
+   `pnpm content:push -- --force` una volta.
+7. `npx vitest run scripts/lib` → verdi: la sequenza è provata con un client finto (un tabellone cambiato ferma
+   tutto **prima** di ogni scrittura; `--force` va fino in fondo; un errore di lettura non scrive).
+
+**Esito:** verificato il 2026-09-18 (Opus) **sul database locale**, e il guard ha fatto una cosa meglio di
+quanto chiesto: si è fermato da solo, con uscita 3, nominando `classic` — perché `supabase/seed.sql` era rimasto
+indietro rispetto al file dopo che avevo spostato le decorazioni. Cioè ha trovato una disallineatura vera che non
+sapevo di avere, che è esattamente il suo mestiere. Il messaggio dice l'id, la regola e le due strade, e si legge.
+
+Poi `pnpm content:seed` (rigenerato `seed.sql`, committato), `pnpm db:reset`, e di nuovo `pnpm content:push`:
+«1 già identici · nessun tabellone nuovo · nessuno riscritto». Quindi funzionano entrambe le strade, il fermo e il
+passaggio pulito, e il confronto su JSON canonico regge — un confronto testuale avrebbe detto «diverso» anche
+quando le due copie coincidono.
+
+**Il remoto resta da riallineare** e ho scelto la strada 1 (ripubblicare una volta con `-- --force`): nessuna
+serata è stata giocata, quindi non c'è storia da proteggere, e `classic-2` costerebbe churn per difenderla.
+Si fa quando si torna sul remoto, prima della prima partita vera: da quel momento la finestra è chiusa.
+
+### J3 · Il canale della stanza è privato (F2-03, F2-04) — la voce che conta
+
+Serve Docker, Supabase locale e **due sessioni vere** (una finestra normale e una in incognito).
+
+1. `pnpm db:start`, `pnpm db:reset` (applica la migrazione nuova), `pnpm dev`.
+2. Crea una stanza: `pnpm room:create --code COPPIA42 --name1 Leo --name2 Marta`, poi apri
+   `http://localhost:3000/r/COPPIA42` nelle due finestre e accedi ai due posti.
+3. **Se funziona** (è quello che mi aspetto): in lobby l'indicatore **«l'altro è connesso»** si accende in tutte e
+   due le finestre; avviate la partita e le mosse compaiono nell'altra finestra **come prima** (l'azione di uno
+   arriva all'altro in meno di un secondo: è il controllo «Sincronia» qui sopra). Anche la scheda, il diario e il
+   rientro a metà partita si comportano come prima.
+4. **Se la policy è troppo stretta** (il caso da riconoscere in un minuto): l'indicatore resta **spento** in tutte e
+   due le finestre _anche se l'altra è aperta_, e in partita **le mosse non arrivano**: la finestra che agisce vede
+   il proprio risultato dopo la risposta della API, l'altra resta **ferma** — nessun salto della pedina, nessuna
+   carta. In console compare l'errore del canale (`CHANNEL_ERROR`, oppure un `Forbidden`/`Unauthorized` su
+   `realtime`); nell'applicazione è la variabile `connected` che non diventa mai `true`.
+   Distinzione rapida: **se la partita si muove ma l'indicatore è spento è la presenza; se non si muove niente è la
+   policy del canale** (le mosse passano dallo stesso canale della presenza).
+5. **Se invece non cambia niente** (un estraneo entra lo stesso): il canale privato da solo non basta se
+   l'interruttore **«Allow public access»** di Realtime Settings è acceso. In locale non ho trovato un equivalente
+   in `config.toml`; sul **progetto remoto** va spento a mano in dashboard (Realtime → Settings), come l'accesso
+   anonimo: è un'impostazione, non una migrazione. Da fare quando pubblichi su Vercel.
+6. Per tornare indietro in un minuto: `drop policy "realtime: la propria stanza (ascolto)" on realtime.messages;` e
+   `drop policy "realtime: la propria stanza (invio)" on realtime.messages;` (SQL editor di Studio) e
+   `private: false` in `src/features/presence/use-room-realtime.ts`.
+
+**Esito:** verificato **in parte** il 2026-09-18 (Opus). Quello che si può controllare senza due sessioni è a
+posto: la migrazione `20260918180000_private_realtime.sql` si applica in un `pnpm db:reset` pulito insieme alle
+altre tre, nel database ci sono le **due policy** su `realtime.messages` («la propria stanza (ascolto)» in SELECT
+e «(invio)» in INSERT), l'helper `public.current_room_id()` esiste ed è `security definer`, e il client apre il
+canale con `private: true` senza mandare nulla in più.
+
+**Non verificato, ed è la parte che conta:** che le mosse continuino ad arrivare da un posto all'altro. Serve la
+prova a due sessioni descritta qui sopra, e va fatta **prima della prima serata vera**: il canale privato è lo
+stesso che porta `postgres_changes` di `games` e `game_events`, quindi una policy troppo stretta non spegne il
+pallino della presenza — ferma la partita a distanza. Hermes ha scritto bene come distinguere i due casi in un
+minuto, ed è quello da usare.
+
+Resta anche l'interruttore **«Allow public access»** di Realtime Settings sul progetto remoto, da spegnere a mano
+dal dashboard: finché è acceso un canale non privato con lo stesso topic resta raggiungibile, e la chiusura è a
+metà. Non è una migrazione e non lo può fare un agente.
+
+### Note su come sono state fatte queste prove
+
+- **I numeri di J1 (prima e dopo** su 20 e 200 semi) sono misurati con lo stesso script autosufficiente su due
+  alberi: `git worktree add /tmp/jprima aeeed06` per il generatore di `main`, e il codice nuovo. L'angolo è
+  `atan2(file, colonne)` fra i **centri** delle due caselle, la stessa formula di `elementAngle`. Lo script
+  temporaneo non è rimasto nel repository.
+- **J2 non si può provare da qui**: serve Supabase (Docker) e le variabili. Da qui ho provato solo che lo script
+  senza `.env.local` **esce prima di toccare il database** (`Variabili Supabase mancanti`, uscita 2) e che la
+  sequenza, con un client finto, si comporta come deve.
+- **J3 non si può provare da qui affatto** (RLS e Realtime): la migrazione è scritta secondo la documentazione
+  Supabase (Realtime Authorization: `realtime.topic()`, `realtime.messages.extension`, RLS già attiva su
+  `realtime.messages`) e le due policy sono reversibili. Il resto lo vedi tu con due sessioni vere, e il punto 4 qui
+  sopra dice come distinguere «troppo stretta» da «non ho visto niente».
+- **Una cosa trovata usando lo script di I3** (non corretta, è una riga se la vuoi): `pnpm board:freeze 5 --pippo`
+  crea una disposizione chiamata «--pippo» (il file `pippo.ts`). Non è un problema di sicurezza, ma un nome che
+  comincia con `-` è quasi sempre un flag digitato male: si può rifiutare quando lo chiedi.

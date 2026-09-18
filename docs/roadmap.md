@@ -61,6 +61,9 @@ Dopo la fase 3: **prima serata giocabile**.
   a zero righe, scrittura diretta e `apply_game_action` dal client rifiutate.
   Restano: la stanza vera (`pnpm room:create` dal Terminale, serve un terminale vero per la password), il
   progetto Vercel con le tre variabili, e il deploy di prova. Vedi la voce «Due ambienti» del Registro.
+  **Da riallineare (pacchetto J, D-78):** il tabellone sul remoto è quello pubblicato **prima** che le decorazioni
+  della `classic` fossero spostate, quindi non è più uguale al file locale. Il primo `pnpm content:push` con la
+  regola nuova si fermerà su `classic` e dirà cosa fare; la sequenza proposta è nel log del pacchetto J.
 
 ## Fase 1 · Tabellone — _partita completa su un solo schermo_
 
@@ -124,6 +127,9 @@ Dopo la fase 3: **prima serata giocabile**.
 - [x] **F2-04** Presence: indicatore dell'altro giocatore e `last_seen_at`.
       Nota: Presence sul canale della stanza (`{ seat, screen }`) alimenta l'indicatore in lobby e in partita;
       `players.last_seen_at` si aggiorna a ogni caricamento di pagina della stanza (lato server).
+      **Dal pacchetto J (D-79)** il canale è **privato**: si iscrive solo chi ha una sessione in quella stanza (due
+      policy su `realtime.messages`), e sul canale passano anche mosse ed eventi — per questo la verifica in locale
+      con due sessioni vere guarda tutte e due le cose (voce J3 del Registro).
 - [~] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
   Nota: dal pacchetto E il percorso della pedina è **cella per cella** (`src/features/board/route.ts`: un saltello
   per ogni casella, gradino per gradino sulle scale, lungo il corpo sui serpenti) e gli eventi di spostamento si
@@ -173,6 +179,9 @@ Dopo la fase 3: **prima serata giocabile**.
       progetto remoto: Registro, voce F3-05.
       Chiuso il 2026-09-18: eseguito sul progetto remoto vero, 150 domande, 17 sfide e 1 tabellone pubblicati e
       ricontati sul database. Da rilanciare a ogni revisione dei testi.
+      **Dal pacchetto J (D-78)** i **tabelloni** non si riscrivono più: prima di scrivere, lo script confronta il
+      layout locale con quello pubblicato e, se è diverso, si ferma (uscita 3) dicendo quale id è cambiato; le due
+      strade sono un id nuovo oppure `pnpm content:push -- --force`. Domande e sfide restano come prima.
 
 ## Fase 4 · Sfide — _tutte le categorie tranne l'emulatore_
 
@@ -307,23 +316,26 @@ Dopo la fase 3: **prima serata giocabile**.
 
 - [ ] **F7-01** Emulatore DS nel browser per sfide a punteggio (file caricato solo in locale); elenco giochi da decidere.
 - [L] **F7-02** Generatore casuale di disposizioni da seme.
-  Nota: `generateBoard(seed)` in `src/engine/board-generator.ts` (pacchetto H, rifinito nel pacchetto I). Funzione
+  Nota: `generateBoard(seed)` in `src/engine/board-generator.ts` (pacchetto H, rifinito nei pacchetti I e J). Funzione
   **pura**: il caso viene solo dal seme (generatore congruenziale a interi, niente `Math.random`), quindi stesso seme
   = stessa disposizione anche su macchine diverse. Rispetta i vincoli di [rules.md § Tabellone](rules.md#tabellone)
   — la distribuzione di tipi della `classic`, 7 scale e 6 serpenti, nessun estremo condiviso, niente sulla 1 e sulla
   100, al massimo 5 file, nessuna testa di serpente fra la 2 e la 12 — la regola delle decorazioni di D-65 con
   **tutti e tre** i vincoli (casella libera, che nulla attraversa, **non di bordo**: `crossedCells` più
-  `isBorderCell`) e il **budget di leggibilità** di D-72 (`RULES.board.maxCrossings`, `maxLinesPerCell`), applicato
-  **mentre piazza**: si aggiunge una scala o un serpente alla volta e si rifiuta il candidato che porterebbe il
-  tabellone oltre il tetto. Con un tetto impossibile il generatore lancia dicendo a quanto si è fermato e con che
-  tetto, invece di restituire un tabellone che il validatore rifiuterebbe. Gli id delle illustrazioni arrivano da
-  fuori (`illustrationsByCategory()` del registro); se non bastano, lancia dicendo quanti ne mancano. Le decorazioni
-  sono quattro forme, ma la regola viene prima del numero: su 200 semi sono quattro in 130 casi, tre in 43, due in
-  21, una in 5, nessuna in uno. Le leggibilità misurata non supera mai il tetto: incroci 6, linee per casella 2.
+  `isBorderCell`) e due vincoli **misurati**, tutti e due applicati **mentre pesca i candidati** (non scartando
+  tabelloni finiti): il **budget di leggibilità** di D-72 (`RULES.board.maxCrossings`, `maxLinesPerCell`) e
+  l'**inclinazione minima** di 18° sull'orizzontale (J1, `RULES.board.minAngleDegrees`, `elementAngle` in
+  `board-geometry.ts` — il numero viene dalla `classic`, la scala 51→67). Con un tetto impossibile il generatore
+  lancia dicendo a quanto si è fermato e con che tetto, invece di restituire un tabellone che il validatore
+  rifiuterebbe. Gli id delle illustrazioni arrivano da fuori (`illustrationsByCategory()` del registro); se non
+  bastano, lancia dicendo quanti ne mancano. Le decorazioni sono quattro forme, ma la regola viene prima del numero:
+  su 200 semi sono quattro in 146 casi, tre in 33, due in 12, una in 7, nessuna in 2. La leggibilità misurata non
+  supera mai il tetto (incroci 6, linee per casella 2) e l'inclinazione non scende mai sotto la soglia (minimo
+  18,4°, contro 6,3° prima di J1); **nessun seme resta corto**: 7 scale e 6 serpenti sempre, su 200 semi.
   Si guarda in **`/dev/disposizioni`** (pagina di sviluppo, 404 in produzione): quattro semi fissi più quello che si
-  scrive nel campo, disegnati dal componente vero della partita, con i numeri di incroci e linee per tabellone e il
-  conto della `classic` per confronto. 36 prove fra `board-generator.test.ts`, `board-readability.test.ts` e
-  `board-geometry.test.ts`. La metà meccanica di F7-03 (congelare un seme) è fatta.
+  scrive nel campo, disegnati dal componente vero della partita, con i numeri di incroci, linee e inclinazione per
+  tabellone e il conto della `classic` per confronto. 43 prove fra `board-generator.test.ts`,
+  `board-readability.test.ts` e `board-geometry.test.ts`. La metà meccanica di F7-03 (congelare un seme) è fatta.
 - [~] **F7-03** Altre disposizioni predefinite.
   Nota: la **metà meccanica** è fatta (pacchetto I). `pnpm board:freeze <seme> <nome>` scrive
   `src/content/boards/<nome>.ts` con la disposizione **intera come dato** — caselle, scale, serpenti, decorazioni —
