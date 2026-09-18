@@ -262,13 +262,19 @@ Dopo la fase 3: **prima serata giocabile**.
   caselle domanda hanno 35 disegni diversi. Dal pacchetto G le **decorazioni** multi-cella sono forme piene
   (`disc`, `crescent`, `hill`, `diamond` in `board.tsx`, scelte in `src/content/boards/classic.ts`, D-65) e i tre
   disegni che a 48 px non si leggevano (`deep-mirror`, `deep-roots`, `memories-phone`) sono rifatti. Verificato in
-  locale il 2026-09-18: le decorazioni sono state spostate sulle caselle 46 e 90 (sulla 23 e sulla 26 si fondono
-  con il serpente e con la scala) e il rombo è pieno e non più un anello; `memories-phone` ora si legge.
+  locale il 2026-09-18: il rombo è pieno e non più un anello, e `memories-phone` ora si legge. Le decorazioni sono
+  **tre** (colle 46, disco 64, rombo 84): D-65 ha tre vincoli — niente caselle attraversate, niente caselle di
+  bordo (la cornice se le mangia), forme piene e mai anelli — e in `classic` restano solo quattro caselle legali,
+  che `crossedCells` calcola invece di scegliere a occhio.
   **Dal pacchetto H** i due disegni che restavano aperti sono rifatti (H1): `deep-mirror` è uno specchio a mano visto
   di fronte — ovale più alto che largo, cornice spessa, manico corto e largo, e dentro una fascia diagonale di carta
   su fondo di inchiostro, con 4 unità di carta fra cornice e fondo — e `deep-roots` è terra in sezione, con la terra
   come campitura piena e quattro radici asimmetriche che si assottigliano a gradini. Resta il suo occhio: la voce H1
   del Registro dice cosa guardare a 48 px.
+  `deep-roots` è stato poi rifatto una terza volta in verifica: la campitura rettangolare si leggeva come un
+  **tavolo**, e ne esce con la terra ridotta a una zolla sottile e le radici che si **biforcano** — nessuna gamba si
+  biforca, ed è quello il segno. Le due regole generali che ne restano sono in design.md: l'angolo in alto a
+  sinistra del disegno resta libero (lì morde l'alone del numero) e a 48 px conta la silhouette, non il dettaglio.
 - [L] **F6-03** Scale e serpenti definitivi (montanti e pioli, corpo a macchie, testa con occhio).
   Nota: fatti nel pacchetto F (macchie, occhio, lingua, coda che si assottiglia; scale con montanti e pioli
   bianchi bordati di nero), con `geometry.test.ts`. Verificato in locale il 2026-09-18: si leggono anche sopra le
