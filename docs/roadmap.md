@@ -53,7 +53,14 @@ Dopo la fase 3: **prima serata giocabile**.
       Dal pacchetto D: la pagina `/` usa `AccessContainer` (sessione anonima, `POST /api/rooms/join`, scelta del posto)
       e rimanda alla schermata della fase; la lobby di `/r/[code]/lobby` è collegata ai dati veri (F2-02, F2-04) e
       l'indicatore "l'altro è collegato" viene da Presence.
-- [ ] **F0-06** Progetto Supabase remoto + progetto Vercel + variabili; deploy di prova.
+- [~] **F0-06** Progetto Supabase remoto + progetto Vercel + variabili; deploy di prova.
+  Fatto il 2026-09-18: progetto Supabase `wgrctbgxsxtkuleavrwz` (eu-west-1, Postgres 17), le tre migrazioni
+  applicate con `pnpm supabase db push`, contenuti pubblicati con `pnpm content:push` (150 domande, 17 sfide,
+  1 tabellone), accesso anonimo attivato a mano dal dashboard (è spento di default: senza, nessuno entra) e
+  **RLS verificata sul remoto** con una sessione anonima vera — `rooms` non leggibile, le altre tabelle filtrate
+  a zero righe, scrittura diretta e `apply_game_action` dal client rifiutate.
+  Restano: la stanza vera (`pnpm room:create` dal Terminale, serve un terminale vero per la password), il
+  progetto Vercel con le tre variabili, e il deploy di prova. Vedi la voce «Due ambienti» del Registro.
 
 ## Fase 1 · Tabellone — _partita completa su un solo schermo_
 

@@ -12,6 +12,31 @@ del proprietario, con Supabase locale in Docker.
    accesi l'avvio falliva perché il container `vector` non diventa "healthy".
 4. `cp .env.example .env.local` e incolla i valori.
 
+## Due ambienti: Docker e il progetto remoto
+
+Da quando esiste il progetto Supabase remoto (F0-06) ci sono due database, e l'applicazione guarda **uno solo**:
+quello che sta in `.env.local`. Per non sbagliare, i due insiemi di valori vivono in due file accanto (tutti e
+due ignorati da git, come `.env*`):
+
+| file          | dove punta                                   |
+| ------------- | -------------------------------------------- |
+| `.env.locale` | Docker su `127.0.0.1:54321`                  |
+| `.env.remoto` | il progetto Supabase remoto                  |
+| `.env.local`  | **quello in uso**: è la copia di uno dei due |
+
+- Si passa da un ambiente all'altro con `cp .env.locale .env.local` (o `.env.remoto`). Per le prove locali si
+  resta sempre su `.env.locale`: `pnpm db:reset`, `db:types` e il Registro parlano di Docker.
+- Se `.env.locale` va perso lo si rigenera da `pnpm supabase status -o env` (le chiavi nuove sono `PUBLISHABLE_KEY`
+  e `SECRET_KEY`, non le vecchie `ANON_KEY`/`SERVICE_ROLE_KEY`).
+- Gli script da terminale (`content:push`, `room:create`) leggono `.env.local`, **ma le variabili già impostate
+  nell'ambiente vincono**: per lanciarne uno sul remoto senza toccare niente basta
+  `set -a; source .env.remoto; set +a; pnpm content:push`.
+- **Mai** incollare `SUPABASE_SECRET_KEY` o un token `sbp_…` fuori da questi file: la prima scavalca RLS, il
+  secondo vale per tutto l'account. Le due variabili `NEXT_PUBLIC_…` invece sono pubbliche per progetto — finiscono
+  nel bundle del browser.
+- Due cose del remoto non arrivano dalle migrazioni e vanno fatte a mano sul dashboard: l'**accesso anonimo**
+  (spento di default: senza, nessuno entra) e, quando ci sarà, le variabili su Vercel.
+
 ## Verifica di un branch
 
 ```bash
