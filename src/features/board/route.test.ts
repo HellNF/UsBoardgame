@@ -61,3 +61,33 @@ describe("percorso della pedina", () => {
     expect(route.points).toHaveLength(4);
   });
 });
+
+describe("che movimento è", () => {
+  // Il tipo di movimento serve alla pedina per sapere **come deformarsi**: saltellando cede
+  // sulle gambe atterrando, su un serpente si inclina, su una scala non fa niente. I punti da
+  // soli non lo dicono, perché una salita e una camminata sono entrambe un elenco di punti.
+  it("fermo quando non si muove", () => {
+    expect(pawnRouteFor(classic, 12, 12).kind).toBe("fermo");
+  });
+
+  it("saltelli su un movimento normale", () => {
+    expect(pawnRouteFor(classic, 4, 8).kind).toBe("saltelli");
+  });
+
+  it("scala quando la casella ne ha una che porta lì", () => {
+    const ladder = classic.ladders[0]!;
+    expect(pawnRouteFor(classic, ladder.from, ladder.to).kind).toBe("scala");
+  });
+
+  it("serpente quando la casella ne ha uno che porta lì", () => {
+    const snake = classic.snakes[0]!;
+    expect(pawnRouteFor(classic, snake.from, snake.to).kind).toBe("serpente");
+  });
+
+  it("i punti dei saltelli si alternano aria e atterraggio, che è quello su cui si allinea la deformazione", () => {
+    // Due caselle attraversate: quattro punti, uno a mezz'aria e uno al centro, due volte.
+    const route = pawnRouteFor(classic, 4, 6);
+    expect(route.points).toHaveLength(4);
+    expect(route.kind).toBe("saltelli");
+  });
+});

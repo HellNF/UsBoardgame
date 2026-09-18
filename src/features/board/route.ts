@@ -20,6 +20,13 @@ const SLIDE_SECONDS = 0.9;
 /** Quanto si alza la pedina al culmine di un saltello, in unità SVG. */
 const HOP_HEIGHT = 26;
 
+/**
+ * Che movimento è. I punti da soli non lo dicono — una salita e una camminata sono entrambe
+ * un elenco di punti — e chi disegna la pedina ne ha bisogno: il personaggio si schiaccia
+ * atterrando **solo** se sta saltellando, mentre su un serpente scivola.
+ */
+export type PawnRouteKind = "fermo" | "saltelli" | "scala" | "serpente";
+
 export type PawnRoute = {
   /** Casella di partenza e punti che la pedina segue, in ordine. */
   from: CellNumber;
@@ -27,6 +34,7 @@ export type PawnRoute = {
   points: Point[];
   /** Durata dell'animazione in secondi (0 = nessun movimento). */
   duration: number;
+  kind: PawnRouteKind;
 };
 
 /** Le caselle attraversate fra due caselle, in ordine: una per volta, avanti o indietro. */
@@ -74,7 +82,7 @@ function climbPoints(from: CellNumber, to: CellNumber): Point[] {
  * la scala si sale gradino per gradino, il serpente si scende seguendo il corpo.
  */
 export function pawnRouteFor(board: BoardLayout, from: CellNumber, to: CellNumber): PawnRoute {
-  if (from === to) return { from, to, points: [cellCenter(from)], duration: 0 };
+  if (from === to) return { from, to, points: [cellCenter(from)], duration: 0, kind: "fermo" };
 
   const ladder = ladderAt(board, from);
   if (ladder && ladder.to === to) {
@@ -84,12 +92,13 @@ export function pawnRouteFor(board: BoardLayout, from: CellNumber, to: CellNumbe
       to,
       points,
       duration: Math.max(CLIMB_SECONDS, points.length * CLIMB_SECONDS),
+      kind: "scala",
     };
   }
 
   const snake = snakeAt(board, from);
   if (snake && snake.to === to) {
-    return { from, to, points: snakeGeometry(from, to).points, duration: SLIDE_SECONDS };
+    return { from, to, points: snakeGeometry(from, to).points, duration: SLIDE_SECONDS, kind: "serpente" };
   }
 
   // Movimento normale: un saltello per ogni casella attraversata.
@@ -99,6 +108,7 @@ export function pawnRouteFor(board: BoardLayout, from: CellNumber, to: CellNumbe
     to,
     points: points.length > 0 ? points : [cellCenter(to)],
     duration: Math.max(HOP_SECONDS, cellsBetween(from, to).length * HOP_SECONDS),
+    kind: "saltelli",
   };
 }
 

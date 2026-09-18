@@ -1045,3 +1045,36 @@ seed fa fallire `pnpm check`, invece di lasciare la disallineatura in giro fino 
 
 È la stessa idea di D-78, spostata **prima**: il guard controlla al momento della pubblicazione, questo al
 momento del commit.
+
+## I personaggi
+
+### D-82 · I personaggi sono disegni SVG, e Rive resta la rifinitura
+
+**Decisa dal proprietario.** I sei animali sono **disegni SVG del progetto** (`src/art/characters`), animati con
+Motion, e non file Rive. Il contratto di Rive non si tocca: i wrapper di `src/art/rive` restano, la sonda `HEAD`
+resta, e se un giorno un `.riv` compare in `public/rive/` prende il posto del disegno senza toccare una riga
+(D-14, D-68).
+
+_Perché:_ sul tabellone non c'era **nessun personaggio** — la pedina era un disco col numero del posto, e le sei
+teste disegnate nel pacchetto G stavano solo in `/dev/art`. Il problema non era che i personaggi non si
+muovessero: era che non c'erano. E i `.riv` non li può fare un agente (D-14): dodici artboard riggati a mano — sei
+pedine e sei mascotte con cinque umori — sono una serata o due del proprietario nell'editor, cioè la serata che
+non passa a giocare. Disegnarli in SVG li mette in gioco subito e non chiude nessuna porta: i pezzi hanno un nome
+(`data-parte`), che è la forma che serve per importarli in Rive se quella serata arriverà.
+
+Tre conseguenze registrate perché sono regole, non gusti:
+
+1. **I personaggi sono a colori**, con la tavolozza delle illustrazioni (D-75). Con sei animali la prima cosa che
+   li separa è la tinta; in solo inchiostro restava la sola sagoma, e a 34 px non basta. Cambia anche il contratto
+   dei `.riv`, che prima chiedeva bianco e nero: un `mascots.riv` in bianco e nero ora sarebbe un personaggio
+   **diverso** da quello che si vede in partita (docs/design.md § Animazioni Rive).
+2. **Il colore del giocatore resta fuori dal disegno**, nella pedana sotto i piedi, col numero del posto scritto
+   dentro. Lo stesso animale lo può scegliere chiunque dei due.
+3. **L'alone del turno si è spostato a terra.** Era un anello attorno alla pedina, e attorno a un disco di raggio
+   32 girava pulito; attorno a un personaggio alto e stretto da una parte taglia e dall'altra esce dalla cornice
+   del tabellone. Sulla casella 1, dove le pedine partono entrambe e che sta in un angolo, si vedeva subito.
+
+_Come si verifica:_ `/dev/personaggi` mostra i sei animali alle due misure vere (34 px con la pedana, anche sopra
+una casella nera; 110 px con i cinque umori). Le prove di `src/art/characters/characters.test.ts` tengono il
+registro completo, l'ordine degli umori (che è il contratto di `mascots.riv`) e il fatto che **ogni umore cambi
+qualcosa**: la civetta, che non ha bocca, usciva felice identica a neutra.

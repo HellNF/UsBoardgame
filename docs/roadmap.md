@@ -303,6 +303,10 @@ Dopo la fase 3: **prima serata giocabile**.
   in partita il segnaposto di ogni wrapper è il **componente attuale** della schermata (il cerchio SVG con il numero
   del posto, il dado a pallini, la carta con il suo ingresso di Motion), e il campione di `/dev/art` resta nella
   pagina. Resta da verificare col primo `.riv` esportato che il file prenda il posto del segnaposto.
+  **Dal 18/09/2026 (D-82) la pedina è il personaggio**: i sei animali sono disegni SVG in `src/art/characters`, a
+  colori, con la pedana del colore del giocatore e il numero del posto, e si muovono con Motion (schiacciata
+  atterrando, inclinazione sul serpente, respiro a chi tocca). Il disco col numero resta solo per una pedina senza
+  animale. `pawns.riv` non serve più per giocare: se arriva, prende il posto del disegno.
 - [L] **F6-05** Rive: wrapper e segnaposto per mascotte (6) e finale; file `.riv` creati a mano nell'editor Rive.
   Nota: come F6-04 — stesso pacchetto, stessi wrapper, stessa voce del Registro; i segnaposto si guardano tutti
   insieme in fondo a `/dev/art`.
@@ -313,6 +317,9 @@ Dopo la fase 3: **prima serata giocabile**.
   pedina, movimento dagli stessi `GameEvent[]` delle animazioni, mai unico canale di un'informazione (D-74, mappa
   evento → mood compresa) — ma non è collegata: senza `mascots.riv` il segnaposto occuperebbe spazio senza fare
   niente.
+  **Dal 18/09/2026 (D-82) il motivo è caduto**: i sei personaggi esistono come disegni SVG con i **cinque umori**
+  (`src/art/characters`, campionario in `/dev/personaggi`), quindi la mascotte nel pannello avrebbe qualcosa da
+  fare. Resta da collegare: la mappa evento → umore di D-74 e il posto nel pannello di destra.
 - [ ] **F6-06** Suoni opzionali.
 
 ## Fase 7 · Extra — _versione rifinita_

@@ -122,6 +122,54 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 | Buffe (`funny`)      | occhio, spazzolino, dado, mela, calzino, banana, sveglia                           |
 | Stelle (`stars`)     | stella, ammasso di stelle, stella grande                                           |
 
+## Personaggi (`src/art/characters`)
+
+I sei animali — volpe, coniglio, gatto, orso, rana, civetta — sono **un disegno solo per due usi**: la pedina sul
+tabellone e la mascotte del pannello. Un file per animale, la faccia e la cornice in comune
+([D-82](decisions.md#d-82--i-personaggi-sono-disegni-svg-e-rive-resta-la-rifinitura)).
+
+**Le misure che contano sono due**, e sono quelle di `/dev/personaggi`: **34 px**, cioè quanto è alta una pedina in
+una casella (una casella è 48 px), e **110 px**, la mascotte nel pannello. Un dettaglio che non si vede a 34 px non
+esiste: è la stessa regola delle illustrazioni.
+
+- **Tinte:** la tavolozza `--color-art-*` delle illustrazioni, una tinta dominante per animale perché la prima cosa
+  che separa sei animali è il colore: volpe terracotta, coniglio sabbia, gatto blu notte, orso marrone, rana verde,
+  civetta blu. La seconda è la **sagoma**: tonda (orso), a punte (gatto, volpe), larga e bassa (rana), alta di
+  orecchie (coniglio), con due dischi chiari in faccia (civetta).
+- **Il colore del giocatore sta fuori dal disegno**, nella **pedana** su cui il personaggio sta, con il numero del
+  posto scritto dentro. Non è un vezzo: lo stesso animale lo può scegliere chiunque dei due, quindi rosso o blu nel
+  disegno sarebbero una bugia. È anche l'informazione che resta leggibile quando la pedina è alta 34 px.
+- **Alone di carta**, come scale e serpenti: il disegno ripetuto sotto, tutto color carta e col tratto grosso. Serve
+  perché la pedina finisce anche sopra una casella sfida, che è nera, e il gatto — blu notte — lì si perderebbe.
+  Sta **sotto la pedana**, altrimenti il tratto chiaro morde il colore del giocatore.
+- **I pezzi hanno un nome** (`data-parte`: `coda`, `corpo`, `orecchie`, `testa`, `faccia`, `pedana`): sono quelli che
+  si muovono uno rispetto all'altro, e sono i nomi che servirebbero per riggare lo stesso disegno in Rive. Un
+  attributo e non un `id`, perché il disegno compare due volte (l'alone) e due `id` uguali non si fanno.
+- **Cinque umori** (`neutro`, `felice`, `sorpreso`, `triste`, `esultante`): l'animale dice **dove** stanno occhi e
+  bocca, l'umore **come** sono fatti. Due regole imparate renderizzando: il sopracciglio della tristezza va **alto
+  dalla parte del naso** (al contrario è il cipiglio, e sei animali arrabbiati non sono sei animali tristi), e un
+  umore che non cambia niente non esiste — la civetta, che non ha bocca, usciva felice identica a neutra. Lo
+  controlla una prova, non l'occhio.
+
+**Come si muovono** (il movimento sta in `src/features/board/pawn.tsx`, il percorso in `route.ts`):
+
+| Movimento  | Cosa fa il personaggio                                        |
+| ---------- | ------------------------------------------------------------- |
+| saltelli   | si allunga in aria e cede sulle gambe atterrando (`scaleY`)   |
+| serpente   | non salta: si inclina da una parte e dall'altra               |
+| scala      | niente — a otto gradini in un secondo e mezzo è un tremolio   |
+| fermo, suo turno | respira: due unità in due secondi e mezzo               |
+
+- **L'arco del salto non lo fa il personaggio**: c'è già nel percorso, che mette un punto a mezz'aria fra due
+  caselle. Il personaggio aggiunge il **peso**, che è un'altra cosa. I fotogrammi della deformazione sono allineati
+  ai punti del percorso, quindi non c'è nessun tempo da indovinare.
+- Le deformazioni girano intorno ai **piedi** (`PAWN_FEET_Y`), non al centro: intorno al centro la pedina affonda
+  nel tabellone invece di cedere sulle gambe.
+- **L'alone del turno sta a terra**, sotto i piedi, e non è più un anello attorno alla pedina: attorno a un
+  personaggio alto e stretto un cerchio da una parte taglia e dall'altra esce dalla cornice — sulla casella 1, che è
+  in un angolo e dove le pedine partono entrambe, si vedeva subito.
+- Il respiro si spegne con `prefers-reduced-motion`: è l'unica animazione ciclica del tabellone.
+
 ## Animazioni Rive (`public/rive`, `src/art/rive`)
 
 Rive per i personaggi; tutto ciò che dipende dalla disposizione resta in SVG + Motion
@@ -133,8 +181,8 @@ segnaposto, basandosi sulla tabella qui sotto.
 
 | File          | Artboard            | State machine | Input                                                                  | Segnaposto                          |
 | ------------- | ------------------- | ------------- | ---------------------------------------------------------------------- | ----------------------------------- |
-| `mascots.riv` | una per forma (6)   | `Mood`        | `mood` (number: 0 neutro, 1 felice, 2 sorpreso, 3 triste, 4 esultante) | SVG statico della forma             |
-| `pawns.riv`   | una per animale (6) | `Pawn`        | trigger `hop`, `celebrate`; bool `active`                              | cerchio colorato + numero del posto |
+| `mascots.riv` | una per forma (6)   | `Mood`        | `mood` (number: 0 neutro, 1 felice, 2 sorpreso, 3 triste, 4 esultante) | il personaggio SVG col suo umore    |
+| `pawns.riv`   | una per animale (6) | `Pawn`        | trigger `hop`, `celebrate`; bool `active`                              | il personaggio SVG (§ Personaggi)   |
 | `dice.riv`    | `Die`               | `Roll`        | trigger `roll`; number `value` 1-6                                     | numero in un quadrato               |
 | `card.riv`    | `Card`              | `Flip`        | trigger `flip`                                                         | transizione CSS                     |
 | `finale.riv`  | `Finale`            | `Reveal`      | trigger `revealStar`; number `winner` (0 pareggio, 1, 2)               | testo                               |
@@ -159,7 +207,9 @@ segnaposto, basandosi sulla tabella qui sotto.
   file resta il segnaposto e in console compare la riga di rete del 404 (una per file, non un errore dell'app). Sul
   server la risposta è sempre «non c'è», così il primo disegno è il segnaposto e non si disallinea l'idratazione.
   I segnaposto si guardano tutti insieme in fondo a `/dev/art`.
-- Solo bianco e nero dentro i `.riv`; il colore del giocatore lo aggiunge il wrapper (gettone sotto la testa).
+- Dentro i `.riv` vale la tavolozza dei personaggi (`--color-art-*`), non il solo bianco e nero: da quando i
+  disegni sono a colori un `.riv` in bianco e nero sarebbe un personaggio diverso da quello che si vede oggi. Il
+  colore **del giocatore** resta fuori dal file, come nel disegno: lo mette il wrapper (pedana sotto i piedi).
 - Rispettare `prefers-reduced-motion`: nessuna animazione ciclica, transizioni ridotte.
 
 ## Animazioni in codice (Motion)

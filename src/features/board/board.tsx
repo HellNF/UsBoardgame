@@ -16,7 +16,7 @@ import {
   type Seat,
 } from "@/engine";
 import { BOARD, CELL, cellCenter, cellsBounds, ladderGeometry, snakeGeometry } from "./geometry";
-import { Pawn } from "./pawn";
+import { PAWN_FEET_Y, Pawn } from "./pawn";
 import { pawnRouteFor, type PawnRoute as PawnRouteForBoard } from "./route";
 
 /**
@@ -228,13 +228,13 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
     const move = moves?.[seat];
     if (move) return pawnRouteFor(board, move.from, move.to);
     const cell = state.players[seat].position;
-    return { from: cell, to: cell, points: [cellCenter(cell)], duration: 0 };
+    return { from: cell, to: cell, points: [cellCenter(cell)], duration: 0, kind: "fermo" };
   };
   const routes: Record<Seat, PawnRoute> = { 1: route(1), 2: route(2) };
   // Sulla stessa casella le due pedine si coprirebbero: si scostano di lato.
   if (state.players[1].position === state.players[2].position) {
     for (const seat of [1, 2] as Seat[]) {
-      const shift = seat === 1 ? -20 : 20;
+      const shift = seat === 1 ? -14 : 14;
       routes[seat] = {
         ...routes[seat],
         points: routes[seat].points.map((point) => ({ x: point.x + shift, y: point.y })),
@@ -396,20 +396,43 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
         const active = state.turn === seat && state.phase !== "finished";
         return (
           <g key={seat}>
-            <motion.circle
+            {/*
+              L'alone del turno sta **a terra, sotto i piedi**, e non è più un anello attorno
+              alla pedina. Con il disco colorato di prima un cerchio di raggio 44 gli girava
+              intorno pulito; il personaggio è alto e stretto, quindi quel cerchio da una parte
+              lo tagliava e dall'altra usciva dalla cornice del tabellone — sulla casella 1, che
+              è in un angolo e dove le pedine partono entrambe, si vedeva subito.
+            */}
+            <motion.ellipse
               initial={false}
-              animate={{ cx: end.x, cy: end.y, opacity: active ? 0.35 : 0, r: active ? 44 : 34 }}
+              animate={{
+                cx: end.x,
+                cy: end.y + PAWN_FEET_Y,
+                opacity: active ? 0.4 : 0,
+                rx: active ? 32 : 26,
+                ry: active ? 10 : 8,
+              }}
               transition={{ duration: route.duration || 0.2 }}
-              fill="none"
-              stroke={`var(--color-player-${colors[seat]})`}
-              strokeWidth={7}
+              fill={`var(--color-player-${colors[seat]})`}
+              stroke="none"
             />
             <motion.g
               initial={false}
               animate={{ x: route.points.map((point) => point.x), y: route.points.map((point) => point.y) }}
               transition={{ duration: route.duration, ease: "easeInOut" }}
             >
-              <Pawn seat={seat} name={names[seat]} color={colors[seat]} animal={pawns?.[seat]} x={0} y={0} />
+              <Pawn
+                seat={seat}
+                name={names[seat]}
+                color={colors[seat]}
+                animal={pawns?.[seat]}
+                x={0}
+                y={0}
+                kind={route.kind}
+                steps={route.points.length}
+                duration={route.duration}
+                active={active}
+              />
             </motion.g>
           </g>
         );
