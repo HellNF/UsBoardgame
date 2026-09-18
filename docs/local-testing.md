@@ -461,8 +461,11 @@ verdetto: in `checkMultipleChoice` il confronto avviene dentro una chiusura lato
 3. Il push non tocca le partite: `select count(*) from public.games;` e `select count(*) from public.sheet_answers;`
    restano quelli di prima.
 
-**Esito:** **non verificato:** serve un progetto Supabase remoto, che non esiste ancora (task F0-06). In locale lo script si
-ferma con il messaggio sulle variabili mancanti, che è il comportamento giusto. Resta `[L]`.
+**Esito:** verificato il 2026-09-18 (Opus) **sul progetto remoto vero**: con le variabili del remoto caricate
+dall'ambiente (`set -a; source .env.remoto; set +a; pnpm content:push`) lo script risponde
+«Pubblicati: 150 domande, 17 sfide, 1 tabelloni in https://…supabase.co» e le tre tabelle sul remoto contengono
+esattamente quelle righe (contate con la chiave segreta). Senza variabili si ferma con il messaggio giusto.
+Da rifare a ogni modifica dei contenuti: è il modo di portare online le domande riviste.
 
 ### F5-06 · Diario e archivio
 

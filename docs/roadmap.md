@@ -166,10 +166,12 @@ Dopo la fase 3: **prima serata giocabile**.
   Nota: 150 domande (30 per categoria: 8 da scheda e 22 aperte; profonde dieci per livello) in
   `src/content/questions/`, con i controlli di forma in `src/content/content.test.ts`. I testi sono una prima
   bozza da rileggere: voce nel Registro di [local-testing.md](local-testing.md).
-- [L] **F3-05** `pnpm content:push` per pubblicare i contenuti in produzione.
-  Nota: `scripts/push-content.ts` fa upsert su `questions`, `challenges` e `boards` con gli stessi id del seed
-  (ripubblicare non duplica e non tocca schede, domande usate né partite). Da eseguire con le variabili del
-  progetto remoto: Registro, voce F3-05.
+- [x] **F3-05** `pnpm content:push` per pubblicare i contenuti in produzione.
+      Nota: `scripts/push-content.ts` fa upsert su `questions`, `challenges` e `boards` con gli stessi id del seed
+      (ripubblicare non duplica e non tocca schede, domande usate né partite). Da eseguire con le variabili del
+      progetto remoto: Registro, voce F3-05.
+      Chiuso il 2026-09-18: eseguito sul progetto remoto vero, 150 domande, 17 sfide e 1 tabellone pubblicati e
+      ricontati sul database. Da rilanciare a ogni revisione dei testi.
 
 ## Fase 4 · Sfide — _tutte le categorie tranne l'emulatore_
 
