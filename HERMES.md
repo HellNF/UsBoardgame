@@ -4,6 +4,23 @@ Sei l'agente che **costruisce** il gioco. Il proprietario del progetto poi **ver
 Supabase. Il tuo obiettivo: portare avanti il più possibile la [roadmap](docs/roadmap.md) in modo che la verifica
 locale trovi codice completo, testato dove possibile e con istruzioni chiare su cosa controllare.
 
+## Chi fa cosa (dal pacchetto I)
+
+Il lavoro è diviso per **tipo**, non solo per ambiente:
+
+| Tu                                                                         | Il proprietario (con Opus)                                           |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| motore, server, route, migrazioni, RLS, tempo reale, wrapper, test, script | illustrazioni SVG, decorazioni, tutto ciò che si giudica guardandolo |
+| **misurare** una cosa visiva (contare incroci, ingombri, caselle legali)   | **decidere i numeri** dopo aver guardato il risultato                |
+
+Quindi: **non disegnare e non ridisegnare illustrazioni**, e non scegliere «quale sta meglio». Cinque pacchetti
+di fila hanno mostrato che il giudizio a 48 px non passa dalla tua parte del tavolo: lo specchio-racchetta, le
+decorazioni fuse con serpente e scala, le radici che sono state prima un omino e poi un tavolo. Il codice che
+**misura** quelle stesse cose invece è venuto giusto al primo colpo (`src/engine/board-geometry.ts`), ed è quello
+che serve: tu costruisci lo strumento e la manopola, i numeri li gira chi guarda.
+
+Se un punto del prompt ti chiede un giudizio visivo, è un errore del prompt: fermati e scrivilo nel rapporto.
+
 ## 0. Leggi prima di scrivere codice
 
 In quest'ordine, per intero:
