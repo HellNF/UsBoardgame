@@ -77,5 +77,5 @@ console.log(
 console.log(`  ${resolve(BOARDS_DIRECTORY, FROZEN_BARREL_FILE)} riscritto (${frozen.slug} aggiunta)`);
 console.log("\nPoi: `pnpm check`, e guardala in /dev/disposizioni (sezione «Disposizioni congelate»).");
 console.log(
-  "Non entra in partita da sola: la lobby offre la `classic` finché non scegli tu quali disposizioni entrano (F7-03).",
+  "Entra in lobby da sola (l'elenco `boards` la mette in fila dopo la `classic`): scegli tu se e quando usarla.",
 );

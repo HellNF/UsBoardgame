@@ -95,6 +95,23 @@ describe("freezeBoard: la disposizione diventa dati", () => {
     expect(a.layout.name).toBe("Prima");
     expect(b.layout.name).toBe("Seconda");
   });
+
+  // K4: `pnpm board:freeze 5 --pippo` congelava una disposizione chiamata «--pippo» (un flag scritto
+  // male) e le sue prove sono finite in `src/content/boards/`.
+  it("rifiuta un nome che comincia con «-»", () => {
+    expect(() => freezeBoard({ seed: 5, name: "--pippo" })).toThrow(/non può cominciare con «-»/);
+    expect(() => freezeBoard({ seed: 5, name: "--pippo" })).toThrow(/flag scritto male/);
+    expect(() => freezeBoard({ seed: 5, name: "-x" })).toThrow(/non può cominciare con «-»/);
+  });
+
+  it("un trattino in mezzo al nome invece va bene", () => {
+    expect(freezeBoard({ seed: 5, name: "Serata d'estate - 2" }).layout.name).toBe("Serata d'estate - 2");
+  });
+
+  it("gli spazi intorno al nome si tagliano, e un nome di soli spazi è vuoto", () => {
+    expect(freezeBoard({ seed: 5, name: "  Con spazi  " }).layout.name).toBe("Con spazi");
+    expect(() => freezeBoard({ seed: 5, name: "   " })).toThrow(/vuoto/);
+  });
 });
 
 describe("il barrel delle disposizioni congelate", () => {
