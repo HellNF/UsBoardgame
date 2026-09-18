@@ -25,7 +25,11 @@ export function ReflexBoard(props: MinigameViewProps) {
 function ReflexLive({ state, seat, onMove, names }: MinigameViewProps & { state: ReflexState }) {
   // Si accende esattamente all'istante del segnale: un conto alla rovescia a intervalli
   // mostrerebbe il segnale con un ritardo a caso (e i riflessi si misurano in decine di ms).
-  const [signalOn, setSignalOn] = useState(() => Date.now() >= Date.parse(state.goAt));
+  //
+  // Parte **sempre** spento, anche se il segnale è già passato: l'orologio non può entrare nel
+  // primo disegno, altrimenti il server e il browser scrivono due cose diverse e React rifà
+  // l'albero (disaccordo di idratazione, D-60). Ci pensa l'effetto qui sotto, subito dopo.
+  const [signalOn, setSignalOn] = useState(false);
 
   const goAt = state.goAt;
   useEffect(() => {

@@ -5,7 +5,8 @@ import { minigameTurn, otherSeat, RULES, SEATS } from "@/engine";
 import type { ActiveCard, MinigameState, Seat } from "@/engine";
 import { plural } from "@/lib/plural";
 import type { CardPanelProps } from "./card-panel";
-import { viewerActs, type Viewer } from "./viewer";
+import { viewerActs, waitingLine, type Viewer } from "./viewer";
+import { useHydrated } from "./use-hydrated";
 import { WaitingRow } from "./waiting-row";
 import { Minigame } from "@/features/minigames/minigame";
 
@@ -67,6 +68,9 @@ export function ChallengeCard({
   // Sfida esterna: si va a giocare fuori e si torna a dichiarare (F4-05). La pausa è della
   // schermata, non della partita: lo stato condiviso resta quello del server.
   const [away, setAway] = useState(false);
+  // Il tempo che manca si scrive solo nel browser (D-60): `now` viene dall'orologio, quindi
+  // sul server vale un secondo diverso e React rifarebbe l'albero (disaccordo di idratazione).
+  const clockReady = useHydrated();
 
   useEffect(() => {
     if (deadlineMs === null || Number.isNaN(deadlineMs) || now < deadlineMs) return;
@@ -106,7 +110,7 @@ export function ChallengeCard({
         </p>
       )}
 
-      {deadlineMs !== null && !Number.isNaN(deadlineMs) && (
+      {clockReady && deadlineMs !== null && !Number.isNaN(deadlineMs) && (
         <p className="font-display text-3xl italic">{formatRemaining(deadlineMs - now)}</p>
       )}
 
@@ -289,7 +293,8 @@ export function ChallengeCard({
           ) : (
             <>
               <Minigame state={minigame} seat={null} onMove={() => {}} names={names} />
-              <WaitingRow text={`Tocca a ${names[seatFor(minigame, viewerSeat, state.turn)]} muovere.`} />
+              {/* La riga di attesa la decide `waitingLine` (D-56): qui non si riscrive a mano. */}
+              <WaitingRow text={waitingLine(state, card, viewerSeat, names) ?? ""} />
             </>
           )}
         </div>
