@@ -2,13 +2,13 @@
 
 import { motion } from "motion/react";
 import { useMemo } from "react";
+import { Illustration } from "@/art/illustrations";
 import {
   type BoardLayout,
   type Cell,
   type CellNumber,
   type GameState,
   type PlayerColor,
-  type QuestionCategory,
   type Seat,
 } from "@/engine";
 import { BOARD, CELL, cellCenter, cellsBounds, ladderGeometry, snakeGeometry } from "./geometry";
@@ -18,24 +18,15 @@ import { pawnRouteFor, type PawnRoute as PawnRouteForBoard } from "./route";
 /**
  * Tabellone SVG (task F1-05, docs/design.md § Tabellone).
  * Un solo `<svg viewBox="0 0 1000 1000">`, a strati dal basso: celle → decorazioni →
- * scale → serpenti → cornice → numeri e simboli delle caselle → pedine.
+ * scale → serpenti → cornice → numeri e illustrazioni delle caselle → pedine.
  *
- * I numeri e i simboli stanno **sopra** scale e serpenti e hanno un alone del colore
- * della casella (docs/design.md § Tabellone): dove una scala o un serpente passano su
- * una casella, il numero e il simbolo restano leggibili.
+ * I numeri e le illustrazioni stanno **sopra** scale e serpenti e hanno un tondo del colore
+ * della casella (docs/design.md § Tabellone): dove una scala o un serpente passano su una
+ * casella, il numero e il disegno restano leggibili.
  *
  * Le forme di scale e serpenti si generano dagli estremi della disposizione, quindi
  * non cambiano mai per lo stesso tabellone.
  */
-
-/** Iniziale del segnaposto delle illustrazioni, per categoria (docs/design.md). */
-const CATEGORY_INITIAL: Record<QuestionCategory, string> = {
-  tastes: "G",
-  memories: "R",
-  future: "F",
-  deep: "P",
-  funny: "B",
-};
 
 /** Percorso di una pedina: casella di partenza e punti da seguire. */
 type PawnRoute = PawnRouteForBoard;
@@ -51,19 +42,6 @@ export type BoardProps = {
    */
   moves?: Partial<Record<Seat, { from: CellNumber; to: CellNumber }>>;
 };
-
-/** Stella disegnata a mano: cinque punte attorno al centro della casella. */
-function starPath(cx: number, cy: number, outer = 34, inner = 14): string {
-  const points: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const radius = i % 2 === 0 ? outer : inner;
-    const angle = (Math.PI / 5) * i - Math.PI / 2;
-    points.push(
-      `${(cx + radius * Math.cos(angle)).toFixed(1)},${(cy + radius * Math.sin(angle)).toFixed(1)}`,
-    );
-  }
-  return `M ${points.join(" L ")} Z`;
-}
 
 /** Fondo della casella: nero per le sfide, carta per tutto il resto. */
 const cellBackground = (cell: Cell): string =>
@@ -101,7 +79,29 @@ function CellBase({ cell }: { cell: Cell }) {
 }
 
 /**
- * Numero e simbolo della casella (stella, monete, iniziale della categoria).
+ * L'illustrazione di una casella, dentro il suo tondo di carta.
+ *
+ * Il tondo è l'alone di A1/A5: sta **sopra** scale e serpenti, così dove una scala o un serpente
+ * passano sulla casella il disegno resta leggibile (docs/design.md § Tabellone). Il numero della
+ * casella si disegna ancora dopo, più in alto di tutto.
+ * Se l'id non è nel registro (`illustrationFor` ritorna `null`) resta solo il numero: una
+ * disposizione nuova non fa sparire il tabellone.
+ */
+function CellIllustration({ cell }: { cell: Cell }) {
+  if (cell.kind !== "question" && cell.kind !== "star") return null;
+
+  const center = cellCenter(cell.n);
+  const size = 68;
+  return (
+    <g className="text-ink">
+      <circle cx={center.x} cy={center.y} r={35} fill={cellBackground(cell)} />
+      <Illustration id={cell.illustration} x={center.x - size / 2} y={center.y - size / 2} size={size} />
+    </g>
+  );
+}
+
+/**
+ * Numero e simbolo della casella (illustrazione, monete).
  * Disegnati dopo scale e serpenti, ognuno con un alone del colore della casella:
  * dove una scala o un serpente passano sulla casella, restano leggibili.
  */
@@ -128,25 +128,7 @@ function CellMarks({ cell }: { cell: Cell }) {
             <circle cx={center.x} cy={center.y} r={24} fill="none" stroke={foreground} strokeWidth={9} />
           </>
         ))}
-      {cell.kind === "star" && (
-        <path d={starPath(center.x, center.y)} fill={foreground} {...halo} strokeWidth={14} />
-      )}
-      {cell.kind === "question" && (
-        <text
-          x={center.x}
-          y={center.y}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={52}
-          fontStyle="italic"
-          fill={foreground}
-          fontFamily="var(--font-display)"
-          {...halo}
-          strokeWidth={10}
-        >
-          {CATEGORY_INITIAL[cell.category]}
-        </text>
-      )}
+      <CellIllustration cell={cell} />
       <text
         x={x + 18}
         y={y + 38}
@@ -245,7 +227,7 @@ export function Board({ board, state, names, colors, moves }: BoardProps) {
         ))}
       </g>
 
-      {/* Scale: montanti spessi, pioli bianchi bordati di nero. */}
+      {/* Scale: due montanti neri e pioli bianchi bordati di nero (docs/design.md). */}
       <g aria-hidden="true">
         {ladders.map((ladder, index) => (
           <g key={index}>
@@ -253,26 +235,36 @@ export function Board({ board, state, names, colors, moves }: BoardProps) {
               d={ladder.rails}
               fill="none"
               stroke="var(--color-ink)"
-              strokeWidth={13}
+              strokeWidth={14}
               strokeLinecap="round"
             />
             {ladder.rungs.map((rung, rungIndex) => (
-              <line
-                key={rungIndex}
-                x1={rung.a.x}
-                y1={rung.a.y}
-                x2={rung.b.x}
-                y2={rung.b.y}
-                stroke="var(--color-ink)"
-                strokeWidth={9}
-                strokeLinecap="round"
-              />
+              <g key={rungIndex}>
+                <line
+                  x1={rung.a.x}
+                  y1={rung.a.y}
+                  x2={rung.b.x}
+                  y2={rung.b.y}
+                  stroke="var(--color-ink)"
+                  strokeWidth={13}
+                  strokeLinecap="round"
+                />
+                <line
+                  x1={rung.a.x}
+                  y1={rung.a.y}
+                  x2={rung.b.x}
+                  y2={rung.b.y}
+                  stroke="var(--color-paper)"
+                  strokeWidth={6}
+                  strokeLinecap="round"
+                />
+              </g>
             ))}
           </g>
         ))}
       </g>
 
-      {/* Serpenti: corpo nero a macchie chiare, testa con occhio. */}
+      {/* Serpenti: corpo nero a macchie chiare, coda assottigliata, testa con un occhio. */}
       <g aria-hidden="true">
         {snakes.map((snake, index) => (
           <g key={index}>
@@ -284,18 +276,43 @@ export function Board({ board, state, names, colors, moves }: BoardProps) {
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            <path
-              d={snake.body}
-              fill="none"
-              stroke="var(--color-paper)"
-              strokeWidth={7}
-              strokeLinecap="round"
-              strokeDasharray="12 30"
-            />
+            {/* Le macchie: una sì e una no, orientate come il corpo in quel punto. */}
+            {snake.spots.map((spot, spotIndex) => (
+              <ellipse
+                key={spotIndex}
+                cx={spot.at.x}
+                cy={spot.at.y}
+                rx={spot.rx}
+                ry={spot.ry}
+                transform={`rotate(${spot.angle.toFixed(1)} ${spot.at.x} ${spot.at.y})`}
+                fill="var(--color-paper)"
+              />
+            ))}
+            {/* La coda si assottiglia: gli ultimi tratti, ognuno più sottile. */}
+            {snake.tail.map((segment, segmentIndex) => (
+              <line
+                key={segmentIndex}
+                x1={segment.from.x}
+                y1={segment.from.y}
+                x2={segment.to.x}
+                y2={segment.to.y}
+                stroke="var(--color-ink)"
+                strokeWidth={segment.width}
+                strokeLinecap="round"
+              />
+            ))}
+            {/* La testa: un occhio solo e la lingua fuori. */}
             <g transform={`translate(${snake.head.x} ${snake.head.y}) rotate(${snake.headAngle})`}>
-              <ellipse rx={30} ry={24} fill="var(--color-ink)" />
-              <circle cx={12} cy={-8} r={5} fill="var(--color-paper)" />
-              <circle cx={-12} cy={-8} r={5} fill="var(--color-paper)" />
+              <ellipse rx={32} ry={25} fill="var(--color-ink)" />
+              <circle cx={8} cy={-9} r={7} fill="var(--color-paper)" />
+              <circle cx={9} cy={-9} r={3.5} fill="var(--color-ink)" />
+              <path
+                d="M-30 0h-12l-5-6M-42 0l-5 6"
+                fill="none"
+                stroke="var(--color-ink)"
+                strokeWidth={4}
+                strokeLinecap="round"
+              />
             </g>
           </g>
         ))}
