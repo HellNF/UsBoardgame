@@ -249,21 +249,23 @@ diventa "healthy" e la CLI ferma tutto (`LegacyHealthCheckTimeoutError`). Il gir
 ### F0-03 · `pnpm room:create`
 
 1. `pnpm room:create` (senza argomenti) → stampa l'uso e non tocca il database.
-2. `pnpm room:create -- --code COPPIA42 --name1 Nicolò --name2 Marta`: chiede la password **due volte**, e mentre
+2. `pnpm room:create --code COPPIA42 --name1 Nicolò --name2 Marta`: chiede la password **due volte**, e mentre
    la scrivi non si vede (l'eco è spento). Atteso: `Stanza COPPIA42 creata (id …)` e i due posti con il loro id.
 3. In Studio: `select code, left(password_hash, 20) from public.rooms;` → l'hash comincia con `scrypt$16384$8$1$`;
    la password in chiaro non compare da nessuna parte.
 4. Rilancia lo stesso comando: atteso `La stanza COPPIA42 esiste già: …` (non nasce una seconda stanza).
 5. In Studio: `select seat, display_name, pawn, color from public.players order by seat;` → due righe, posto 1 e
    posto 2, con pedina e colore scelti.
-6. `pnpm room:create -- --code COPPIA42 --name1 A --name2 B --pawn1 fox --pawn2 fox` → rifiuta pedine o colori
+6. `pnpm room:create --code COPPIA42 --name1 A --name2 B --pawn1 fox --pawn2 fox` → rifiuta pedine o colori
    uguali **prima** di chiedere la password.
 
 **Esito:** verificato il 2026-09-17 (Opus, con Docker): crea la stanza e i due posti, la password è chiesta a
 terminale e salvata come hash scrypt; `--help` e gli argomenti sbagliati stampano l'uso.
 **Due difetti:** (1) l'invocazione scritta nell'aiuto — `pnpm room:create -- --code …` — **non funziona** con pnpm
 11.25: il `--` arriva allo script e risponde "Argomento inatteso". Va scritta senza `--`
-(`pnpm room:create --code COPPIA42 --name1 Leo --name2 Marta`): correggere il messaggio di aiuto e i documenti.
+(`pnpm room:create --code COPPIA42 --name1 Leo --name2 Marta`).
+**Corretto nel pacchetto F:** l'aiuto di `scripts/lib/room-args.ts`, il commento in cima a `scripts/create-room.ts`
+e le due righe di questo Registro sono senza `--`.
 (2) la password digitata resta visibile a terminale mentre si scrive.
 
 ### F0-04 · Accesso alla stanza, posto legato al browser, uscita

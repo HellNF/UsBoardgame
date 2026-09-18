@@ -11,7 +11,10 @@ import { buildRoomRecords, parseRoomArgs, USAGE } from "./lib/room-args";
  * Crea la stanza della coppia (task F0-03): una stanza (codice + password) e i suoi due
  * posti fissi, con nome, pedina e colore. La stanza si crea **una volta sola**.
  *
- *   pnpm room:create -- --code COPPIA42 --name1 Nicolò --name2 Marta
+ *   pnpm room:create --code COPPIA42 --name1 Nicolò --name2 Marta
+ *
+ * Senza `--` prima delle opzioni: con pnpm 11 il separatore arriva allo script e lo fa
+ * fallire con «Argomento inatteso: COPPIA42» (F0-03, Registro di docs/local-testing.md).
  *
  * La password si chiede a terminale, due volte, e non compare mai negli argomenti né
  * nella cronologia della shell. Le variabili di Supabase arrivano da `.env.local`
