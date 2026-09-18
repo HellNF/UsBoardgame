@@ -116,8 +116,10 @@ export function diagnose(run: RealtimeRun): CheckLine[] {
     run.cleanedUp
       ? { label: "pulizia", status: "ok", detail: "stanza usa e getta e righe collegate rimosse" }
       : {
+          // KO e non un avviso: una stanza di prova lasciata indietro sporca il database che
+          // ospita le serate vere, e su un progetto ospitato nessuno se ne accorgerebbe.
           label: "pulizia",
-          status: "warn",
+          status: "fail",
           detail: "qualcosa è rimasto nel database",
           fix: "cancella a mano la stanza e la partita della prova (gli id sono stampati sopra)",
         },

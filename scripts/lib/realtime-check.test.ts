@@ -78,11 +78,12 @@ describe("diagnose: cosa dice la prova a due sessioni", () => {
     expect(lines[0]?.detail).toContain("422");
   });
 
-  it("se la pulizia non è riuscita lo dice, senza far fallire la prova", () => {
-    const lines = diagnose({ ...okRun(), cleanedUp: false });
+  it("se la pulizia non è riuscita la prova fallisce", () => {
+    // Una stanza di prova rimasta nel database non è un dettaglio: su un progetto ospitato
+    // sporca lo stesso database delle serate vere e nessuno se ne accorgerebbe.
     const cleanup = find({ ...okRun(), cleanedUp: false }, "pulizia");
-    expect(cleanup.status).toBe("warn");
-    expect(lines.filter((line) => line.status === "fail")).toHaveLength(0);
+    expect(cleanup.status).toBe("fail");
+    expect(cleanup.fix).toContain("cancella a mano");
   });
 });
 

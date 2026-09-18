@@ -309,15 +309,17 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 - [x] Carte di gioco per due schermi: **chiusa dal pacchetto E** (D-56). `CardPanel` riceve il posto di chi guarda:
       l'altro non vede più il campo di risposta, ma una riga di attesa che dice cosa sta facendo. Il server
       rifiutava già le azioni non proprie (403), quindi era un problema di chiarezza, non di sicurezza.
-- [ ] Presenza non protetta: chi conosce l'id di una stanza può iscriversi al suo canale e vedere la presenza
-      (i dati di gioco no, li filtra RLS). Si chiude con i canali privati e RLS su `realtime.messages`.
-      **Fatto nel codice dal pacchetto J (D-79)**: canale `private: true` e due policy su `realtime.messages` che
-      ammettono solo chi ha una sessione in **quella** stanza. **Non è chiusa**: la verifica in locale con due
-      sessioni vere ora è uno script (`pnpm check:realtime`, pacchetto K: crea una stanza usa e getta, gioca una
-      mossa vera, guarda se arriva all'altro posto, controlla la presenza e che una terza sessione resti fuori,
-      poi pulisce), ma **non è ancora passata**: finché non gira verde sul database e, sul progetto remoto,
-      l'interruttore «Allow public access» di Realtime Settings — un'impostazione del dashboard, non una migrazione
-      — non è spento, la voce resta aperta. Si chiude quando una serata a distanza funziona con il canale privato.
+- [x] **Presenza non protetta** (chi conosceva l'id di una stanza poteva iscriversi al suo canale e vedere la
+      presenza): **chiusa in locale il 2026-09-18**. Canale `private: true` e due policy su `realtime.messages`
+      che ammettono solo chi ha una sessione in **quella** stanza (D-79), e la verifica con due sessioni vere è
+      passata: `pnpm check:realtime` dà 9 ok sul database locale — le mosse arrivano all'altro posto in 378 ms, la
+      presenza si vede nei due sensi, una terza sessione è rifiutata e non vede nessuno nemmeno su un canale
+      pubblico con lo stesso topic. Provati anche i due rossi buttando giù una policy per volta, e la diagnosi
+      distingue «non arriva niente» (la partita) da «arriva ma la presenza no» (la presenza).
+      **Resta un pezzo sul remoto, che non è una migrazione:** l'interruttore «Allow public access» di Realtime
+      Settings va spento a mano dal dashboard, e poi `pnpm check:realtime` va rilanciato con `.env.remoto` — finché
+      è acceso, un canale pubblico con lo stesso topic vede la presenza. È nella lista delle cose da fare prima
+      della prima serata (Registro, voce K1).
 - [x] `pnpm db:start` non arrivava in fondo (il container dei log `vector` non diventa "healthy"):
       **chiusa il 2026-09-17** con `[analytics] enabled = false` in `supabase/config.toml` (commit `d7658fe`).
 - [x] Il diario mostrava l'id della domanda invece del testo e registrava le monete a zero: **chiusa dal pacchetto

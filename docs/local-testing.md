@@ -1446,7 +1446,25 @@ l'ho girata**: su questa macchina non c'è Docker né Supabase, quindi i due res
 produce per quelle due situazioni, non due rossi osservati. La prima volta che gira sul tuo database, questa
 sezione diventa la prova che è.
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus) **con il database vero**, ed è la prova che Hermes non poteva girare:
+`pnpm check:realtime` sul Supabase locale dà **9 ok, uscita 0** — le mosse arrivano al posto che non ha giocato in
+**378 ms**, la presenza si vede nei due sensi, una terza sessione è **rifiutata (CHANNEL_ERROR)** e non vede
+nessuno nemmeno aprendo un canale pubblico con lo stesso topic. La stanza usa e getta viene rimossa.
+
+**Con questo la voce J3 è chiusa**: il canale privato non rompe la partita a distanza, che era la cosa che gate la
+prima serata.
+
+Provati anche i due rossi, buttando giù una policy per volta in locale:
+
+- senza la policy di **lettura**: uscita 1, e **fallisce prima e meglio di come il rapporto prevedeva** — non
+  aspetta i 15 secondi del messaggio che non arriva, il canale non si apre affatto e lo script lo dice subito
+  («Il posto 1 non è entrato nel canale (CHANNEL_ERROR). Con il canale privato questo è già la diagnosi»). La
+  pulizia gira comunque: 3 ok · 1 KO;
+- senza la policy di **invio**: le mosse passano (242 ms) e **solo la presenza** è rossa, con il rimedio che nomina
+  l'`insert` con `extension = 'presence'`. 8 ok · 1 KO.
+
+Quindi la distinzione su cui si regge tutta la diagnosi — «non arriva niente» è la partita, «arriva ma la presenza
+no» è la presenza — funziona sul serio, non solo nel testo.
 
 ### K2 · La scelta del tabellone in lobby
 
@@ -1466,7 +1484,13 @@ Da guardare in due momenti:
    dice: «Il tabellone di questa serata (`<id>`) non è nel database», con il comando per ripubblicare. Prima
    diceva «la partita non è ancora cominciata», che era falso.
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus). L'elenco è `[classic, ...frozenBoards]` filtrato sui tabelloni
+**pubblicati**, e il filtro va tenuto: offrire una disposizione che non è nel database sarebbe una scelta che porta
+a una serata che non si ridisegna. La riga compare solo con più di una scelta, quindi oggi — con la sola classica —
+la lobby è identica a prima. Comparirà da sé quando congelerò le due o tre disposizioni.
+La risposta sul `boardId` sparito è quella giusta e la correzione del messaggio («Il tabellone di questa serata non
+è nel database» invece di «la partita non è ancora cominciata») è un difetto vero trovato da lui: il vecchio testo
+era falso.
 
 ### K3 · `pnpm check:ready` — il controllo prima della serata
 
@@ -1484,7 +1508,14 @@ Cosa guardare:
 - un rosso da provare: spegni il database (`pnpm db:stop`) e rilancia — aspettati una sola riga,
   «Il database non risponde», non un muro di rossi.
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus) sul locale: **9 ok · 1 KO · 4 da controllare a mano**, uscita 1. Il
+KO era giusto — nessuna stanza nel database, perché il `pnpm db:reset` di questa verifica ha cancellato COPPIA42 —
+col rimedio esatto (`pnpm room:create`, che chiede la password a terminale). Le quattro righe `[--]` sono quelle
+che l'API non può sapere e **non sono verdi finte**: le due migrazioni che non lasciano tracce leggibili (il
+`create or replace` di `apply_game_action` e le policy su `realtime.messages`), il canale — che rimanda a
+`check:realtime` — e l'interruttore del dashboard.
+Nota sul nome: `pnpm doctor` non si poteva usare perché è un comando di pnpm, e Hermes l'ha scoperto **eseguendolo**
+invece di supporre. `check:ready` va bene.
 
 ### K4 · Le due guardie
 
@@ -1495,7 +1526,10 @@ check` deve diventare rosso, con il file e il comando da lanciare. È il guard d
    `seed.sql` vecchio era una disallineatura vera, e adesso non può più arrivare fino al database senza che
    nessuno se ne accorga.
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus). Le due guardie fanno quello che dicono, e la seconda è nata da un
+difetto vero: il guard di J2 aveva trovato `seed.sql` indietro per caso, ora un test lo tiene allineato e
+`pnpm check` diventa rosso subito invece di lasciare la disallineatura in giro fino al prossimo push. È la regola
+giusta: se una cosa si è scoperta per fortuna una volta, la volta dopo deve scoprirla una prova.
 
 ### Note su come sono state fatte queste prove
 
