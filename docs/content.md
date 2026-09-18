@@ -48,5 +48,15 @@ Serve un numero sufficiente di carte `snakeFlash` (almeno 6) perché le sfide la
 ## Pubblicare i contenuti
 
 - **Locale:** `pnpm content:seed` (rigenera `supabase/seed.sql`, da committare) e poi `pnpm db:reset`.
-- **Produzione:** `supabase db push` non esegue il seed. Da creare (task F3-05): `pnpm content:push`, che fa
-  upsert dei contenuti sul progetto remoto con la secret key. Gli upsert non cancellano mai righe.
+- **Produzione:** `supabase db push` non esegue il seed. `pnpm content:push` fa upsert dei contenuti sul progetto
+  remoto con la secret key (le variabili da `.env.local`, oppure dall'ambiente: `set -a; source .env.remoto; set +a`).
+  Gli upsert non cancellano mai righe.
+- **Domande e sfide** si ripubblicano liberamente: i testi si correggono, e l'upsert per id è quello che serve.
+- **I tabelloni no (J2):** un tabellone pubblicato è **immutabile**. La riga della partita porta il suo id
+  (`games.settings.boardId`) e il diario di una serata passata lo ridisegna leggendolo da `public.boards`, quindi
+  riscrivere un layout già usato cambierebbe il diario di una partita giocata — è la regola 7 di AGENTS.md («id dei
+  contenuti stabili») estesa ai tabelloni, la stessa che `pnpm board:freeze` applica rifiutando di sovrascrivere.
+  Prima di scrivere qualcosa, `content:push` confronta ogni tabellone locale con quello pubblicato e, se è diverso,
+  **si ferma** dicendo quale id è cambiato: il tabellone nuovo prende un **id nuovo** (`classic-2`) e il vecchio
+  resta dov'è. La scappatoia esplicita, per chi sa cosa sta riscrivendo, è `pnpm content:push -- --force` (il `--`
+  serve: pnpm si tiene i flag e non li passa allo script).

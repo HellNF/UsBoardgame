@@ -5,6 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 import { boards } from "../src/content/boards";
 import { challenges } from "../src/content/challenges";
 import { questions } from "../src/content/questions";
+import { boardChangeWarning, isForceFlag } from "./lib/board-publish";
+import { publishContent } from "./lib/content-publish";
 import { loadEnvFile } from "./lib/env-file";
 
 /**
@@ -15,9 +17,21 @@ import { loadEnvFile } from "./lib/env-file";
  * contenuti). Fa upsert sulle stesse tabelle, con gli stessi id stabili: ripubblicare i
  * contenuti non duplica nulla e non tocca schede, domande usate né partite.
  *
+ * **I tabelloni però non si riscrivono** (J2): prima di toccare qualsiasi cosa, lo script confronta
+ * il layout locale di ogni tabellone con quello già pubblicato e, se è diverso, **si ferma**
+ * dicendo quale id è cambiato. Un tabellone pubblicato è immutabile: la riga della partita porta il
+ * suo id e il diario di una serata passata lo ridisegna leggendolo dal database (AGENTS.md regola 7).
+ * Le due uscite sono un id nuovo per il tabellone nuovo, oppure la scappatoia esplicita
+ * `pnpm content:push -- --force` (il `--` serve: pnpm si tiene i flag e non li passa allo script).
+ *
  * Le variabili si leggono da `.env.local` come per `pnpm room:create`; in produzione si
  * passano dall'ambiente (`SUPABASE_PUBLISHABLE_URL` + `SUPABASE_SECRET_KEY` del progetto).
+ *
+ * La sequenza sta in `scripts/lib/content-publish.ts` (con i suoi test): qui c'è solo il guscio —
+ * variabili, client, stampa, codici di uscita (2 variabili mancanti, 3 tabellone cambiato).
  */
+
+const force = isForceFlag(process.argv.slice(2));
 
 const envPath = resolve(import.meta.dirname, "../.env.local");
 loadEnvFile(envPath);
@@ -34,36 +48,39 @@ if (!url || !secret) {
 const supabase = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
 
 async function main(): Promise<void> {
-  const questionsResult = await supabase.from("questions").upsert(
-    questions.map((question) => ({
-      id: question.id,
-      category: question.category,
-      level: question.level,
-      kind: question.kind,
-      text: question.text,
-      sheet_text: question.sheetText ?? null,
-      options: question.options ?? null,
-      active: true,
-    })),
-    { onConflict: "id" },
-  );
-  if (questionsResult.error) throw new Error(`Domande: ${questionsResult.error.message}`);
+  // La sequenza (confronto dei tabelloni **prima** di ogni scrittura) sta in scripts/lib/content-publish.ts.
+  const outcome = await publishContent(supabase, { force });
 
-  const challengesResult = await supabase.from("challenges").upsert(
-    challenges.map((challenge) => ({ id: challenge.id, data: challenge, active: true })),
-    { onConflict: "id" },
-  );
-  if (challengesResult.error) throw new Error(`Sfide: ${challengesResult.error.message}`);
+  if (!outcome.ok) {
+    console.error(boardChangeWarning(outcome.changed));
+    process.exit(3);
+  }
 
-  const boardsResult = await supabase.from("boards").upsert(
-    boards.map((board) => ({ id: board.id, name: board.name, layout: board })),
-    { onConflict: "id" },
-  );
-  if (boardsResult.error) throw new Error(`Tabelloni: ${boardsResult.error.message}`);
+  const { publication } = outcome;
+  if (publication.changed.length > 0) {
+    console.warn(
+      `Riscritto con \`--force\`: ${publication.changed.map(({ id }) => id).join(", ")} — una serata passata che li usa ridisegnerebbe un altro tabellone.`,
+    );
+  }
 
   console.log(
     `Pubblicati: ${questions.length} domande, ${challenges.length} sfide, ${boards.length} tabelloni in ${url}.`,
   );
+  const summary = [
+    `${publication.unchanged.length} già identici`,
+    publication.added.length > 0
+      ? `${publication.added.length} nuovi (${publication.added.join(", ")})`
+      : "nessun tabellone nuovo",
+    publication.changed.length > 0
+      ? `${publication.changed.length} riscritti (${publication.changed.map(({ id }) => id).join(", ")})`
+      : "nessuno riscritto",
+  ];
+  console.log(`Tabelloni: ${summary.join(" · ")}.`);
+  if (publication.onlyPublished.length > 0) {
+    console.log(
+      `Tabelloni pubblicati che non sono più fra i contenuti locali (non li tocco): ${publication.onlyPublished.join(", ")}.`,
+    );
+  }
 }
 
 main().catch((error: unknown) => {
