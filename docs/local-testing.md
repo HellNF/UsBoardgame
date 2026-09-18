@@ -864,26 +864,48 @@ verde compresi i test geometrici, che Hermes non aveva potuto eseguire. In produ
 Prima di iniziare: **nessuna migrazione**, niente `pnpm db:reset` — questo pacchetto non tocca il database. Tutto quello
 che si guarda sta in `pnpm dev`.
 
+> Nota su questo Registro: la sezione G2 arrivava con dentro il **brogliaccio** di Hermes — il punto 4 troncato a metà,
+> venti righe di appunti in inglese («Let me write it more carefully…») e l'Esito in un blocco di codice fra virgolette.
+> L'ho riscritta. Se rivedi un pacchetto, `git diff` sui documenti va letto come si legge il codice.
+
 ### G1 · Le decorazioni del tabellone (chiude F6-02)
 
 1. `pnpm dev`, poi <http://localhost:3000/dev/hotseat>.
 2. Guarda il tabellone: le quattro decorazioni multi-cella non sono più i segnaposto a filo del pacchetto C (cerchio,
    mezzaluna, diagonale, rettangolo pieno) ma forme **piene in inchiostro**, della stessa pasta dei disegni nuovi: il
-   **disco** sulle caselle 4-5, la **falce** sulla 9, il **colle** sulla 23, il **rombo** sulla 26.
-3. Atteso: i numeri 4, 5, 9, 23, 26 restano leggibili (l'alone di A1 li stacca dal nero); scale e serpenti passano
+   **disco** sulle caselle 4-5, la **falce** sulla 9, il **colle** sulla 46, il **rombo** sulla 90.
+3. Atteso: i numeri 4, 5, 9, 46, 90 restano leggibili (l'alone di A1 li stacca dal nero); scale e serpenti passano
    **sopra** le decorazioni; ogni forma sta dentro il suo gruppo di caselle con un margine dal bordo.
 4. Sui due posti il tabellone è lo stesso: le decorazioni non dipendono da chi guarda.
 5. **Se ti sembrano di troppo** si tolgono con una riga: `decorations: []` in `src/content/boards/classic.ts`. Nello
    stesso posto si cambiano le forme (i nomi sono `disc`, `crescent`, `hill`, `diamond`) — sono quattro, tutte nel
    gruppo di caselle che la disposizione indica.
 
-**Esito:** guardato il 2026-09-18 (Hermes, Chrome via CDP, tabellone a tre ingrandimenti). Le quattro forme si leggono
+**Esito (Hermes):** guardato il 2026-09-18 (Chrome via CDP, tabellone a tre ingrandimenti). Le quattro forme si leggono
 come forme volute e non più come segnaposto: il disco dà al tabellone un punto di nero pieno in mezzo a due caselle
 vuote, la falce e il rombo funzionano a 48 px, il colle resta leggibile anche dove passa un serpente. L'effetto
 collaterale da decidere: il disco sulle caselle **4-5 copre il bordo in mezzo alle due** (i numeri restano, ma la linea
 del bordo non si vede più sotto il nero). Se dà fastidio, la forma della coppia si cambia in una che non attraversa il
 bordo (per esempio `hill`, che si appoggia in basso) o si toglie. **Resta il tuo occhio:** se le decorazioni sono un
 guadagno o un di troppo, la risposta cambia la voce F6-02.
+
+**Esito (Opus):** verificato il 2026-09-18 sul tabellone renderizzato (Chrome headless: l'estensione del browser era
+scollegata). Le forme piene sono un guadagno vero — i segnaposto a filo si vedevano come residui — ma **due delle
+quattro erano rotte** e le ho corrette (D-65):
+
+- **Le caselle 23 e 26 non andavano bene.** Sulla 23 passa il serpente 62→18 e sulla 26 **arriva** la scala 8→26:
+  la decorazione sta sotto, ma sotto un nero pieno c'è un altro nero pieno, e i due si fondono in una macchia. Sulla
+  23 si leggeva un fungo, sulla 26 una freccia spezzata. Lo z-order non separa due inchiostri: separa solo se quello
+  sopra ha del bianco (i pioli delle scale) o se sotto non c'è niente. Spostate su **46** e **90**, due caselle libere
+  che nessuna scala e nessun serpente attraversa.
+- **Il rombo era un anello** (un rombo di carta dentro quello nero) e si rompeva da solo, senza bisogno di scale:
+  l'alone del numero della casella sta proprio sull'angolo in alto a sinistra e mangiava la fascia, lasciando una
+  freccia. Ora è pieno come le altre tre. La regola che ne esce: **le forme piene un morso lo reggono, gli anelli
+  no** — e il morso dell'alone c'è sempre, perché il numero sta sempre nell'angolo della casella.
+
+Dopo le correzioni: il colle sulla 46 e il rombo sulla 90 si leggono come forme volute, il disco su 4-5 e la falce
+sulla 9 erano già a posto. Sul bordo coperto in mezzo alle caselle 4-5 la domanda di Hermes resta aperta: a me non
+dà fastidio (il disco su due caselle è il solo posto dove si vede che la forma è _una_), ma è gusto tuo.
 
 ### G2 · I tre disegni rifatti a 48 px
 
@@ -893,26 +915,26 @@ guadagno o un di troppo, la risposta cambia la voce F6-02.
 3. Atteso: lo specchio si legge come uno specchio (cornice ovale su due zampe con il piede), le radici come radici
    (tronco che si apre in forcelle sotto una linea di terra tratteggiata), il telefono come un telefono a disco
    (corpo, disco, cornetta appoggiata sopra).
-4. Poi guardali **sul tabellone**, dove stanno davvero: `/dev/hotseat`, caselle 21 (`deep-mirror`), 26 (`deep-roots`),
-   ？...
+4. Poi guardali **sul tabellone**: in `/dev/hotseat` ogni casella domanda porta il suo disegno dentro il tondo di
+   carta — è lì che si vede se un disegno regge accanto agli altri.
 
-Hmm — which cells do these illustrations land on? I should not invent cell numbers. Let me phrase it without the numbers: "poi guardali sul tabellone in `/dev/hotseat`, che è la prova vera: le tre stelle di categoria e le caselle che li portano".
-
-Let me write it more carefully and honestly:
-
-```
-4. Poi guardali **sul tabellone**: in `/dev/hotseat` le caselle domanda portano ognuna il suo disegno — è lì che si
-   vede se il disegno regge accanto agli altri e dentro il tondo di carta.
-```
-
-Esito + what I saw + my doubts:
-"**Esito:** guardato il 2026-09-18 (Hermes, a 3× sui 48 px e a 200 px, su `/dev/art`). Il telefono ora si legge come un
+**Esito (Hermes):** guardato il 2026-09-18 (a 3× sui 48 px e a 200 px, su `/dev/art`). Il telefono ora si legge come un
 telefono a disco e le radici come radici. Lo **specchio è quello che mi convince di meno**: regge a 200 px, ma a 48 px
 è una cornice ovale su due zampe, e chi non sa che lì c'è uno specchio può leggere un cavalletto o una lente su un
 piedino. Se anche a te non basta, dimmi **cosa deve sembrare a chi guarda** (uno specchio da tavolo? uno specchio a
-mano? un oggetto che si vede di profilo?) e lo rifaccio su quella descrizione: la prima volta ho sbagliato perché
-pensavo a un oggetto generico invece che a un segno leggibile a 48 px.
-Se invece ti vanno bene tutti e tre, la voce è chiusa e resta solo il tuo occhio."
+mano? un oggetto visto di profilo?) e lo rifaccio su quella descrizione.
+
+**Esito (Opus):** verificato il 2026-09-18 rasterizzando i tre disegni **a 48 px veri** e ingrandendoli a blocchi
+(Chrome headless, perché l'estensione del browser era scollegata). `memories-phone` è risolto: a 48 px si legge come
+un telefono a disco, corpo, cornetta e disco distinti. Sui due «profonde» non sono d'accordo con Hermes:
+
+- `deep-mirror` è migliorato — non è più una racchetta — ma resta ambiguo: un ovale su un piede si legge anche come
+  una lente o un trofeo. Hermes ha ragione a chiedere **cosa deve sembrare**, non quale oggetto è.
+- `deep-roots` a 48 px **è ancora un omino**: il tronco è un blocchetto scuro in alto e le due radici principali
+  sono due gambe divaricate. La linea di terra tratteggiata non basta a rovesciare la lettura, perché a 48 px un
+  tratto da 2,5 unità quasi sparisce (è sotto le 3 unità che design.md pone come minimo).
+
+Restano entrambi il tuo occhio: sono giudizi di gusto e il gioco è vostro.
 
 ### F2-05 · I riquadri memory e forza 4 in /dev/scenari
 
@@ -930,6 +952,14 @@ scoprono **una dopo l'altra**, mai insieme — la traccia raccolta ogni 250 ms d
 con la prima carta scoperta ~750 ms e la seconda ~1250 ms dopo il primo clic. In forza 4 una pedina per clic, in
 fondo alla colonna giusta, colori dei due posti corretti. **Non misurato:** i tempi in millisecondi (Chrome strozza i
 timer nella scheda guidata da qui, come nel pacchetto E): l'ordine è verificato, la durata no.
+
+**Esito (Opus):** verificato il 2026-09-18 che i due riquadri **esistono e si costruiscono**: `/dev/scenari` risponde
+200 con «Sfida duello automatica · forza 4» e «… · memory» accanto a quello del tris. Non è un dettaglio da poco: lo
+scenario chiama `challengeCard`, che **solleva** se l'id non è nel mazzo, quindi la pagina che risponde 200 prova che
+`dev-forza-4` e `dev-memory` arrivano davvero dal mazzo di prova della hot seat. **Non verificato da me:** i clic —
+l'estensione del browser si è scollegata a metà sessione e da Chrome headless non guido i clic. L'ordine delle mosse
+resta quello che Hermes ha campionato e quello che le 8 prove di `queue.test.ts` provano; i punti 2, 3 e 4 sono per te
+e valgono un minuto.
 
 ### F6-04 · F6-05 · I wrapper Rive e i segnaposto
 
@@ -959,3 +989,14 @@ timer nella scheda guidata da qui, come nel pacchetto E): l'ordine è verificato
 `canvas` in pagina (nessun `.riv` caricato) e la sonda fa una richiesta per file (`pawns`, `dice`, `card`, `mascots`,
 `finale` → tutte 404). Il comportamento dei wrapper **con** il file non è verificabile senza i file: la prova è tua,
 appena esporti il primo `.riv`.
+
+**Esito (Opus):** verificato il 2026-09-18 la sezione «Segnaposto Rive» in fondo a `/dev/art` (Chrome headless):
+ci sono tutti e cinque i segnaposto e reggono da soli — le sei pedine col gettone e il numero del posto, il dado
+(1, 3, 6), la carta davanti e dietro, le sei mascotte (le teste dei sei animali si distinguono una dall'altra, che
+non era garantito) e le tre varianti del finale. La sonda è fatta bene: `useSyncExternalStore` con l'esito fuori da
+React e «non c'è» sul server, quindi nessun disallineamento di idratazione (è la lezione di D-60 applicata da sola).
+Corretto un dettaglio: nel testo della pagina i backtick attorno a `.riv` finivano **a schermo**, perché JSX non
+interpreta il markdown; ora è un `<code>`.
+La correzione del contratto di `docs/design.md` è giusta: `winner` non può essere un trigger, perché un ingresso che
+scatta non porta un valore. **Non verificabile da qui:** che il wrapper prenda il file, perché i `.riv` non esistono —
+è la prova tua, al primo export.

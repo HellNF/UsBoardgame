@@ -65,8 +65,8 @@ export default function ArtPage() {
         <h2 className="font-display text-2xl italic">Segnaposto Rive</h2>
         <p className="text-sm text-ink/70">
           I wrapper di <code>src/art/rive</code> mostrano il segnaposto finché il file non c&apos;è in{" "}
-          <code>public/rive/</code>. I `.riv` li disegna il proprietario nell&apos;editor: quando arriveranno,
-          il wrapper prenderà quello e il segnaposto sparirà da solo.
+          <code>public/rive/</code>. I <code>.riv</code> li disegna il proprietario nell&apos;editor: quando
+          arriveranno, il wrapper prenderà quello e il segnaposto sparirà da solo.
         </p>
 
         <div className="flex flex-col gap-6">
