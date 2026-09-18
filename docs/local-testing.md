@@ -542,7 +542,7 @@ console). Restano da vedere in partita vera (due finestre) le voci dei punti 3.
    - **tris:** con l'interruttore su «posto 1» le caselle sono cliccabili solo quando tocca a lui; dopo ogni
      mossa il clic passa all'altro posto.
    - **quiz:** cinque domande a turno, una risposta ciascuno; la risposta giusta dà un punto (i punti si vedono
-     sotto: «Leo: 1  Marta: 0»); alla quinta domanda la sfida si chiude **da sola** e paga il premio. Con una
+     sotto: «Leo: 1 Marta: 0»); alla quinta domanda la sfida si chiude **da sola** e paga il premio. Con una
      risposta sbagliata non si prende il punto. Pareggio (es. 1 a 1) → la sfida riparte.
    - **riflessi:** il pulsante dice «Aspetta il segnale…» e diventa «Tocca!» dopo pochi secondi; toccando dopo il
      segnale il punto è vostro («Punto a Leo.»), toccando **prima** il punto va all'altro («Partenza falsa»); al

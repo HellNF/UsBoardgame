@@ -65,8 +65,8 @@ export default async function SheetPage({ params }: PageProps<"/r/[code]/sheet">
           <p className="border-2 border-ink px-4 py-3">Scheda completa: si può cominciare.</p>
         ) : (
           <p className="border-2 border-ink px-4 py-3">
-            {plural(missing, "risposta mancante", "risposte mancanti")} alla scheda: si può giocare lo stesso, ma le
-            domande senza risposta non escono in partita.
+            {plural(missing, "risposta mancante", "risposte mancanti")} alla scheda: si può giocare lo stesso,
+            ma le domande senza risposta non escono in partita.
           </p>
         )}
       </div>

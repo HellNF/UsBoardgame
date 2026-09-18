@@ -15,9 +15,10 @@ export default async function DiaryPage({ params }: PageProps<"/r/[code]/diary">
   const { code } = await params;
   const room = await currentRoom(code);
 
-  const { entries, archive } = await readDiary(createSupabaseAdminClient(), [room.game, ...room.finished]).catch(
-    () => ({ entries: [], archive: [] }),
-  );
+  const { entries, archive } = await readDiary(createSupabaseAdminClient(), [
+    room.game,
+    ...room.finished,
+  ]).catch(() => ({ entries: [], archive: [] }));
 
   return (
     <main className="flex flex-1 flex-col">

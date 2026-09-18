@@ -298,7 +298,7 @@ del push: `e6e3675` (E1, le carte per posto), `7c74a20` (E2, lobby atomica), `58
 - **Limiti noti / debito tecnico:**
   - **le pedine dei minigiochi non si animano**: gli eventi `MINIGAME_MOVED` arrivano ma tris, forza 4 e memory
     ridisegnano lo stato senza transizione (resta aperto in F2-05);
-  - i **riflessi** dipendono dall'orologio del browser per *mostrare* il segnale (il giudizio è del server): con
+  - i **riflessi** dipendono dall'orologio del browser per _mostrare_ il segnale (il giudizio è del server): con
     due dispositivi con orologi diversi di qualche secondo la sfida resta corretta, ma il segnale può apparire
     prima a uno dei due;
   - la **coda delle animazioni** è per posto: se due movimenti riguardano lo stesso posto si animano uno dopo
