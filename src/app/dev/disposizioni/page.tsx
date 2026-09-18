@@ -3,7 +3,15 @@ import { notFound } from "next/navigation";
 import { illustrationsByCategory } from "@/art/illustrations";
 import { Board } from "@/features/board/board";
 import { HOTSEAT_SETTINGS } from "@/features/game/dev-context";
-import { createInitialState, generateBoard, type BoardLayout } from "@/engine";
+import {
+  READABILITY_BUDGET,
+  createInitialState,
+  describeBudget,
+  fitsBudget,
+  generateBoard,
+  measureReadability,
+  type BoardLayout,
+} from "@/engine";
 
 /**
  * Disposizioni generate da un seme (task F7-02).
@@ -33,6 +41,8 @@ function Summary({ board }: { board: BoardLayout }) {
   const decorations = board.decorations
     .map(({ shape, cells }) => `${shape} ${cells.join("+")}`)
     .join(" · ");
+  const readability = measureReadability(board);
+  const within = fitsBudget(readability, READABILITY_BUDGET);
 
   return (
     <dl className="flex flex-col gap-1 font-sans text-xs text-ink/80">
@@ -47,6 +57,16 @@ function Summary({ board }: { board: BoardLayout }) {
       <div>
         <dt className="inline font-semibold">Decorazioni </dt>
         <dd className="inline">{decorations}</dd>
+      </div>
+      {/* Il budget di leggibilità (I2), misurato con lo stesso conto del generatore: due linee
+          sulla stessa casella si sovrappongono e lì il numero della casella sparisce. */}
+      <div>
+        <dt className="inline font-semibold">Leggibilità </dt>
+        <dd className="inline">
+          {readability.crossings} caselle con più di una linea, al massimo {readability.linesPerCell}{" "}
+          {readability.linesPerCell === 1 ? "linea" : "linee"} su una casella — il tetto è{" "}
+          {describeBudget(READABILITY_BUDGET)} {within ? "✓" : "✗"}
+        </dd>
       </div>
     </dl>
   );
@@ -92,8 +112,9 @@ export default async function BoardSeedsPage({ searchParams }: PageProps<"/dev/d
         <p className="text-sm text-ink/70">
           Stesso seme, stessa disposizione: {boards.length} tabelloni disegnati dal componente della partita.
           Le regole che il generatore rispetta sono in <code>docs/rules.md</code> § Tabellone, più D-65 per le
-          decorazioni (si decora solo una casella che nulla attraversa). Pagina di sviluppo: in produzione
-          risponde 404.
+          decorazioni (si decora solo una casella libera, interna e che nulla attraversa) e il budget di
+          leggibilità del piazzamento (<code>RULES.board.maxCrossings</code>,{" "}
+          <code>RULES.board.maxLinesPerCell</code>). Pagina di sviluppo: in produzione risponde 404.
         </p>
         <form method="get" className="flex flex-wrap items-center gap-2 text-sm">
           <label htmlFor="seme" className="font-semibold">

@@ -5,11 +5,14 @@ import { boards } from "@/content/boards";
 import { DECORATION_SHAPES } from "@/engine/board-generator";
 import {
   QUESTION_CATEGORIES,
+  READABILITY_BUDGET,
   RULES,
   cellToCoord,
   crossedCells,
+  fitsBudget,
   generateBoard,
   isBorderCell,
+  measureReadability,
   validateBoard,
   type BoardLayout,
   type CellKind,
@@ -219,6 +222,48 @@ describe("generateBoard: quando i disegni non bastano", () => {
       expect(pool[category].length).toBeGreaterThanOrEqual(7);
     }
     expect(pool.stars.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("generateBoard: il budget di leggibilità (I2)", () => {
+  it("il conto della classic è quello contato a mano: 17 incroci e 2 linee per casella", () => {
+    const measure = measureReadability(classic);
+    expect(measure.crossings).toBe(17);
+    expect(measure.linesPerCell).toBe(2);
+  });
+
+  it("nessuna disposizione generata supera il tetto di incroci e di linee per casella", () => {
+    for (const seed of SEEDS) {
+      const measure = measureReadability(generate(seed));
+      expect(measure.crossings).toBeLessThanOrEqual(READABILITY_BUDGET.crossings);
+      expect(measure.linesPerCell).toBeLessThanOrEqual(READABILITY_BUDGET.linesPerCell);
+      expect(fitsBudget(measure, READABILITY_BUDGET)).toBe(true);
+    }
+  });
+
+  it("il budget è la sola differenza: senza, gli stessi semi tornano sopra il tetto", () => {
+    for (const seed of [1, 12, 17]) {
+      const withoutBudget = generateBoard({ seed, illustrations: pool(), budget: null });
+      const measure = measureReadability(withoutBudget);
+      expect(measure.linesPerCell).toBeGreaterThan(READABILITY_BUDGET.linesPerCell);
+      expect(measure.crossings).toBeGreaterThan(READABILITY_BUDGET.crossings);
+      // Stesso seme e stessi vincoli di prima: la disposizione senza budget è ancora valida.
+      expect(validateBoard(withoutBudget)).toEqual({ ok: true });
+    }
+  });
+
+  it("con un tetto impossibile (nessuna linea ammessa) si ferma dicendo a quanto e con che tetto", () => {
+    expect(() =>
+      generateBoard({ seed: 1, illustrations: pool(), budget: { crossings: 0, linesPerCell: 0 } }),
+    ).toThrow(/budget di leggibilità \(0 incroci, 0 linee per casella\)[\s\S]*si ferma a \d+ scale e \d+/);
+  });
+
+  it("il budget non cambia nient'altro: le scale restano 7, i serpenti 6", () => {
+    for (const seed of SEEDS) {
+      const board = generate(seed);
+      expect(board.ladders).toHaveLength(RULES.board.ladders);
+      expect(board.snakes).toHaveLength(RULES.board.snakes);
+    }
   });
 });
 
