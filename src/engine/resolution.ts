@@ -109,10 +109,12 @@ export function drawQuestionCard(
   });
 }
 
-/** Momento di scadenza di una sfida: durata della carta, entro il massimo della serata. */
-export function challengeDeadline(ctx: EngineContext, card: ChallengeCard): string {
-  const seconds = Math.max(1, Math.min(card.durationSeconds.max, ctx.settings.maxChallengeSeconds));
-  return new Date(ctx.now().getTime() + seconds * 1000).toISOString();
+/**
+ * Durata suggerita di una sfida: la durata della carta, entro il massimo della serata.
+ * È un numero per la schermata, non una scadenza: nessuno chiude la carta al suo posto (D-82).
+ */
+export function challengeSuggestedSeconds(ctx: EngineContext, card: ChallengeCard): number {
+  return Math.max(1, Math.min(card.durationSeconds.max, ctx.settings.maxChallengeSeconds));
 }
 
 /**
@@ -130,7 +132,8 @@ export function drawChallengeCard(draft: Draft, ctx: EngineContext, snakeFlash: 
     verdict: card.verdict,
     prize: card.prize,
     snakeFlash: card.snakeFlash,
-    deadlineAt: challengeDeadline(ctx, card),
+    suggestedSeconds: challengeSuggestedSeconds(ctx, card),
+    timeUp: {},
     claims: {},
     disputeChoices: {},
     disputed: false,
@@ -147,7 +150,7 @@ export function drawChallengeCard(draft: Draft, ctx: EngineContext, snakeFlash: 
     mode: card.mode,
     verdict: card.verdict,
     snakeFlash: card.snakeFlash,
-    deadlineAt: active.deadlineAt,
+    suggestedSeconds: active.suggestedSeconds,
   });
   if (card.verdict === "automatic") startMinigame(draft, ctx, card, active.quiz);
 }
@@ -343,7 +346,8 @@ export function restartChallenge(draft: Draft, ctx: EngineContext): void {
   card.claims = {};
   card.disputeChoices = {};
   card.disputed = false;
-  card.deadlineAt = new Date(ctx.now().getTime() + RULES.challenges.snakeFlashSeconds * 1000).toISOString();
+  // La rivincita è una sfida nuova: le dichiarazioni «il tempo è finito» si azzerano.
+  card.timeUp = {};
   if (card.verdict === "automatic" && card.minigameId) {
     startMinigame(
       draft,
@@ -365,6 +369,5 @@ export function restartChallenge(draft: Draft, ctx: EngineContext): void {
     type: "CHALLENGE_REMATCH",
     seat: null,
     challengeId: card.challengeId,
-    deadlineAt: card.deadlineAt,
   });
 }

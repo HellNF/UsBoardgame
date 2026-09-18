@@ -245,7 +245,7 @@ describe("azioni rifiutate (ogni rifiuto ha un messaggio)", () => {
     expect(game.reject({ type: "RESOLVE_DISPUTE", seat: 1, method: "rematch" })).toBe(
       "Nessuna sfida aperta.",
     );
-    expect(game.reject({ type: "TIMER_EXPIRED", seat: 1 })).toBe("Nessuna sfida aperta.");
+    expect(game.reject({ type: "DECLARE_TIME_UP", seat: 1 })).toBe("Nessuna sfida aperta.");
     expect(game.reject({ type: "DECLINE_STAR", seat: 1 })).toBe("Nessuna offerta di stella in corso.");
     expect(game.reject({ type: "MINIGAME_MOVE", seat: 1, move: { cell: 0 } })).toBe(
       "La sfida aperta non ha un minigioco.",

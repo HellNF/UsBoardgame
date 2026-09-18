@@ -5,7 +5,7 @@ import type { ChallengeCard, Seat } from "./types";
 
 /**
  * Sfide: duello o prova, verdetto automatico, giudice, doppia conferma, disputa,
- * timer e sfida lampo del serpente (docs/rules.md § Sfide, D-17, D-27, F4-02, F4-06).
+ * tempo finito e sfida lampo del serpente (docs/rules.md § Sfide, D-17, D-27, D-82, F4-02, F4-06).
  */
 
 const duel: ChallengeCard = {
@@ -224,49 +224,110 @@ describe("minigioco integrato (docs/rules.md § Sfide, D-26)", () => {
   });
 });
 
-describe("timer (docs/rules.md § Sfide, D-25)", () => {
-  it("prima della scadenza TIMER_EXPIRED è rifiutato", () => {
-    const game = openChallenge([trial]);
-    expect(game.reject({ type: "TIMER_EXPIRED", seat: 1 })).toBe("Il tempo non è ancora scaduto.");
-  });
-
-  it("una prova scaduta senza verdetto è fallita", () => {
-    const game = openChallenge([trial]);
-    game.test.advanceSeconds(30);
-    game.do({ type: "TIMER_EXPIRED", seat: 1 });
-    expect(game.events.map((event) => event.type)).toContain("TIMER_EXPIRED");
-    expect(game.state.players[1].coins).toBe(0);
-    expect(game.state.card).toBeNull();
-    expect(game.state.turn).toBe(2);
-  });
-
-  it("un duello scaduto passa alla doppia conferma", () => {
-    const game = openChallenge([duel]);
-    game.test.advanceSeconds(300);
-    game.do({ type: "TIMER_EXPIRED", seat: 1 });
-    expect(game.state.card).toMatchObject({ verdict: "double_confirm", deadlineAt: null });
-    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 1, winner: 2 });
-    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 2, winner: 2 });
-    expect(game.state.players[2].coins).toBe(duel.prize);
-  });
-
-  it("la scadenza è la durata della carta, entro il massimo della serata", () => {
+describe("il tempo è indicativo (docs/rules.md § Sfide, D-82)", () => {
+  it("la durata suggerita è la durata della carta, entro il massimo della serata", () => {
     const game = createTestGame({ challenges: [trial], settings: { maxChallengeSeconds: 10 } });
     game.place(1, 12);
     game.test.setRandom([0, 0]);
     game.do({ type: "ROLL", seat: 1 });
     const card = game.state.card as Extract<typeof game.state.card, { type: "challenge" }>;
-    expect(card.deadlineAt).toBe("2026-09-17T20:00:10.000Z");
+    expect(card.suggestedSeconds).toBe(10);
+  });
+
+  it("l'orologio che passa non chiude la carta e non produce nessun evento", () => {
+    const game = openChallenge([trial]);
+    const before = structuredClone(game.state);
+    game.test.advanceSeconds(3600);
+    expect(game.state).toEqual(before);
+    expect(game.state.phase).toBe("resolving");
+    expect(game.state.players[1].coins).toBe(0);
+    // La carta è ancora viva: chi giudica la chiude come sempre.
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 2, winner: 1 });
+    expect(game.state.players[1].coins).toBe(trial.prize);
+  });
+
+  it("una dichiarazione sola non chiude niente: la sfida continua", () => {
+    const game = openChallenge([trial]);
+    game.do({ type: "DECLARE_TIME_UP", seat: 1 });
+    expect(game.events.map((event) => event.type)).toContain("TIME_UP_DECLARED");
+    expect(game.events.map((event) => event.type)).not.toContain("CHALLENGE_TIME_UP");
+    expect(game.state.card).toMatchObject({ timeUp: { 1: true } });
+    expect(game.state.turn).toBe(1);
+  });
+
+  it("la stessa dichiarazione due volte è rifiutata", () => {
+    const game = openChallenge([trial]);
+    game.do({ type: "DECLARE_TIME_UP", seat: 1 });
+    expect(game.reject({ type: "DECLARE_TIME_UP", seat: 1 })).toBe(
+      "L'hai già detto: manca l'altro giocatore.",
+    );
+  });
+
+  it("una prova finita senza verdetto è non riuscita quando lo dicono entrambi", () => {
+    const game = openChallenge([trial]);
+    game.do({ type: "DECLARE_TIME_UP", seat: 1 });
+    game.do({ type: "DECLARE_TIME_UP", seat: 2 });
+    expect(game.events.find((event) => event.type === "CHALLENGE_TIME_UP")).toMatchObject({
+      outcome: "failed",
+    });
+    expect(game.state.players[1].coins).toBe(0);
+    expect(game.state.card).toBeNull();
+    expect(game.state.turn).toBe(2);
+  });
+
+  it("un duello finito passa alla doppia conferma e si chiude con le dichiarazioni", () => {
+    const game = openChallenge([duel]);
+    game.do({ type: "DECLARE_TIME_UP", seat: 1 });
+    game.do({ type: "DECLARE_TIME_UP", seat: 2 });
+    expect(game.events.find((event) => event.type === "CHALLENGE_TIME_UP")).toMatchObject({
+      outcome: "double_confirm",
+    });
+    expect(game.state.card).toMatchObject({ verdict: "double_confirm" });
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 1, winner: 2 });
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 2, winner: 2 });
+    expect(game.state.players[2].coins).toBe(duel.prize);
+  });
+
+  it("un duello automatico abbandona il minigioco e non resta a metà", () => {
+    const game = openChallenge([automatic]);
+    game.do({ type: "DECLARE_TIME_UP", seat: 1 });
+    game.do({ type: "DECLARE_TIME_UP", seat: 2 });
+    expect(game.state.card).toMatchObject({
+      verdict: "double_confirm",
+      minigame: null,
+      minigameId: null,
+    });
+    // Il minigioco abbandonato non accetta più mosse: la carta si chiude con le dichiarazioni.
+    expect(game.reject({ type: "MINIGAME_MOVE", seat: 1, move: { cell: 0 } })).toBe(
+      "La sfida aperta non ha un minigioco.",
+    );
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 1, winner: 1 });
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 2, winner: 1 });
+    expect(game.state.players[1].coins).toBe(automatic.prize);
+  });
+
+  it("la rivincita azzera le dichiarazioni del tempo finito", () => {
+    const game = openChallenge([duel]);
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 1, winner: 1 });
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 2, winner: 2 });
+    game.do({ type: "RESOLVE_DISPUTE", seat: 1, method: "rematch" });
+    game.do({ type: "RESOLVE_DISPUTE", seat: 2, method: "rematch" });
+    expect(game.state.card).toMatchObject({ timeUp: {} });
+  });
+
+  it("senza una sfida aperta la dichiarazione è rifiutata", () => {
+    const game = createTestGame({ challenges: [trial] });
+    expect(game.reject({ type: "DECLARE_TIME_UP", seat: 1 })).toBe("Nessuna sfida aperta.");
   });
 });
 
 describe("sfida lampo del serpente (docs/rules.md § Turno 4, F4-06)", () => {
-  it("si apre una carta con snakeFlash e 30 secondi di tempo", () => {
+  it("si apre una carta con snakeFlash e una durata suggerita", () => {
     const game = snakeFlash();
     expect(game.state.card).toMatchObject({ type: "challenge", snakeFlash: true });
     expect(game.test.drawChallengeCalls[0]).toEqual({ snakeFlash: true });
     const card = game.state.card as Extract<typeof game.state.card, { type: "challenge" }>;
-    expect(card.deadlineAt).toBe("2026-09-17T20:00:30.000Z");
+    expect(card.suggestedSeconds).toBe(30);
   });
 
   it("vinta: si resta dov'è, una sfida vinta e nessuna moneta", () => {
@@ -286,10 +347,10 @@ describe("sfida lampo del serpente (docs/rules.md § Turno 4, F4-06)", () => {
     expect(game.events.map((event) => event.type)).toContain("SLID_DOWN_SNAKE");
   });
 
-  it("scaduta: la prova è fallita e si scende", () => {
+  it("finita senza un vincitore: la prova è non riuscita e si scende", () => {
     const game = snakeFlash();
-    game.test.advanceSeconds(RULES.challenges.snakeFlashSeconds);
-    game.do({ type: "TIMER_EXPIRED", seat: 1 });
+    game.do({ type: "DECLARE_TIME_UP", seat: 1 });
+    game.do({ type: "DECLARE_TIME_UP", seat: 2 });
     expect(game.state.players[1].position).toBe(4);
     expect(game.state.players[1].stats.challengesWon).toBe(0);
   });

@@ -13,9 +13,9 @@ import { otherSeat, type Action, type GameState, type ItemId, type Seat } from "
  * mai e che gli invarianti dello stato reggano (task F1-03, docs/rules.md).
  *
  * La strategia è volutamente stupida: a ogni passo si prendono le azioni che il
- * reducer accetta e se ne sceglie una a caso. Quando nessuna è accettata, l'orologio
- * finto avanza e si prova `TIMER_EXPIRED`: se nemmeno quello passa, la partita è in
- * stallo e il test fallisce.
+ * reducer accetta e se ne sceglie una a caso. Se **nessuna** azione passa, la partita è in
+ * stallo e il test fallisce: da L1 (D-82) il tempo non è più una via d'uscita, quindi
+ * l'orologio finto non salva più nessuna fase. Le uniche uscite sono le azioni dei due.
  */
 
 // ---------------------------------------------------------------------------
@@ -130,8 +130,10 @@ function candidates(state: GameState, next: () => number): Action[] {
             });
           }
         }
-        // Con un timer attivo si può anche lasciar scadere la sfida.
-        if (card.deadlineAt !== null && next() % 8 === 0) actions.push({ type: "TIMER_EXPIRED", seat: turn });
+        // Il tempo è un'informazione (D-82): i due possono dire che è finito, ma serve dirlo in due.
+        for (const seat of SEATS) {
+          if (card.timeUp[seat] !== true) actions.push({ type: "DECLARE_TIME_UP", seat });
+        }
         break;
       }
       case "event":
@@ -144,11 +146,6 @@ function candidates(state: GameState, next: () => number): Action[] {
         actions.push({ type: "DISCARD_ITEM", seat: turn, item: card.incoming });
         break;
     }
-  }
-
-  // Il timer è provato da entrambi: il reducer decide se è scaduto davvero.
-  if (card?.type === "challenge" && card.deadlineAt !== null) {
-    actions.push({ type: "TIMER_EXPIRED", seat: turn }, { type: "TIMER_EXPIRED", seat: other });
   }
 
   return actions;
@@ -218,16 +215,14 @@ function simulate(seed: number): GameReport {
       continue;
     }
 
-    // Nessuna azione accettata: il tempo passa e si prova la scadenza del timer.
-    test.advanceSeconds(Math.max(60, settings.maxChallengeSeconds + 10));
-    const timeouts = SEATS.map((seat) => ({ type: "TIMER_EXPIRED", seat }) as Action).filter(
-      (action) => reduce(state, action, test.ctx).ok,
+    // Nessuna azione accettata: da L1 (D-82) il tempo non apre più nessuna porta, quindi non
+    // c'è nessun orologio da far avanzare. Se lo stato non offre un'uscita, la partita è in stallo.
+    stalls += 1;
+    console.info(
+      `[simulazione] partita ${seed}: stallo in fase ${state.phase}, ` +
+        `carta ${state.card?.type ?? "nessuna"}, turno ${state.turn}`,
     );
-    if (timeouts.length === 0) {
-      stalls += 1;
-      break;
-    }
-    apply(timeouts[next() % timeouts.length]);
+    break;
   }
 
   return { steps, stalls, rounds: state.round, reason, winner: state.winner };

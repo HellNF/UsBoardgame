@@ -18,7 +18,7 @@ describe("validazione delle azioni del client (F2-01)", () => {
       { type: "CLAIM_CHALLENGE_RESULT", seat: 1, winner: 2 },
       { type: "RESOLVE_DISPUTE", seat: 1, method: "coin_flip" },
       { type: "MINIGAME_MOVE", seat: 1, move: { cell: 4 } },
-      { type: "TIMER_EXPIRED", seat: 2 },
+      { type: "DECLARE_TIME_UP", seat: 2 },
       { type: "BUY_STAR", seat: 1 },
       { type: "DECLINE_STAR", seat: 2 },
       { type: "ACK_EVENT", seat: 1 },

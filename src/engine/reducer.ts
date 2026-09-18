@@ -9,7 +9,7 @@ import {
   minigameMove,
   resolveDispute,
   skipQuestion,
-  timerExpired,
+  declareTimeUp,
 } from "./cards";
 import { RULES } from "./config";
 import { activateItem, buyItem, discardItem } from "./items";
@@ -137,8 +137,8 @@ function dispatch(draft: Draft, ctx: EngineContext, action: Action): string | nu
       return resolveDispute(draft, ctx, action);
     case "MINIGAME_MOVE":
       return minigameMove(draft, ctx, action);
-    case "TIMER_EXPIRED":
-      return timerExpired(draft, ctx, action);
+    case "DECLARE_TIME_UP":
+      return declareTimeUp(draft, ctx, action);
     case "BUY_STAR":
       return buyStar(draft, ctx, action);
     case "DECLINE_STAR":

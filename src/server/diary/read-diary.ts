@@ -164,13 +164,13 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
           detail: "Rivincita o lancio di moneta (D-27).",
         });
         break;
-      case "TIMER_EXPIRED":
+      case "CHALLENGE_TIME_UP":
         push(
           "challenge",
-          `Tempo scaduto: ${challengeName(asString(event.payload.challengeId, "?"))}`,
+          `Il tempo è finito: ${challengeName(asString(event.payload.challengeId, "?"))}`,
           event.payload.outcome === "failed"
-            ? "La prova non è riuscita: nessun premio."
-            : "Si passa alle dichiarazioni di entrambi.",
+            ? "L'hanno detto tutti e due: la prova non è riuscita, nessun premio."
+            : "L'hanno detto tutti e due: si passa alle dichiarazioni.",
         );
         break;
       case "EVENT_RESOLVED": {

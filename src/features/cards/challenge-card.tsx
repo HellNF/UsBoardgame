@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { minigameTurn, otherSeat, RULES, SEATS } from "@/engine";
+import { useState } from "react";
+import { minigameTurn, otherSeat, SEATS } from "@/engine";
 import type { ActiveCard, MinigameState, Seat } from "@/engine";
 import { plural } from "@/lib/plural";
 import type { CardPanelProps } from "./card-panel";
 import { viewerActs, waitingLine, type Viewer } from "./viewer";
-import { useHydrated } from "./use-hydrated";
 import { WaitingRow } from "./waiting-row";
 import { Minigame } from "@/features/minigames/minigame";
 import { useMinigameQueue } from "@/features/minigames/use-minigame-queue";
@@ -21,13 +20,6 @@ const SOLID_BUTTON =
 /** Pulsante vuoto: carta con bordo nero spesso. */
 const OUTLINE_BUTTON =
   "border-2 border-ink px-4 py-2 hover:bg-ink hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:border-dashed disabled:hover:bg-paper disabled:hover:text-ink";
-
-/** Tempo che manca in «m:ss», mai sotto zero. */
-function formatRemaining(ms: number): string {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  const seconds = total % 60;
-  return `${Math.floor(total / 60)}:${String(seconds).padStart(2, "0")}`;
-}
 
 /** Nome del vincitore dichiarato, leggibile. */
 function winnerLabel(winner: Seat | "draw", names: Record<Seat, string>): string {
@@ -53,17 +45,10 @@ export function ChallengeCard({
   challenge,
   card,
   act,
-  now,
   names,
   viewerSeat,
 }: CardPanelProps & { card: Extract<ActiveCard, { type: "challenge" }> }) {
   const judge = otherSeat(state.turn);
-  const deadline = card.deadlineAt;
-  const deadlineMs = deadline === null ? null : new Date(deadline).getTime();
-  // Un solo TIMER_EXPIRED per scadenza; il ref si riarma quando cambiano sfida o timer.
-  // La scadenza la può annunciare chiunque abbia la schermata aperta: se l'altro è
-  // disconnesso, la partita deve andare avanti lo stesso (il secondo annuncio riceve 409).
-  const expiredRef = useRef<string | null>(null);
   // Costante locale: la narrowing regge anche dentro la callback di `onMove`.
   const minigame = card.minigame;
   // Una mossa per volta anche nel minigioco (F2-05): la coda tiene indietro lo stato nuovo finché
@@ -73,19 +58,9 @@ export function ChallengeCard({
   const scene = useMinigameQueue(minigame);
   const shown = scene.state ?? minigame;
   // Sfida esterna: si va a giocare fuori e si torna a dichiarare (F4-05). La pausa è della
-  // schermata, non della partita: lo stato condiviso resta quello del server.
+  // schermata, non della partita: lo stato condiviso resta quello del server, e da L1 non c'è
+  // più nessun conto da fermare (la durata della carta è solo un'informazione, D-82).
   const [away, setAway] = useState(false);
-  // Il tempo che manca si scrive solo nel browser (D-60): `now` viene dall'orologio, quindi
-  // sul server vale un secondo diverso e React rifarebbe l'albero (disaccordo di idratazione).
-  const clockReady = useHydrated();
-
-  useEffect(() => {
-    if (deadlineMs === null || Number.isNaN(deadlineMs) || now < deadlineMs) return;
-    const key = `${card.challengeId}@${deadline}`;
-    if (expiredRef.current === key) return;
-    expiredRef.current = key;
-    act({ type: "TIMER_EXPIRED", seat: state.turn });
-  }, [act, card.challengeId, deadline, deadlineMs, now, state.turn]);
 
   const isExternal = challenge?.category === "external";
 
@@ -113,13 +88,46 @@ export function ChallengeCard({
       </p>
       {card.snakeFlash && (
         <p className="text-sm">
-          Sfida lampo da {RULES.challenges.snakeFlashSeconds} secondi: chi non vince scende dal serpente.
+          Sfida lampo di circa {card.suggestedSeconds} secondi: chi non vince scende dal serpente.
         </p>
       )}
 
-      {clockReady && deadlineMs !== null && !Number.isNaN(deadlineMs) && (
-        <p className="font-display text-3xl italic">{formatRemaining(deadlineMs - now)}</p>
-      )}
+      {/*
+        Il tempo è indicativo (D-82): la carta non scade da sé, e si chiude quando i due dicono
+        che il tempo è finito. Un'orologio non decide più niente al posto loro.
+      */}
+      <div className="flex flex-col gap-2 border-t-2 border-ink pt-4">
+        <p className="text-sm">
+          Il tempo è indicativo: questa carta non scade da sé. Se non volete più giocarla, ditelo tutti e
+          due.
+        </p>
+        {SEATS.map((seat) => {
+          const declared = card.timeUp[seat] === true;
+          if (!owns(viewerSeat, seat)) {
+            return (
+              <p key={seat} className="text-sm text-ink/70">
+                <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+                {declared ? " dice che il tempo è finito." : " vuole ancora giocarla."}
+              </p>
+            );
+          }
+          return (
+            <div key={seat} className="flex flex-wrap items-center gap-2">
+              {viewerSeat === "all" && (
+                <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+              )}
+              <button
+                type="button"
+                className={OUTLINE_BUTTON}
+                disabled={declared}
+                onClick={() => act({ type: "DECLARE_TIME_UP", seat })}
+              >
+                {declared ? "Hai detto che il tempo è finito" : "Il tempo è finito"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Sfida esterna in pausa: la partita resta ferma finché non si torna (F4-05). */}
       {isExternal && away && (

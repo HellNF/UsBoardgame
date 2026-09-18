@@ -12,6 +12,9 @@ import { useSyncExternalStore } from "react";
  *
  * È `useSyncExternalStore` e non un `useState` mosso da un effetto perché la regola
  * `react-hooks/set-state-in-effect` — giustamente — vieta la seconda strada.
+ *
+ * Da D-82 nessuna carta lo usa più: il conto alla rovescia della sfida è sparito con il timer.
+ * Resta qui per il conto che sale che il proprietario sta rifacendo, e per il segnale dei riflessi.
  */
 const subscribeToNothing = (): (() => void) => () => {};
 

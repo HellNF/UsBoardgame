@@ -215,10 +215,19 @@ export type ActiveCard =
       verdict: ChallengeVerdict;
       /** Premio in monete per chi vince. */
       prize: number;
-      /** Sfida lampo del serpente (30 s). */
+      /** Sfida lampo del serpente (durata breve: `RULES.challenges.snakeFlashSeconds`). */
       snakeFlash: boolean;
-      /** ISO timestamp di scadenza, deciso dal server. */
-      deadlineAt: string | null;
+      /**
+       * Durata suggerita della carta in secondi: la durata del contenuto, entro il massimo
+       * della serata. È un'**informazione**, non una scadenza: nessun orologio produce esiti
+       * da solo (D-82).
+       */
+      suggestedSeconds: number;
+      /**
+       * Dichiarazioni «basta, il tempo è finito», una per posto: la carta si chiude così solo
+       * quando l'hanno detta **entrambi** (D-82). Non è un conto alla rovescia, è una scelta dei due.
+       */
+      timeUp: Partial<Record<Seat, true>>;
       /** Dichiarazioni per la doppia conferma (o verdetto del giudice). */
       claims: Partial<Record<Seat, Seat | "draw">>;
       /** Scelte di rivincita o moneta dopo un disaccordo (D-27). */
@@ -284,7 +293,7 @@ export type Action =
   | { type: "CLAIM_CHALLENGE_RESULT"; seat: Seat; winner: Seat | "draw" }
   | { type: "RESOLVE_DISPUTE"; seat: Seat; method: "rematch" | "coin_flip" }
   | { type: "MINIGAME_MOVE"; seat: Seat; move: unknown }
-  | { type: "TIMER_EXPIRED"; seat: Seat }
+  | { type: "DECLARE_TIME_UP"; seat: Seat }
   | { type: "BUY_STAR"; seat: Seat }
   | { type: "DECLINE_STAR"; seat: Seat }
   | { type: "ACK_EVENT"; seat: Seat }
@@ -312,8 +321,8 @@ export type CoinSource =
 
 export type ChallengeResultMethod = "automatic" | "double_confirm" | "judge" | "coin_flip";
 
-/** Cosa è successo a una sfida scaduta: prova fallita o duello alla doppia conferma. */
-export type TimeoutOutcome = "failed" | "double_confirm";
+/** Cosa succede quando i due dicono che il tempo è finito: prova fallita o duello alla doppia conferma. */
+export type TimeUpOutcome = "failed" | "double_confirm";
 
 /**
  * Evento restituito dal reducer. Unione discriminata su `type`: descrive tutto ciò
@@ -360,7 +369,7 @@ export type GameEvent =
       mode: ChallengeMode;
       verdict: ChallengeVerdict;
       snakeFlash: boolean;
-      deadlineAt: string | null;
+      suggestedSeconds: number;
     }
   | { type: "CHALLENGE_CLAIMED"; seat: Seat; challengeId: string; winner: Seat | "draw" }
   | { type: "CHALLENGE_DISPUTED"; seat: null; challengeId: string }
@@ -378,8 +387,11 @@ export type GameEvent =
        */
       won: boolean;
     }
-  | { type: "CHALLENGE_REMATCH"; seat: null; challengeId: string; deadlineAt: string | null }
-  | { type: "TIMER_EXPIRED"; seat: null; challengeId: string; outcome: TimeoutOutcome }
+  | { type: "CHALLENGE_REMATCH"; seat: null; challengeId: string }
+  /** Uno dei due ha detto «basta, il tempo è finito»: la carta aspetta l'altro (D-82). */
+  | { type: "TIME_UP_DECLARED"; seat: Seat; challengeId: string }
+  /** Il tempo è finito per tutti e due: la carta si chiude come dice `outcome` (D-82). */
+  | { type: "CHALLENGE_TIME_UP"; seat: null; challengeId: string; outcome: TimeUpOutcome }
   | { type: "MINIGAME_STARTED"; seat: null; minigame: MinigameId }
   | { type: "MINIGAME_MOVED"; seat: Seat; minigame: MinigameId; move: unknown }
   | { type: "MINIGAME_FINISHED"; seat: null; minigame: MinigameId; winner: Seat | "draw" }

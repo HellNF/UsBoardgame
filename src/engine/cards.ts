@@ -11,7 +11,7 @@ import {
   slideDownSnake,
 } from "./resolution";
 import { movePlayer, pushEvent, reachFinish, type Draft } from "./turn";
-import { ITEM_IDS, otherSeat, type Action, type AnswerVerdict, type EngineContext, type Seat } from "./types";
+import { ITEM_IDS, otherSeat, SEATS, type Action, type AnswerVerdict, type EngineContext, type Seat } from "./types";
 
 /**
  * Carte da risolvere con un'azione: domande (docs/rules.md § Domande), sfide
@@ -234,19 +234,34 @@ export const minigameMove: Handler<Extract<Action, { type: "MINIGAME_MOVE" }>> =
   return null;
 };
 
-export const timerExpired: Handler<Extract<Action, { type: "TIMER_EXPIRED" }>> = (draft, ctx) => {
+/**
+ * «Basta, il tempo è finito»: una dichiarazione per posto, e la carta si chiude quando l'hanno
+ * detta **entrambi** (D-82). Il tempo è un'informazione: nessun orologio produce esiti da solo, e
+ * un giocatore solo non può chiudere la sfida dell'altro.
+ */
+export const declareTimeUp: Handler<Extract<Action, { type: "DECLARE_TIME_UP" }>> = (draft, ctx, action) => {
   const state = draft.state;
   const card = state.card;
   if (card?.type !== "challenge") return "Nessuna sfida aperta.";
-  if (card.deadlineAt === null) return "Questa sfida non ha un timer.";
-  if (ctx.now().getTime() < new Date(card.deadlineAt).getTime()) return "Il tempo non è ancora scaduto.";
+  if (card.timeUp[action.seat] === true) return "L'hai già detto: manca l'altro giocatore.";
+
+  card.timeUp[action.seat] = true;
+  pushEvent(draft, { type: "TIME_UP_DECLARED", seat: action.seat, challengeId: card.challengeId });
+
+  // Con una dichiarazione sola non succede niente: la sfida continua (D-82).
+  if (!SEATS.every((seat) => card.timeUp[seat] === true)) return null;
 
   const activeSeat = state.turn;
   if (card.verdict === "judge") {
-    // Prova scaduta senza verdetto = fallita: nessun premio per nessuno.
+    // Prova finita senza verdetto = non riuscita: nessun premio per nessuno.
     state.card = null;
     state.phase = "pre_roll";
-    pushEvent(draft, { type: "TIMER_EXPIRED", seat: null, challengeId: card.challengeId, outcome: "failed" });
+    pushEvent(draft, {
+      type: "CHALLENGE_TIME_UP",
+      seat: null,
+      challengeId: card.challengeId,
+      outcome: "failed",
+    });
     pushEvent(draft, {
       type: "CHALLENGE_RESOLVED",
       seat: "draw",
@@ -260,14 +275,13 @@ export const timerExpired: Handler<Extract<Action, { type: "TIMER_EXPIRED" }>> =
     return null;
   }
 
-  // Duello scaduto: si passa alla doppia conferma.
+  // Duello: si passa alla doppia conferma (il minigioco, se c'era, si abbandona). Le
+  // dichiarazioni già fatte restano: chi ha parlato prima non deve ripetersi.
   card.verdict = "double_confirm";
-  card.deadlineAt = null;
-  card.claims = {};
   card.minigame = null;
   card.minigameId = null;
   pushEvent(draft, {
-    type: "TIMER_EXPIRED",
+    type: "CHALLENGE_TIME_UP",
     seat: null,
     challengeId: card.challengeId,
     outcome: "double_confirm",

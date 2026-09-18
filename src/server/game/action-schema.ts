@@ -39,7 +39,7 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.strictObject({ type: z.literal("RESOLVE_DISPUTE"), seat, method: z.enum(["rematch", "coin_flip"]) }),
   // La mossa del minigioco la valida il modulo del minigioco: qui è solo "qualcosa".
   z.strictObject({ type: z.literal("MINIGAME_MOVE"), seat, move: z.unknown() }),
-  z.strictObject({ type: z.literal("TIMER_EXPIRED"), seat }),
+  z.strictObject({ type: z.literal("DECLARE_TIME_UP"), seat }),
   z.strictObject({ type: z.literal("BUY_STAR"), seat }),
   z.strictObject({ type: z.literal("DECLINE_STAR"), seat }),
   z.strictObject({ type: z.literal("ACK_EVENT"), seat }),

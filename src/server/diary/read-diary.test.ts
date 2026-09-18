@@ -99,12 +99,12 @@ describe("diario della serata (F5-06)", () => {
     expect(entries[0].detail).toContain("Pareggio");
   });
 
-  it("una prova scaduta è una prova fallita", () => {
+  it("una prova finita senza verdetto è una prova non riuscita", () => {
     const entries = diaryEntriesFromEvents([
-      row(1, "TIMER_EXPIRED", 1, { challengeId: "mimo", outcome: "failed" }),
-      row(2, "TIMER_EXPIRED", 1, { challengeId: "karaoke-a-due", outcome: "double_confirm" }),
+      row(1, "CHALLENGE_TIME_UP", 1, { challengeId: "mimo", outcome: "failed" }),
+      row(2, "CHALLENGE_TIME_UP", 1, { challengeId: "karaoke-a-due", outcome: "double_confirm" }),
     ]);
-    expect(entries[0].title).toBe("Tempo scaduto: Mimo in 30 secondi");
+    expect(entries[0].title).toBe("Il tempo è finito: Mimo in 30 secondi");
     expect(entries[0].detail).toContain("non è riuscita");
     expect(entries[1].detail).toContain("dichiarazioni");
   });

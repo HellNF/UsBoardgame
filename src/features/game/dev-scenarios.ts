@@ -10,8 +10,8 @@ import { HOTSEAT_CHALLENGE_CONTENT } from "./dev-context";
  * che il proprietario non è ancora riuscito a vedere giocando.
  *
  * Niente è pescato a caso: ogni stato dichiara la carta, il posto di turno, le posizioni
- * e i conti. L'unica cosa calcolata al momento è la **scadenza dei timer**, così il conto
- * alla rovescia parte quando si apre la pagina (`startState`).
+ * e i conti. L'unica cosa calcolata al momento è il **tempo che l'orologio del motore
+ * suggerisce** (`startState`, solo per i minigiochi a tempo dei riflessi).
  *
  * Solo per lo sviluppo: la pagina risponde 404 in produzione come `/dev/hotseat` e `/dev/ui`.
  */
@@ -27,8 +27,6 @@ export type Scenario = {
   description: string;
   /** Stato di partenza, fissato a mano. */
   state: GameState;
-  /** Secondi che mancano alla scadenza: il timer parte quando si apre la pagina. */
-  deadlineSeconds?: number;
   /** Solo per i riflessi: fra quanti secondi arriva il segnale (il resto lo fa il motore). */
   signalSeconds?: number;
   /** Solo per la schermata finale: stelle bonus già calcolate (null in pareggio). */
@@ -134,7 +132,8 @@ function challengeCard(
     verdict: found.verdict,
     prize: found.prize,
     snakeFlash: found.snakeFlash,
-    deadlineAt: null,
+    suggestedSeconds: found.durationSeconds.max,
+    timeUp: {},
     claims: {},
     disputeChoices: {},
     disputed: false,
@@ -345,7 +344,6 @@ export const SCENARIOS: Scenario[] = [
     title: "Sfida duello automatica · tris",
     description:
       "Minigioco nel motore: clicca le caselle e gioca fino alla vittoria. Primo a muovere è chi ha pescato la carta.",
-    deadlineSeconds: 180,
     state: scenarioState({
       card: challengeCard("tic-tac-toe"),
       players: { 1: player(1, 11), 2: player(2, 13) },
@@ -356,7 +354,6 @@ export const SCENARIOS: Scenario[] = [
     title: "Sfida duello automatica · forza 4",
     description:
       "Sette colonne, sei righe: clicca una colonna e la pedina cade in fondo. Serve a guardare la caduta (F2-05): una mossa per volta, in coda — due clic veloci non si accavallano.",
-    deadlineSeconds: 180,
     state: scenarioState({
       card: challengeCard("dev-forza-4"),
       players: { 1: player(1, 11), 2: player(2, 13) },
@@ -367,7 +364,6 @@ export const SCENARIOS: Scenario[] = [
     title: "Sfida duello automatica · memory",
     description:
       "Dodici carte coperte, sei coppie. Clicca due carte che non combaciano: restano scoperte. Poi clicca la terza: le due si richiudono dopo l'occhiata di un secondo (F2-05).",
-    deadlineSeconds: 180,
     state: scenarioState({
       card: challengeCard("dev-memory"),
       players: { 1: player(1, 11), 2: player(2, 13) },
@@ -378,7 +374,6 @@ export const SCENARIOS: Scenario[] = [
     title: "Sfida a tempo · quiz-lampo",
     description:
       "Cinque domande a turno: chi risponde giusto prende un punto, alla fine la sfida si chiude da sola e paga il premio (F4-04). Prova anche «Guarda come posto 2»: risponde l'altro.",
-    deadlineSeconds: 120,
     state: scenarioState({
       card: challengeCard("quiz-lampo"),
       players: { 1: player(1, 14), 2: player(2, 9) },
@@ -389,7 +384,6 @@ export const SCENARIOS: Scenario[] = [
     title: "Sfida a tempo · riflessi",
     description:
       "Il segnale arriva dopo pochi secondi: chi tocca dopo prende il punto, chi tocca prima lo regala all'altro. Al meglio di cinque (F4-04).",
-    deadlineSeconds: 120,
     signalSeconds: 4,
     state: scenarioState({
       card: challengeCard("riflessi"),
@@ -400,8 +394,7 @@ export const SCENARIOS: Scenario[] = [
     id: "sfida-prova-giudizio",
     title: "Sfida prova a giudizio",
     description:
-      "Gioca Leo, giudica Marta: 30 secondi sul timer. «Non riuscita» non dà il premio a nessuno (D-36).",
-    deadlineSeconds: 30,
+      "Gioca Leo, giudica Marta: nessun timer, la prova aspetta il giudizio dell'altro. «Non riuscita» non dà il premio a nessuno (D-36).",
     state: scenarioState({
       card: challengeCard("mimo"),
       players: { 1: player(1, 19), 2: player(2, 15) },
@@ -412,7 +405,6 @@ export const SCENARIOS: Scenario[] = [
     title: "Doppia conferma · d'accordo",
     description:
       "Dichiarano entrambi: metti la stessa dichiarazione nelle due righe e la sfida si chiude col premio.",
-    deadlineSeconds: 120,
     state: scenarioState({
       card: challengeCard("indovina-la-canzone"),
       players: { 1: player(1, 11), 2: player(2, 17) },
@@ -432,11 +424,30 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "sfida-tempo-finito",
+    title: "Sfida · il tempo è finito (detto da uno solo)",
+    description:
+      "Leo ha detto che il tempo è finito, Marta no: la carta resta aperta e aspetta l'altro. Guarda che non succede niente finché non lo dicono tutti e due, e che il pulsante non si preme due volte (D-82).",
+    state: scenarioState({
+      card: challengeCard("indovina-la-canzone", { timeUp: { 1: true } }),
+      players: { 1: player(1, 11), 2: player(2, 17) },
+    }),
+  },
+  {
+    id: "sfida-esterna-pausa",
+    title: "Sfida esterna · in pausa si gioca fuori",
+    description:
+      "Sfida esterna: «Andiamo a giocare» mette la schermata in pausa. Resta in pausa quanto vuoi — la carta non scade più da sé (D-82) — e al ritorno «Siamo tornati: chi ha vinto?» riapre le dichiarazioni di entrambi.",
+    state: scenarioState({
+      card: challengeCard("lichess-blitz"),
+      players: { 1: player(1, 33), 2: player(2, 29) },
+    }),
+  },
+  {
     id: "sfida-lampo-serpente",
     title: "Sfida lampo del serpente",
     description:
-      "Casella 62, testa del serpente 62 → 18: la prova dura 30 secondi e chi non vince scende alla coda.",
-    deadlineSeconds: 30,
+      "Casella 62, testa del serpente 62 → 18: la prova suggerisce una trentina di secondi e chi non vince scende alla coda. Non scade da sé: se i due dicono che il tempo è finito, la prova è non riuscita e si scende lo stesso.",
     state: scenarioState({
       card: challengeCard("funny-face"),
       players: { 1: player(1, 62), 2: player(2, 55) },
@@ -508,14 +519,12 @@ export const SCENARIOS: Scenario[] = [
 ];
 
 /**
- * Stato pronto da giocare: copia dello scenario con il timer che parte adesso.
- * La scadenza si calcola qui e non nei dati perché `deadlineAt` è un istante assoluto.
+ * Stato pronto da giocare: copia dello scenario con l'orologio che parte adesso.
+ * Il segnale dei riflessi si calcola qui perché `goAt` è un istante assoluto: la durata
+ * suggerita di una sfida, invece, è un numero e non ha bisogno di nessuna scadenza (D-82).
  */
 export function startState(scenario: Scenario): GameState {
   const copy = structuredClone(scenario.state);
-  if (scenario.deadlineSeconds !== undefined && copy.card?.type === "challenge") {
-    copy.card.deadlineAt = new Date(Date.now() + scenario.deadlineSeconds * 1000).toISOString();
-  }
   // I riflessi: il segnale parte poco dopo l'apertura, così si vede anche l'attesa.
   if (
     scenario.signalSeconds !== undefined &&
