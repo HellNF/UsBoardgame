@@ -152,6 +152,10 @@ describe("waitingLine: la riga di attesa di chi non agisce", () => {
     expect(waitingLine(game(minigame, 2), minigame, 1, NAMES)).toBe("Tocca a Marta muovere.");
   });
 
+  it("nel quiz si risponde, non si muove", () => {
+    expect(waitingLine(game(quizCard, 2), quizCard, 1, NAMES)).toBe("Tocca a Marta rispondere.");
+  });
+
   it("riflessi: nessuna riga di attesa, il pulsante ce l'hanno tutti e due", () => {
     expect(waitingLine(game(reflexCard), reflexCard, 1, NAMES)).toBeNull();
     expect(waitingLine(game(reflexCard), reflexCard, 2, NAMES)).toBeNull();

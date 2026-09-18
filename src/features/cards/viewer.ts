@@ -72,7 +72,8 @@ export function waitingLine(
       // Doppia conferma e disaccordo: ognuno dichiara il suo pezzo (righe per posto).
       if (card.disputed || card.verdict === "double_confirm") return null;
       if (card.verdict === "judge") return `${who} sta giudicando…`;
-      return `Tocca a ${who} muovere.`;
+      // Nel quiz non si "muove": si risponde. Gli altri minigiochi sono mosse su un tabellino.
+      return card.minigameId === "quiz" ? `Tocca a ${who} rispondere.` : `Tocca a ${who} muovere.`;
     case "event":
       return `Tocca a ${who} leggere l'imprevisto.`;
     case "star_offer":
