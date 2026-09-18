@@ -21,7 +21,8 @@
     "content:push": "tsx scripts/push-content.ts",
     "board:freeze": "tsx scripts/board-freeze.ts",
     "room:create": "tsx scripts/create-room.ts",
-    "check:realtime": "NODE_OPTIONS=--conditions=react-server tsx scripts/check-realtime.ts"
+    "check:realtime": "NODE_OPTIONS=--conditions=react-server tsx scripts/check-realtime.ts",
+    "check:ready": "tsx scripts/check-ready.ts"
   },
   "dependencies": {
     "@rive-app/react-canvas": "^4.34.2",
