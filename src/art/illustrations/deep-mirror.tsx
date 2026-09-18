@@ -30,14 +30,17 @@ export function DeepMirror({ x = 0, y = 0, size = 100, className }: Illustration
       aria-hidden="true"
       className={className}
     >
-      {/* Il manico: corto e largo, attaccato alla cornice. */}
-      <path d="M41 60h18l5 15c1 4-1 7-5 7H41c-4 0-6-3-5-7z" fill="currentColor" stroke="none" />
-      {/* Il fondo dello specchio: inchiostro pieno, staccato dalla cornice da una fascia di carta. */}
-      <ellipse cx="50" cy="38" rx="11.5" ry="17.5" fill="currentColor" stroke="none" />
-      {/* Il riflesso: una fascia diagonale di carta, tutta dentro il fondo. */}
-      <path d="M45 44 53 28" stroke="var(--color-paper)" strokeWidth={9} strokeLinecap="round" />
-      {/* La cornice. */}
-      <ellipse cx="50" cy="38" rx="20" ry="26" strokeWidth={9} />
+      {/* Il manico: corto e largo, attaccato al corpo. */}
+      <path d="M48 66h18l4 13c1 4-1 7-5 7H49c-4 0-6-3-5-7z" fill="currentColor" stroke="none" />
+      {/*
+       * Lo specchio è una **massa piena**, non una cornice a tratto: nella casella l'alone del
+       * numero morde l'angolo in alto a sinistra del disegno (tutto ciò che sta sopra e a sinistra
+       * di circa 47, 41), e un anello lì si apre — l'ovale si leggeva come una «C». Una massa il
+       * morso lo regge come una tacca. È la regola di D-65 applicata a un'illustrazione.
+       */}
+      <ellipse cx="57" cy="44" rx="17" ry="22" fill="currentColor" stroke="none" />
+      {/* Il riflesso: la fascia diagonale di carta che dice «superficie che riflette». */}
+      <path d="M51 54 63 32" stroke="var(--color-paper)" strokeWidth={8} strokeLinecap="round" />
     </svg>
   );
 }

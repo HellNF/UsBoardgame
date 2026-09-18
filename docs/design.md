@@ -75,10 +75,16 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 - Tratto `strokeWidth` 5,5, `strokeLinecap="round"`, `strokeLinejoin="round"`; almeno una campitura piena per
   illustrazione. Nessun testo dentro gli SVG.
 - Leggibili a 48 px: niente dettagli sotto le 3 unità.
-- **L'angolo in alto a sinistra resta libero:** nella casella il numero si disegna sopra l'illustrazione con il suo
-  alone di carta, e quell'alone morde lì. Una campitura piena regge il morso come una tacca; un tratto sottile o una
-  fascia che attraversa l'angolo viene **tagliata in due** e il disegno si spezza (è la stessa regola delle
-  decorazioni, D-65: piene sì, sottili no). Un disegno si guarda a 48 px **nella casella**, non solo in `/dev/art`.
+- **Il quadrante in alto a sinistra è occupato dall'alone del numero.** Nella casella il numero si disegna sopra
+  l'illustrazione (`x + 18`, `y + 38`, corpo 22, alone 12) e l'alone di carta copre circa il rettangolo
+  `x 12…48`, `y 16…44` della casella — che nelle coordinate dell'illustrazione, disegnata a 68 unità dentro le 100
+  della casella, è **tutto ciò che sta sopra e a sinistra di (47, 41)**. Non è un angolino: è un quarto del disegno,
+  e con un numero a due cifre è il caso peggiore.
+  Conseguenze: una campitura piena regge il morso come una tacca, un tratto sottile o un **anello** viene tagliato
+  in due (è D-65 applicata a un disegno: `deep-mirror` era una cornice ovale a tratto e si leggeva come una «C»,
+  poi come una testa di cavallo); e la parte che **definisce la silhouette** non va lì — lo specchio è finito a
+  massa piena, spostato in basso a destra. Le stelle invece non ne soffrono: una tacca su una punta non si vede.
+  Un disegno si guarda a 48 px **nella casella**, non solo in `/dev/art`.
 - La silhouette conta più del dettaglio: a 48 px «massa in alto + tratti lisci in basso» si legge sempre come un
   corpo (una persona, un tavolo, un animale a quattro zampe). Per uscirne serve un segno che i corpi non hanno —
   per le radici la **biforcazione** (`deep-roots`, tre versioni buttate prima di trovarlo).
