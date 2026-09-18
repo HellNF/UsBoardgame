@@ -12,5 +12,8 @@
  */
 import type { BoardLayout } from "@/engine/types";
 
-/** Le disposizioni congelate finora: nessuna. `pnpm board:freeze 42 "Serata d'estate"` ne scrive una. */
-export const frozenBoards: BoardLayout[] = [];
+import { laDiagonale } from "./la-diagonale";
+import { laRipida } from "./la-ripida";
+
+/** Le disposizioni congelate finora, in ordine di nome. */
+export const frozenBoards: BoardLayout[] = [laDiagonale, laRipida];

@@ -16,8 +16,12 @@ describe("disposizioni del tabellone", () => {
     expect(boards.map((b) => b.id)).toContain(defaultBoardId);
   });
 
-  it("ogni id è unico, contando anche le disposizioni congelate", () => {
-    const ids = [...boards, ...frozenBoards].map((b) => b.id);
+  it("ogni id è unico", () => {
+    // Su `boards`, che dal pacchetto K **contiene già** le congelate (`[classic, ...frozenBoards]`):
+    // sommare i due elenchi conterebbe ogni congelata due volte. La prova era scritta prima di quel
+    // cambiamento e restava verde solo perché non c'era niente di congelato — vacua, e si è vista
+    // appena ho congelato le prime due disposizioni.
+    const ids = boards.map((board) => board.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -33,7 +37,7 @@ describe("disposizioni del tabellone", () => {
     for (const frozen of frozenBoards) expect(offered.has(frozen.id)).toBe(true);
   });
 
-  for (const board of [...boards, ...frozenBoards]) {
+  for (const board of boards) {
     describe(`disposizione \`${board.id}\``, () => {
       it("rispetta tutti i vincoli di docs/rules.md § Tabellone", () => {
         expectValid(board);
