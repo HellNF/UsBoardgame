@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 
 import { illustrationsByCategory } from "@/art/illustrations";
 import { boards } from "@/content/boards";
+import { DECORATION_SHAPES } from "@/engine/board-generator";
 import {
   QUESTION_CATEGORIES,
+  READABILITY_BUDGET,
   RULES,
   cellToCoord,
   crossedCells,
+  fitsBudget,
   generateBoard,
+  isBorderCell,
+  measureReadability,
   validateBoard,
   type BoardLayout,
   type CellKind,
@@ -146,9 +151,39 @@ describe("generateBoard: le decorazioni e D-65", () => {
     }
   });
 
-  it("le decorazioni sono quattro, come nella classic", () => {
+  it("non si decora mai una casella di bordo: la cornice si mangia il margine", () => {
     for (const seed of SEEDS) {
-      expect(generate(seed).decorations).toHaveLength(4);
+      const board = generate(seed);
+      expect(board.decorations.length).toBeGreaterThan(0);
+      for (const decoration of board.decorations) {
+        for (const cell of decoration.cells) expect(isBorderCell(cell)).toBe(false);
+      }
+    }
+  });
+
+  it("le decorazioni sono al massimo quattro, una per forma, e almeno una", () => {
+    for (const seed of SEEDS) {
+      const decorations = generate(seed).decorations;
+      expect(decorations.length).toBeGreaterThan(0);
+      expect(decorations.length).toBeLessThanOrEqual(DECORATION_SHAPES.length);
+    }
+  });
+
+  it("non si mettono più decorazioni delle caselle decorabili (la regola viene prima del numero)", () => {
+    for (const seed of SEEDS) {
+      const board = generate(seed);
+      const crossed = crossedCells(board);
+      const dec = board.cells.filter(
+        (cell) => cell.kind === "free" && !crossed.has(cell.n) && !isBorderCell(cell.n),
+      );
+      const decorated = board.decorations.flatMap((decoration) => decoration.cells);
+      // Le caselle legali sono poche — il bordo ne toglie 36 e le linee ne coprono altre — e questa
+      // è la ragione per cui un tabellone generato può portare due o tre forme invece di quattro.
+      expect(decorated.length).toBeLessThanOrEqual(dec.length);
+      for (const decoration of board.decorations) {
+        expect(decoration.cells.length).toBeLessThanOrEqual(2);
+        expect(decoration.cells.length).toBeGreaterThanOrEqual(1);
+      }
     }
   });
 
@@ -190,11 +225,62 @@ describe("generateBoard: quando i disegni non bastano", () => {
   });
 });
 
+describe("generateBoard: il budget di leggibilità (I2)", () => {
+  it("il conto della classic è quello contato a mano: 17 incroci e 2 linee per casella", () => {
+    const measure = measureReadability(classic);
+    expect(measure.crossings).toBe(17);
+    expect(measure.linesPerCell).toBe(2);
+  });
+
+  it("nessuna disposizione generata supera il tetto di incroci e di linee per casella", () => {
+    for (const seed of SEEDS) {
+      const measure = measureReadability(generate(seed));
+      expect(measure.crossings).toBeLessThanOrEqual(READABILITY_BUDGET.crossings);
+      expect(measure.linesPerCell).toBeLessThanOrEqual(READABILITY_BUDGET.linesPerCell);
+      expect(fitsBudget(measure, READABILITY_BUDGET)).toBe(true);
+    }
+  });
+
+  it("il budget è la sola differenza: senza, gli stessi semi tornano sopra il tetto", () => {
+    for (const seed of [1, 12, 17]) {
+      const withoutBudget = generateBoard({ seed, illustrations: pool(), budget: null });
+      const measure = measureReadability(withoutBudget);
+      expect(measure.linesPerCell).toBeGreaterThan(READABILITY_BUDGET.linesPerCell);
+      expect(measure.crossings).toBeGreaterThan(READABILITY_BUDGET.crossings);
+      // Stesso seme e stessi vincoli di prima: la disposizione senza budget è ancora valida.
+      expect(validateBoard(withoutBudget)).toEqual({ ok: true });
+    }
+  });
+
+  it("con un tetto impossibile (nessuna linea ammessa) si ferma dicendo a quanto e con che tetto", () => {
+    expect(() =>
+      generateBoard({ seed: 1, illustrations: pool(), budget: { crossings: 0, linesPerCell: 0 } }),
+    ).toThrow(/budget di leggibilità \(0 incroci, 0 linee per casella\)[\s\S]*si ferma a \d+ scale e \d+/);
+  });
+
+  it("il budget non cambia nient'altro: le scale restano 7, i serpenti 6", () => {
+    for (const seed of SEEDS) {
+      const board = generate(seed);
+      expect(board.ladders).toHaveLength(RULES.board.ladders);
+      expect(board.snakes).toHaveLength(RULES.board.snakes);
+    }
+  });
+});
+
 describe("generateBoard: che i tipi restino quelli dichiarati", () => {
   it("la `classic` e una generata hanno le stesse chiavi di tipo", () => {
     const kinds = (board: BoardLayout) => [...new Set(board.cells.map((cell) => cell.kind))].sort();
     expect(kinds(generate(5))).toEqual(kinds(classic));
-    const declared: CellKind[] = ["challenge", "coins", "event", "finish", "free", "question", "star", "start"];
+    const declared: CellKind[] = [
+      "challenge",
+      "coins",
+      "event",
+      "finish",
+      "free",
+      "question",
+      "star",
+      "start",
+    ];
     expect(kinds(classic)).toEqual([...declared].sort());
   });
 });

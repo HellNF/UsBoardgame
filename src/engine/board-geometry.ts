@@ -73,6 +73,20 @@ export function cellRect(n: CellNumber, margin = 0): { x: number; y: number; w: 
   return { x: corner.x - margin, y: corner.y - margin, w: CELL + margin * 2, h: CELL + margin * 2 };
 }
 
+/**
+ * Vero se la casella sta sulla **cornice**: prima o ultima fila, prima o ultima colonna.
+ *
+ * È il terzo vincolo di D-65. La cornice del tabellone è spessa e si disegna **dopo** le decorazioni
+ * (docs/design.md § Tabellone), quindi su una casella di bordo si mangia il margine di
+ * `DECORATION_INSET` e i due neri diventano uno: il disco sulle caselle 4-5 della `classic` si
+ * fondeva con la cornice di sotto. Il generatore di disposizioni (F7-02) filtra con questa, il
+ * bordo non è una casella «attraversata» da niente: è una casella dove la decorazione non entra.
+ */
+export function isBorderCell(n: CellNumber): boolean {
+  const { row, col } = cellToCoord(n);
+  return row === 0 || col === 0 || row === RULES.board.size - 1 || col === RULES.board.size - 1;
+}
+
 /** Curva morbida (Catmull-Rom trasformata in Bézier cubiche) che passa per i punti. */
 export function smoothPath(points: Point[]): string {
   if (points.length < 2) return "";
@@ -205,19 +219,67 @@ export type CrossedOptions = {
  * Le caselle attraversate da scale e serpenti della disposizione (D-65, F7-02).
  * Con i valori di partenza sono le caselle su cui una decorazione piena si fonderebbe con
  * un'altra forma piena: è la misura che il generatore usa per scegliere dove decorare.
+ *
+ * Il **bordo** non è di questo conto — lì il nero che si fonde è quello della cornice, non quello di
+ * una scala — e lo tiene fuori `isBorderCell`, il terzo vincolo di D-65.
  */
 export function crossedCells(board: BoardLayout, options: CrossedOptions = {}): Set<CellNumber> {
-  const inset = options.inset ?? DECORATION_INSET;
+  const crossed = new Set<CellNumber>();
+  for (const { cells } of elementFootprints(board, {
+    ...options,
+    inset: options.inset ?? DECORATION_INSET,
+  })) {
+    for (const cell of cells) crossed.add(cell);
+  }
+  return crossed;
+}
+
+/** Una scala o un serpente con le caselle su cui passa. */
+export type ElementFootprint = {
+  kind: "ladder" | "snake";
+  from: CellNumber;
+  to: CellNumber;
+  /** Le caselle toccate: con `inset` 0 tutta la casella, altrimenti ritirata di quel margine. */
+  cells: Set<CellNumber>;
+};
+
+/**
+ * L'ingombro di **ogni** scala e serpente, uno per uno (F7-02, pacchetto I).
+ *
+ * Serve al budget di leggibilità: due linee si «incrociano» quando passano sopra la stessa casella,
+ * quindi il conto ha bisogno delle caselle di ciascuna, non della loro unione. Con `inset` 0 (il
+ * valore di partenza, diverso da quello di `crossedCells`) la misura è l'**inchiostro intero**: una
+ * linea conta su una casella anche quando la sfiora soltanto, che è quello che si vede.
+ *
+ * Come per `crossedCells`, scala e serpente si misurano con gli ingombri veri del disegno
+ * (`LADDER_HALF_WIDTH` + mezzo tratto, metà di `SNAKE_BODY_WIDTH`) e con `cellsAlongPath`, il
+ * modulo da cui il tabellone disegna (D-70): niente geometria nuova, niente seconda verità.
+ */
+export function elementFootprints(
+  board: Pick<BoardLayout, "ladders" | "snakes">,
+  options: CrossedOptions = {},
+): ElementFootprint[] {
+  const inset = options.inset ?? 0;
   const ladderClearance = options.ladder ?? LADDER_HALF_WIDTH + LADDER_STROKE / 2;
   const snakeClearance = options.snake ?? SNAKE_BODY_WIDTH / 2;
 
-  const crossed = new Set<CellNumber>();
+  const footprints: ElementFootprint[] = [];
   for (const { from, to } of board.ladders) {
     const { start, end } = ladderAxis(from, to);
-    for (const cell of cellsAlongPath([start, end], ladderClearance, inset)) crossed.add(cell);
+    footprints.push({
+      kind: "ladder",
+      from,
+      to,
+      cells: cellsAlongPath([start, end], ladderClearance, inset),
+    });
   }
   for (const { from, to } of board.snakes) {
-    for (const cell of cellsAlongPath(snakeBodyPoints(from, to), snakeClearance, inset)) crossed.add(cell);
+    footprints.push({
+      kind: "snake",
+      from,
+      to,
+      cells: cellsAlongPath(snakeBodyPoints(from, to), snakeClearance, inset),
+    });
   }
-  return crossed;
+  return footprints;
 }

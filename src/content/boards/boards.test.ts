@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { validateBoard } from "@/engine/board-validation";
 import { RULES } from "@/engine/config";
 import type { BoardLayout } from "@/engine/types";
-import { boards, defaultBoardId } from "./index";
+import { boards, defaultBoardId, frozenBoards } from "./index";
 
 const expectValid = (board: BoardLayout) => {
   const result = validateBoard(board);
@@ -15,12 +15,12 @@ describe("disposizioni del tabellone", () => {
     expect(boards.map((b) => b.id)).toContain(defaultBoardId);
   });
 
-  it("ogni id è unico", () => {
-    const ids = boards.map((b) => b.id);
+  it("ogni id è unico, contando anche le disposizioni congelate", () => {
+    const ids = [...boards, ...frozenBoards].map((b) => b.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  for (const board of boards) {
+  for (const board of [...boards, ...frozenBoards]) {
     describe(`disposizione \`${board.id}\``, () => {
       it("rispetta tutti i vincoli di docs/rules.md § Tabellone", () => {
         expectValid(board);

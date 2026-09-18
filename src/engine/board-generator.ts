@@ -1,5 +1,13 @@
 import { cellToCoord, coordToCell, rowOf } from "./board";
-import { crossedCells } from "./board-geometry";
+import { crossedCells, elementFootprints, isBorderCell } from "./board-geometry";
+import {
+  READABILITY_BUDGET,
+  addLine,
+  describeBudget,
+  readabilityState,
+  type ReadabilityBudget,
+  type ReadabilityState,
+} from "./board-readability";
 import { RULES } from "./config";
 import {
   QUESTION_CATEGORIES,
@@ -27,9 +35,10 @@ import {
  * serpente), niente che parta o arrivi sulla 1 e sulla 100, una scala o un serpente che coprono
  * al massimo `board.maxSpanRows` file, nessuna testa di serpente fra la 2 e la 12.
  *
- * E le **decorazioni** (D-65) solo su caselle libere che nessuna scala e nessun serpente
- * attraversa, misurate con la geometria di `board-geometry` — la stessa che disegna il tabellone,
- * così il generatore non può rifare il difetto che due neri pieni si fondono in una macchia.
+ * E le **decorazioni** (D-65) solo su caselle libere, che nessuna scala e nessun serpente
+ * attraversa e che non stanno sulla cornice, misurate con la geometria di `board-geometry` — la
+ * stessa che disegna il tabellone, così il generatore non può rifare il difetto che due neri pieni
+ * si fondono in una macchia (e che sul bordo si fonde con la cornice).
  *
  * Le illustrazioni arrivano da fuori (`illustrations`): il registro sta in `src/art/illustrations`,
  * che non è del motore. Senza abbastanza id per una categoria il generatore **lancia**: meglio un
@@ -51,6 +60,14 @@ export type BoardGeneratorOptions = {
   id?: string;
   name?: string;
   illustrations: IllustrationPool;
+  /**
+   * Il budget di leggibilità del piazzamento (I2): si rifiuta il candidato che porterebbe il
+   * tabellone oltre il tetto e si pesca il successivo. Di partenza `READABILITY_BUDGET`
+   * (`RULES.board.maxCrossings`, `RULES.board.maxLinesPerCell`); con `null` il budget non si
+   * applica e il piazzamento è quello di prima (serve a misurare quanto vale, e a rigenerare una
+   * disposizione di confronto).
+   */
+  budget?: ReadabilityBudget | null;
 };
 
 /**
@@ -183,33 +200,108 @@ function snakeCandidates(): Snake[] {
 }
 
 /** Sceglie gli elementi a estremi tutti diversi, mescolando i candidati con il seme. */
-function pickDisjoint<T extends { from: CellNumber; to: CellNumber }>(
+function pickWithinBudget<T extends { from: CellNumber; to: CellNumber }>(
+  kind: "ladder" | "snake",
   candidates: T[],
   wanted: number,
   used: Set<CellNumber>,
+  readability: ReadabilityState,
+  budget: ReadabilityBudget | null,
   next: () => number,
 ): T[] {
   const chosen: T[] = [];
   for (const candidate of shuffled(candidates, next)) {
     if (chosen.length === wanted) break;
     if (used.has(candidate.from) || used.has(candidate.to)) continue;
+    // Il budget si applica **qui**: un candidato che porterebbe il tabellone oltre il tetto si
+    // rifiuta e si pesca il successivo. Scartare il tabellone finito non funzionerebbe: quasi
+    // nessun seme starebbe dentro il tetto e gli otto tentativi si consumerebbero tutti.
+    if (budget && !addLine(readability, footprintOf(kind, candidate), budget)) continue;
     chosen.push(candidate);
     used.add(candidate.from);
     used.add(candidate.to);
   }
-  if (chosen.length < wanted) {
-    throw new Error(`Servono ${wanted} elementi a estremi liberi, se ne trovano ${chosen.length}.`);
-  }
   return chosen;
 }
 
+/** Cosa ha piazzato un tentativo: scale, serpenti e il conto della leggibilità che ne risulta. */
+type Placement = { ladders: Ladder[]; snakes: Snake[]; readability: ReadabilityState };
+
+/** Scale e serpenti di un tentativo, estremi tutti diversi e dentro il budget di leggibilità. */
+function placeElements(
+  next: () => number,
+  budget: ReadabilityBudget | null,
+  used: Set<CellNumber>,
+): Placement {
+  const readability = readabilityState();
+  const ladders = pickWithinBudget(
+    "ladder",
+    ladderCandidates(),
+    RULES.board.ladders,
+    used,
+    readability,
+    budget,
+    next,
+  );
+  const snakes = pickWithinBudget(
+    "snake",
+    snakeCandidates(),
+    RULES.board.snakes,
+    used,
+    readability,
+    budget,
+    next,
+  );
+  return { ladders, snakes, readability };
+}
+
 /**
- * Le decorazioni su caselle che nulla attraversa (D-65).
+ * L'ingombro di un solo elemento, con la misura del budget (inchiostro intero).
+ *
+ * La misura dipende solo dagli estremi, quindi si calcola **una volta sola** per candidato: senza
+ * questa memoria il piazzamento rifà la misura di centinaia di candidati a ogni tabellone, che è il
+ * costo che faceva scadere i test (la scala del tabellone è fissa, i candidati sono circa 5.000).
+ */
+const footprintCache = new Map<string, Set<CellNumber>>();
+
+function footprintOf(kind: "ladder" | "snake", element: Ladder | Snake): Set<CellNumber> {
+  const key = `${kind}:${element.from}:${element.to}`;
+  const cached = footprintCache.get(key);
+  if (cached) return cached;
+
+  const board =
+    kind === "ladder"
+      ? { ladders: [element as Ladder], snakes: [] as Snake[] }
+      : { ladders: [] as Ladder[], snakes: [element as Snake] };
+  const cells = elementFootprints(board)[0].cells;
+  footprintCache.set(key, cells);
+  return cells;
+}
+
+/**
+ * Il messaggio quando il budget non lascia arrivare a 7 e 6: dice **a quanto si è fermato** e **con
+ * che tetto**, che è quello che serve per decidere se allargarlo o accontentarsi di un tabellone
+ * con meno scale. Un tabellone con meno elementi non passa il validatore di
+ * `docs/rules.md` § Tabellone (7 scale e 6 serpenti sono un vincolo), quindi il generatore lancia
+ * invece di restituire una disposizione che il resto del gioco rifiuterebbe.
+ */
+function shortfallMessage(seed: number, budget: ReadabilityBudget, best: Placement | null): string {
+  const reached = best ? `${best.ladders.length} scale e ${best.snakes.length}` : "nessuna scala";
+  return `Il budget di leggibilità (${describeBudget(budget)}) non lascia arrivare a ${RULES.board.ladders} scale e ${RULES.board.snakes} serpenti sul seme ${seed}: il tentativo migliore si ferma a ${reached}.`;
+}
+
+/**
+ * Le decorazioni su caselle che nulla attraversa e che stanno dentro il tabellone (D-65).
  *
  * Le misure sono quelle vere — l'ingombro dei montanti di una scala, metà del corpo di un
  * serpente, con la decorazione dentro il suo margine di 12 unità — perché con un inchiostro
  * pieno sotto un altro inchiostro pieno la forma si fonde in una macchia, ed è il difetto che il
  * proprietario ha corretto a mano sulla 23 e sulla 26.
+ *
+ * I vincoli sono tre e vengono dal guardare il tabellone vero: casella **libera**, **non
+ * attraversata** da una scala o da un serpente, **non di bordo** (la cornice è spessa 16 unità e
+ * si disegna dopo le decorazioni: sul bordo si mangia il margine di 12 e i due neri diventano uno,
+ * era il disco sulle caselle 4-5 della `classic`).
  *
  * Le forme previste sono quattro, ma la regola viene prima del numero: se le caselle libere che
  * nulla attraversa sono meno di quattro, si mette quello che ci sta. Il disco preferisce due
@@ -222,7 +314,9 @@ function chooseDecorations(
   next: () => number,
 ): BoardDecoration[] {
   const order = shuffled(
-    board.cells.filter((cell) => cell.kind === "free" && !crossed.has(cell.n)).map((cell) => cell.n),
+    board.cells
+      .filter((cell) => cell.kind === "free" && !crossed.has(cell.n) && !isBorderCell(cell.n))
+      .map((cell) => cell.n),
     next,
   );
 
@@ -259,27 +353,44 @@ function chooseDecorations(
 /**
  * Una disposizione completa: 100 caselle, 7 scale, 6 serpenti e le decorazioni che ci stanno.
  *
- * Scale e serpenti si ripescano se lasciano il tabellone senza posto per le decorazioni: ogni
- * ripescaggio consuma il generatore, quindi la disposizione resta deterministica. Si accetta
- * anche l'ultimo tentativo — un tabellone con tre decorazioni è meglio di nessun tabellone — ma
- * con otto tentativi un tabellone povero di caselle libere è raro.
+ * Scale e serpenti si ripescano due volte: se il candidato successivo porterebbe il tabellone oltre
+ * il **budget di leggibilità** (I2) si rifiuta e si prova il prossimo, e se le decorazioni non
+ * trovano quattro caselle libere il tentativo intero si rifà. Ogni ripescaggio consuma il
+ * generatore, quindi la disposizione resta deterministica. Si accetta anche l'ultimo tentativo —
+ * un tabellone con tre decorazioni è meglio di nessun tabellone — ma con otto tentativi un tabellone
+ * povero di caselle libere è raro.
+ *
+ * Se in tutti gli otto tentativi il budget taglia le scale o i serpenti, il generatore **lancia**
+ * dicendo a quanto si è fermato e con che tetto: un tabellone con meno di 7 scale o 6 serpenti non
+ * passa il validatore (docs/rules.md § Tabellone), quindi non si restituisce una disposizione che il
+ * resto del gioco rifiuterebbe. Con `budget: null` quel caso non esiste.
  */
 export function generateBoard(options: BoardGeneratorOptions): BoardLayout {
   const next = seededRandom(options.seed);
   const cells = buildCells(next, options.illustrations);
+  const budget = options.budget === undefined ? READABILITY_BUDGET : options.budget;
 
   const attempts = 8;
   let board: BoardLayout | null = null;
+  let best: Placement | null = null;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     const used = new Set<CellNumber>();
-    const ladders = pickDisjoint(ladderCandidates(), RULES.board.ladders, used, next);
-    const snakes = pickDisjoint(snakeCandidates(), RULES.board.snakes, used, next);
+    const placement = placeElements(next, budget, used);
+
+    // Il budget ha tagliato questo tentativo: si tiene il migliore e si prova un altro giro di
+    // mescolata (il generatore avanza, quindi la disposizione resta la stessa a parità di seme).
+    if (placement.ladders.length < RULES.board.ladders || placement.snakes.length < RULES.board.snakes) {
+      const placed = placement.ladders.length + placement.snakes.length;
+      if (!best || placed > best.ladders.length + best.snakes.length) best = placement;
+      continue;
+    }
+
     const candidate: BoardLayout = {
       id: options.id ?? `seed-${options.seed}`,
       name: options.name ?? `Generata dal seme ${options.seed}`,
       cells,
-      ladders,
-      snakes,
+      ladders: placement.ladders,
+      snakes: placement.snakes,
       decorations: [],
     };
     const decorations = chooseDecorations(candidate, crossedCells(candidate), next);
@@ -289,6 +400,9 @@ export function generateBoard(options: BoardGeneratorOptions): BoardLayout {
     }
   }
 
-  if (!board) throw new Error(`Nessuna disposizione generata per il seme ${options.seed}.`);
+  if (!board) {
+    if (!budget) throw new Error(`Nessuna disposizione generata per il seme ${options.seed}.`);
+    throw new Error(shortfallMessage(options.seed, budget, best));
+  }
   return board;
 }

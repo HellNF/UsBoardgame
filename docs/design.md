@@ -52,7 +52,8 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   (due neri pieni uno sull'altro si fondono in una macchia), **mai su una casella di bordo** (la cornice è spessa
   16 unità e si disegna dopo: si mangia il margine), e sono **piene, mai anelli** (l'alone del numero morde sempre
   l'angolo in alto a sinistra: una forma piena lo regge, una fascia sottile si spezza). Le caselle legali le
-  calcola `crossedCells` in `src/engine/board-geometry.ts`, non l'occhio.
+  calcolano `crossedCells` e `isBorderCell` in `src/engine/board-geometry.ts`, non l'occhio: è la stessa misura che
+  usa il generatore di disposizioni (F7-02).
 - Le caselle domanda e stella portano **l'illustrazione** del registro (`src/art/illustrations`) dentro un tondo di
   carta, nello strato dei numeri: è l'alone di A1, e il numero della casella si disegna sopra a tutto.
 
@@ -124,8 +125,10 @@ segnaposto, basandosi sulla tabella qui sotto.
   (es. `<Pawn animal="fox" color="red" hop={n} />`) e mostra il segnaposto finché il file non è caricato o se manca.
   I wrapper ci sono: `PawnView`, `DieView`, `CardView`, `MascotView`, `FinaleView` (registro in `src/art/rive/index.ts`).
 - **Dove sono collegati** (D-68): la pedina del tabellone, il dado, la carta e la schermata finale. La pedina disegna
-  il canvas Rive dentro un `foreignObject`, perché dentro un SVG il canvas è HTML e non entra altrimenti. La
-  **mascotte** non è collegata: non ha un posto nell'interfaccia.
+  il canvas Rive dentro un `foreignObject`, perché dentro un SVG il canvas è HTML e non entra altrimenti. Il posto
+  della **mascotte** è deciso (D-74): pannello di destra della partita, un animale per posto — lo stesso della
+  pedina — con il `mood` mosso dagli stessi `GameEvent[]` che guidano le animazioni. **Non è collegata**: finché
+  `mascots.riv` manca il segnaposto occuperebbe spazio senza fare niente, cioè contro la regola qui sotto.
 - **In partita il segnaposto è il componente attuale della schermata**: ogni wrapper prende `placeholder`, e le
   schermate ci passano quello che si vede oggi — il cerchio SVG della pedina, il dado a **pallini** (`DieFace`), la
   carta con i suoi figli (`placeholder="children"`, perché l'ingresso è già Motion, D-57). I segnaposto disegnati per

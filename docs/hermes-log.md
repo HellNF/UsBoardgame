@@ -502,3 +502,139 @@ build` verde prima di ogni push.
   - i tabelloni generati **non sono contenuti versionati**: non finiscono in `supabase/seed.sql` e la lobby non li
     offre. È voluto (F7-02 è una funzione e un modo per guardarla), ma significa che un seme che ti piace oggi non è
     conservato da nessuna parte: dirlo a voce e lo salvo come disposizione con un nome.
+
+## Pacchetto I · Il generatore che si legge — 2026-09-18
+
+Branch: `hermes/i-disposizioni` (da `main` a `f361e37`) · Un commit per punto, ognuno con `pnpm check` verde prima
+del commit e `pnpm build` verde prima del push, pushato subito: `1790646` (I1, il vincolo di bordo), `9e14ebc` (I2, il
+budget di leggibilità), `3518423` (I3, il congelamento), più il commit di questa documentazione. Nessuna migrazione:
+il pacchetto non tocca il database, quindi niente `db:reset` e niente `db:types`. Nessuna illustrazione toccata,
+nessun `.riv`, nessun suono, nessuna modifica a `src/content/questions/`, a F0-06, a Vercel o ai file `.env`, e
+nessun merge in `main`.
+
+- **Fatto:**
+  - **I1 (D-65, terzo vincolo)** `[L]`: `chooseDecorations` filtrava su «libera e non attraversata» e lasciava passare
+    le caselle di bordo, dove la cornice (spessa, disegnata **dopo** le decorazioni) si mangia il margine di 12 unità
+    e i due neri diventano uno. Ora il vincolo è una **misura**: `isBorderCell` in `src/engine/board-geometry.ts`
+    (prima o ultima riga, prima o ultima colonna), accanto a `crossedCells` che c'era già. La prova è come le altre
+    due: «non si decora mai una casella di bordo» su dodici semi, più il conto delle caselle decorabili. La `classic`
+    **non è stata toccata** (le sue tre decorazioni erano già interne) e nemmeno gli altri vincoli.
+  - **I2 (F7-02, D-72)** `[L]`: il budget di leggibilità del proprietario — **6 caselle con più di una linea, 2
+    linee al massimo sulla stessa casella** — sta ora **dentro il piazzamento**: `pickWithinBudget` aggiunge una
+    scala o un serpente alla volta e rifiuta il candidato che porterebbe il tabellone oltre il tetto, pescando il
+    successivo. La misura è `src/engine/board-readability.ts` (`measureReadability`, `addLine`,
+    `fitsBudget`), costruita su `elementFootprints` di `board-geometry.ts`: la stessa geometria che disegna il
+    tabellone, **niente misura nuova**. Il conto si aggiorna una linea alla volta, e gli ingombri dei ~5.000
+    candidati restano in una memoria (rifare la misura da capo faceva scadere i test: da secondi a ~50 ms per
+    tabellone). I due tetti sono in `RULES.board` e il budget è un **parametro**: `budget: null` dà il piazzamento di
+    prima, per confronto. Se un tetto non lasciasse arrivare a 7 e 6, il generatore **lancia dicendo a quanto si è
+    fermato e con che tetto** invece di restituire una disposizione che il validatore rifiuterebbe.
+  - **I3 (F7-03, metà meccanica, D-73)** `[L]`: `pnpm board:freeze <seme> <nome>` (`scripts/board-freeze.ts`) scrive
+    `src/content/boards/<nome>.ts` con la disposizione **intera come dato** — 100 caselle, 7 scale, 6 serpenti, le
+    decorazioni — e riscrive `src/content/boards/frozen.ts`, l'elenco delle congelate. Una disposizione congelata
+    **non si rigenera**: se un giorno cambia il generatore, quella non si muove. Lo script **rifiuta** di
+    sovrascrivere un file che esiste, e **non ho congelato niente**: i semi e i nomi sono tuoi. Le congelate le
+    validano gli stessi test della `classic` (`boards.test.ts` gira su `boards` e su `frozenBoards`) e si guardano in
+    `/dev/disposizioni`, che ha una sezione per loro; `boards` resta la `classic`, quindi **la lobby non cambia e la
+    scelta non è collegata alla creazione della serata**.
+  - **I4 (F6-05, D-74)** decisione scritta, non collegata: la mascotte sta nel **pannello di destra**, è **lo stesso
+    animale della pedina**, il `mood` lo muovono **gli stessi `GameEvent[]`** che guidano le animazioni, e non è mai
+    l'unico canale di un'informazione (D-69). La mappa evento → mood (5 valori) è in D-74.
+- **Verificato da me, con i comandi e i risultati veri:**
+  - `pnpm check` verde prima di ogni commit: **413 prove su 38 file** con il pacchetto completo (erano 377 su 35 in
+    `main`; 419 con tre disposizioni di prova congelate, sei prove in più che spariscono cancellandole), `pnpm build`
+    verde prima di ogni push. Nessun test disattivato, nessuna regola ESLint spenta.
+  - **I1**: le prove nuove su `board-geometry.test.ts` (4) e su `board-generator.test.ts` (24 in tutto) sono verdi.
+    Correzione dichiarata: la prova «le decorazioni sono quattro, come nella classic» **non poteva più valere** — il
+    vincolo di bordo toglie 36 caselle dalle candidate — ed è diventata «al massimo quattro, almeno una» più «non si
+    mettono più decorazioni delle caselle decorabili». La `classic` non è toccata, quindi la partita resta identica.
+  - **I2**: **incroci e linee per casella dei semi da 1 a 20, prima (il generatore di `main`, `f361e37`) e dopo**
+    (misurati con la stessa formula su una copia del generatore di `main` e sul modulo nuovo; la misura è «caselle
+    con più di una linea / massimo di linee su una casella»):
+
+    | seme | prima | dopo | seme | prima | dopo |
+    | ---- | ----- | ---- | ---- | ----- | ---- |
+    | 1    | 36/6  | 6/2  | 11   | 24/4  | 6/2  |
+    | 2    | 32/4  | 6/2  | 12   | 38/7  | 6/2  |
+    | 3    | 33/6  | 6/2  | 13   | 29/4  | 6/2  |
+    | 4    | 35/5  | 6/2  | 14   | 35/4  | 6/2  |
+    | 5    | 29/3  | 6/2  | 15   | 33/5  | 6/2  |
+    | 6    | 34/4  | 6/2  | 16   | 33/5  | 6/2  |
+    | 7    | 34/5  | 6/2  | 17   | 43/7  | 6/2  |
+    | 8    | 34/4  | 6/2  | 18   | 36/7  | 6/2  |
+    | 9    | 28/4  | 6/2  | 19   | 31/7  | 6/2  |
+    | 10   | 32/5  | 6/2  | 20   | 35/6  | 6/2  |
+
+    Prima: incroci **24-43**, linee per casella **3-7**. Dopo: incroci **6**, linee **2** su tutti e venti i semi
+    (cioè il tetto, mai superato). Su **200 semi**: incroci massimi 6, linee massime 2, **nessun seme si ferma sotto
+    7 scale e 6 serpenti** (il ramo che lancia non è mai servito con i tetti veri; è provato con un tetto impossibile
+    — 0 incroci, 0 linee — e il messaggio dice a quanto si ferma).
+
+  - **I2, il conto della `classic` con questa misura è 17 caselle con più di una linea e 2 linee per casella**, non 3
+    come l'avevi contato. Non è un tabellone diverso: è la misura — l'inchiostro di una scala è largo 62 unità e tocca
+    anche le caselle che sfiora soltanto, mentre a occhio si contano gli attraversamenti che si vedono (nella
+    `classic` sono 2, e il massimo di linee per casella è 2 anche per lei). **Conseguenza dichiarata: i tetti che hai
+    dato sono più stretti della `classic`** (17 > 6), quindi i tabelloni generati escono più ordinati di lei. Ho
+    tenuto i tuoi numeri (sono una decisione di prodotto) e ho lasciato la manopola:
+    `RULES.board.maxCrossings` / `maxLinesPerCell`, più `budget: null` per spegnere il budget del tutto.
+  - **I2, la decorazione che si paga**: le linee piazzate senza sovrapporsi coprono **più** caselle di linee
+    sovrapposte, quindi restano meno caselle libere. Sui semi 1-20 le decorazioni sono 2,4,2,4,3,2,2,4,4,3,1,4,4,4,4,
+    4,4,4,4,1 (prima erano 4 in 19 semi su 20). Su **200 semi**: quattro in **130** casi, tre in 43, due in 21, una
+    in 5, **nessuna in uno** (il seme 113, che non lascia nemmeno una casella decorabile). **Non è il budget a
+    togliere le decorazioni**: con il solo vincolo di bordo e senza budget i semi 1-20 davano 2,4,3,3,4,3,3,3,3,4,4,
+    4,3,4,4,1,3,4,2,4 — è il bordo che toglie le 36 caselle di cornice dalle candidate. Non ti dico se si vede
+    meglio: quello lo guardi tu (Registro I1 e I2).
+  - **I3**: lo script è stato **provato per davvero**, prima di consegnarlo: congelati tre semi di prova
+    (`pnpm board:freeze 7 "Prova di congelamento"`, `12 "Seconda prova"`, `3 "Terza prova"`), `pnpm check` verde con i
+    file nuovi (validati dagli stessi test della `classic`), `prettier --check` pulito sui file generati, il rilancio
+    con lo stesso nome **rifiutato** con il messaggio giusto, e in `/dev/disposizioni` la sezione «Disposizioni
+    congelate» con i tre tabelloni, i loro numeri e la riga di leggibilità. Poi i tre file sono stati cancellati e
+    l'elenco rigenerato: **nel branch non è congelata nessuna disposizione**. 17 prove in
+    `scripts/lib/board-freeze.test.ts` (slug e nomi, determinazione, il file senza chiamate al generatore, i numeri
+    dentro, il barrel mai stantio rispetto alla cartella, il rifiuto di un nome che esiste già).
+  - **La pagina**, guardata a schermo con `pnpm dev`: `/dev/disposizioni` risponde **200**, 7 righe di leggibilità
+    (3 congelate di prova + 4 semi), tutte `6 caselle con più di una linea, al massimo 2 linee su una casella — il
+tetto è 6 incroci, 2 linee per casella ✓`, il paragrafo in testa con il conto della `classic` (**17** e 2),
+    **zero** elementi `canvas`, e **zero messaggi in console** dopo un ricaricamento con il raccoglitore di
+    `console.error` installato prima della navigazione (la lezione di D-71).
+  - **Non verificato da me:** l'aspetto dei tabelloni generati **in partita** (la disposizione di una stanza resta la
+    `classic`, e nessuna congelata è offerta), i tempi in millisecondi (Chrome strozza i timer nella scheda guidata:
+    l'ordine si verifica, la durata no), e la mascotte, che non è collegata da nessuna parte.
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), sezione «Pacchetto I»: **I1** (le
+  decorazioni fuori dalla cornice, sui tabelloni e sulla `classic`), **I2** (i due numeri della leggibilità per
+  tabellone, con il conto della `classic` per confronto, e le decorazioni che calano), **I3** (`pnpm board:freeze`
+  con un seme e un nome tuoi, la sezione in pagina, il rifiuto a sovrascrivere), **I4** (solo da approvare: niente da
+  guardare in partita). Non serve Docker né Supabase: tutto in `pnpm dev`.
+- **Decisioni Derivate aggiunte:** D-72 (il budget di leggibilità dentro il piazzamento, e la misura a inchiostro
+  intero, con il conto della `classic` che non è quello a occhio), D-73 (una disposizione congelata è un file di
+  dati, non un seme — più la conseguenza sui dati: il tabellone va salvato sulla riga della partita), D-74 (il posto
+  della mascotte e la mappa evento → mood, con la regola di D-69). `docs/design.md` § Tabellone e § Animazioni Rive,
+  e `docs/roadmap.md` (F7-02, F7-03, F6-05) aggiornati di conseguenza.
+- **Domande per il proprietario:**
+  1. **Il tetto degli incroci è troppo stretto?** Con la misura a inchiostro la `classic` ne ha 17 e il tetto è 6:
+     i tabelloni generati escono più ordinati di lei, e in pagina si vede subito. Guardali e dimmi se il numero da
+     girare è `maxCrossings` (una riga in `RULES.board`) — oppure se preferisci che il budget si applichi con il
+     **tuo** conto (gli attraversamenti che si vedono: nella `classic` 2, e i semi prima ne stavano fra 6 e 26).
+  2. **Le decorazioni**: con il vincolo di bordo quattro forme restano solo in 130 semi su 200. La regola viene prima
+     del numero (D-65) e non ho toccato niente per rimediare; se per te quattro forme sono un minimo, le strade sono
+     tre — allargare il margine di 12 unità, assottigliare la cornice, o decorare anche le caselle di bordo
+     disegnando la cornice **prima** delle decorazioni. Tutte e tre sono di disegno, quindi tue.
+  3. **Il tabellone sulla riga della partita**: la conseguenza sui dati è scritta in D-73. La decisione (e la
+     migrazione) non sono di questo pacchetto: quando scegli quali disposizioni entrano in gioco, dimmi se il
+     tabellone va **copiato** sulla riga della partita o se basta l'id con l'impegno a non rigenerare mai quell'id.
+  4. **Il posto della mascotte** (D-74): pannello di destra, un animale per posto. Se il pannello di destra è
+     occupato dalle carte, il posto alternativo è dentro la carta — ma allora la mascotte diventa il canale di
+     qualcosa, e la regola di D-69 la esclude.
+- **Limiti noti / debito tecnico:**
+  - il generatore con il budget costa circa **50 ms per tabellone** (200 semi misurati in 11 s con lo script di
+    misura, compreso il primo tabellone che riempie la memoria degli ingombri), ed è una funzione pura: se un giorno
+    si generasse a ogni serata, i candidati andrebbero misurati una volta e messi in una tabella fuori dal ciclo;
+  - la memoria degli ingombri (`footprintCache` in `board-generator.ts`) è stato di modulo: cresce fino a ~5.000
+    insiemi di numeri e non si svuota. In una funzione pura è accettabile (è una memoizzazione dello stesso calcolo),
+    ma è un pezzo di stato fuori dal seme: se un giorno il generatore girasse su più tabelloni in parallelo, va
+    legata all'istanza;
+  - `/dev/disposizioni` disegna ogni tabellone con il componente vero della partita: con molte disposizioni congelate
+    la pagina diventa lunga (ogni tabellone è un SVG completo) e la prima compilazione è lenta su questo host (~100 s
+    per una pagina `/dev` nuova, come dice il Registro del pacchetto E);
+  - la mappa evento → mood di D-74 è scritta e non provata: quando la collegheremo, la mappa va in una funzione pura
+    con i suoi test (oggi non c'è codice, quindi non c'è niente da testare).

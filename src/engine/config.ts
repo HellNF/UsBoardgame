@@ -16,6 +16,20 @@ export const RULES = {
      * (docs/rules.md § Tabellone). Tiene le geometrie leggibili e le scale "credibili" sul tabellone.
      */
     maxSpanRows: 5,
+    /**
+     * Budget di leggibilità di una disposizione generata (F7-02, pacchetto I): quante caselle possono avere
+     * due o più linee sopra e quante linee al massimo possono passare sulla stessa casella.
+     *
+     * I due tetti sono del proprietario, contati sulla `classic` (docs/decisions.md D-65, D-72): il generatore
+     * li applica **mentre piazza** scale e serpenti, perché aggiungerli dopo (scartando il tabellone finito)
+     * consumerebbe gli otto tentativi senza pescare mai un seme valido. Il conto della `classic` con la stessa
+     * misura (`measureReadability`, inchiostro intero) è più alto — vedi il log del pacchetto I: il tetto è
+     * stato tenuto perché è una decisione di prodotto, non un numero dedotto.
+     *
+     * La misura è `measureReadability` in `src/engine/board-readability.ts`.
+     */
+    maxCrossings: 6,
+    maxLinesPerCell: 2,
     /** Quantità di caselle per tipo di una disposizione valida (docs/rules.md § Tabellone). */
     cellCounts: {
       question: 35,

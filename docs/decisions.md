@@ -642,8 +642,10 @@ Due vincoli che vengono dal guardare il tabellone vero, e che la verifica locale
    uno: il disco sulle caselle 4-5 si fondeva con la cornice di sotto. La cornice è il terzo nero, dopo le scale e
    i serpenti; questa regola è arrivata dopo le altre due, guardando il tabellone renderizzato (H).
 
-Il conto lo fa `crossedCells` in `src/engine/board-geometry.ts` (lo stesso modulo che usa il generatore, D-70):
-si decora solo una casella libera, interna e non attraversata. Nella disposizione `classic` ne restano **quattro**
+Il conto lo fanno `crossedCells` e `isBorderCell` in `src/engine/board-geometry.ts` (lo stesso modulo che usa il
+generatore, D-70): si decora solo una casella libera, non attraversata e interna. Il vincolo di bordo è arrivato al
+generatore col pacchetto I, che lo applica nel piazzamento delle decorazioni. Nella disposizione `classic` ne
+restano **quattro**
 — 35, 46, 64, 84 — e le uniche due adiacenti sono la 35 e la 46, quindi la disposizione scritta a mano porta
 **tre** decorazioni su tre righe diverse (46, 64, 84) e nessuna forma su due caselle: quella la usa il generatore,
 dove i vincoli lasciano più spazio. La falce resta fuori da `classic` perché somiglia all'illustrazione
@@ -750,3 +752,101 @@ Ora i punti si arrotondano a due decimali e gli angoli a uno, dove nascono
 _Perché:_ a scala di tabellone 0,01 unità non si vede, mentre un errore in console a ogni caricamento sì
 (è la stessa preoccupazione di D-60). Il difetto c'era anche prima di questo pacchetto: si vedeva solo
 sui tabelloni le cui coordinate cadevano sulla cifra sfortunata, come capita con quelli generati.
+
+---
+
+## Le disposizioni e la mascotte (pacchetto I)
+
+### D-72 · Il budget di leggibilità sta dentro il piazzamento, e si misura a inchiostro intero
+
+**Derivata, su indicazione del proprietario (F7-02, pacchetto I).** Due linee sopra la stessa casella si
+sovrappongono e lì il numero della casella sparisce: è la stessa ragione per cui una decorazione non si mette dove
+passa una scala (D-65), portata alle linee fra loro. I due tetti sono del proprietario, contati sulla `classic` —
+**al massimo 6 caselle con più di una linea e 2 linee sulla stessa casella** — e il posto dove applicarli è
+**dentro il piazzamento**: si aggiunge una scala o un serpente alla volta e si rifiuta il candidato che porterebbe
+il tabellone oltre il tetto, pescando il successivo. Scartare il tabellone finito non funzionerebbe: quasi nessun
+seme starebbe dentro il tetto e gli otto tentativi si consumerebbero tutti.
+
+La misura è `measureReadability` (`src/engine/board-readability.ts`), costruita su `elementFootprints` di
+`board-geometry.ts`: le caselle di **ogni** elemento, con l'inchiostro vero (montanti della scala, corpo del
+serpente) e **senza** ritirare il bordo della casella. Il conto si aggiorna una linea alla volta (`addLine`),
+quindi un candidato si prova sul conto corrente e non sul tabellone intero; gli ingombri dei candidati (circa
+5.000) restano in una memoria, perché rifare la misura da capo costava secondi per tabellone.
+
+**Il conto della `classic` con questa misura non è quello contato a occhio: 17 caselle con più di una linea e 2
+linee per casella**, non 3. La differenza è nella misura, non nel tabellone: l'inchiostro di una scala è largo 62
+unità e conta anche le caselle che sfiora soltanto, mentre a occhio si contano gli attraversamenti che si vedono
+(le due linee che si incrociano davvero sono 2). I tetti sono rimasti quelli dati — sono una decisione di prodotto
+— ma **con questa misura la `classic` non li rispetta** (17 > 6): i tabelloni generati escono quindi più ordinati
+della `classic`. Se il risultato sembra troppo vuoto, la manopola è `RULES.board.maxCrossings` (e
+`maxLinesPerCell`); `budget: null` nel generatore disaccoppia del tutto il budget, per confronto.
+
+_Conseguenza dichiarata:_ linee piazzate senza sovrapporsi **coprono più caselle** di linee sovrapposte, quindi le
+caselle libere che nulla attraversa diminuiscono. Sui semi da 1 a 20 le decorazioni passano da 4 (19 semi su 20
+prima del pacchetto) a 1-4; su 200 semi sono quattro in 130 casi, tre in 43, due in 21, una in 5, nessuna in uno
+(il seme 113, che non lascia nemmeno una casella decorabile). La regola viene prima del numero (D-65): i numeri
+stanno nel log del pacchetto I.
+
+### D-73 · Una disposizione congelata è un file di dati, non un seme
+
+**Derivata, su indicazione del proprietario (F7-03, pacchetto I).** `pnpm board:freeze <seme> <nome>`
+(`scripts/board-freeze.ts`) scrive `src/content/boards/<nome>.ts` con la disposizione **intera** — caselle, scale,
+serpenti, decorazioni — e riscrive `src/content/boards/frozen.ts`, l'elenco delle congelate. Il file non chiama il
+generatore: da lì in poi la disposizione non si muove più, nemmeno se il generatore cambia. Un seme vale finché il
+generatore sta fermo, una disposizione congelata vale per sempre. Lo script **rifiuta** di sovrascrivere un file
+che esiste, ed è l'unico a chiamare il generatore: i semi e i nomi sono del proprietario, e nel repository non ne
+è congelata nessuna.
+
+Le congelate **non entrano in partita da sole**: `boards` resta la `classic` (l'elenco che la lobby offre), le
+congelate vivono in `frozenBoards`, le validano gli stessi test di `boards.test.ts` e si guardano in
+`/dev/disposizioni`, che ha una sezione per loro.
+
+_Conseguenza sui dati, da decidere, non di questo pacchetto:_ la riga della partita ha già l'id del tabellone
+(`games.settings.boardId`), ma il contenuto il gioco lo legge da `public.boards` per id (`loadBoard`, `F2-01`).
+Congelare una disposizione la porta fra i contenuti (file → `pnpm content:seed` → riga in `public.boards`), quindi
+una serata passata si può ridisegnare finché quella riga non cambia: se un giorno si rigenerasse lo stesso id, il
+diario di una serata vecchia mostrerebbe un altro tabellone. Salvare la disposizione (o il suo seme) **sulla riga
+della partita** è la soluzione, ma la decisione e la migrazione non sono di questo pacchetto.
+
+### D-74 · La mascotte sta nel pannello di destra e la muovono gli stessi eventi della grafica
+
+**Derivata, su indicazione del proprietario (F6-05, pacchetto I).** La mascotte è l'asset Rive che era rimasto
+senza un posto (D-68). Adesso il posto è deciso: **pannello di destra della partita**, **lo stesso animale della
+pedina del posto** (`MascotView`, artboard = forma della pedina), una per giocatore. Il `mood` non è uno stato
+inventato accanto alla partita: lo muovono **gli stessi `GameEvent[]`** che già guidano le animazioni (F2-05,
+D-68), cioè l'elenco che il reducer restituisce a ogni azione. Nessun evento nuovo, nessun canale nuovo.
+
+La regola che la tiene onesta è quella di D-69: **la mascotte non è mai l'unico canale di un'informazione**. Il
+mood è un rinforzo visivo di qualcosa che è già scritto altrove (una frase, un numero, una carta): monete e stelle
+hanno i loro contatori, gli incroci e le discese la loro animazione, la fine ha le sue tre rivelazioni.
+
+La mappa evento → mood, che è parte della decisione (5 valori: 0 neutro, 1 felice, 2 sorpreso, 3 triste, 4
+esultante). Vale per il posto indicato da `seat`; per gli eventi senza posto si applica al posto che l'evento
+nomina, altrimenti a entrambi. Quando un'azione produce più eventi, **vince l'ultimo che ha un mood** (gli eventi
+senza mood non azzerano: non raccontano niente di nuovo):
+
+| Evento                                                                               | Mood                                            |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| `CLIMBED_LADDER`                                                                     | 4 esultante                                     |
+| `FINISH_REACHED`                                                                     | 4 esultante (chi arriva)                        |
+| `GAME_FINISHED`                                                                      | 4 al vincitore, 3 allo sconfitto, 0 in pareggio |
+| `BONUS_STARS`                                                                        | 4 a `champion` e `knowItAll`, 0 agli altri      |
+| `MINIGAME_FINISHED`                                                                  | 4 al vincitore, 3 allo sconfitto, 0 in pareggio |
+| `CHALLENGE_RESOLVED`                                                                 | 4 a chi ha vinto (`won`), 3 all'altro           |
+| `CHALLENGE_CLAIMED`                                                                  | 4 se il posto ha vinto, 3 se ha perso           |
+| `STAR_BOUGHT`                                                                        | 4 esultante                                     |
+| `COINS_GAINED`, `ITEM_RECEIVED`, `ITEM_BOUGHT`                                       | 1 felice                                        |
+| `QUESTION_JUDGED`                                                                    | 1 risposta giusta, 3 sbagliata                  |
+| `COINS_LOST`, `ITEM_DISCARDED`, `TURN_SKIPPED`                                       | 3 triste                                        |
+| `SLID_DOWN_SNAKE`                                                                    | 3 triste                                        |
+| `SNAKE_BLOCKED`                                                                      | 3 al posto del serpente, 1 a chi ha bloccato    |
+| `EVENT_DRAWN`, `EVENT_RESOLVED`                                                      | 2 sorpreso                                      |
+| `CHALLENGE_DRAWN`, `CHALLENGE_DISPUTED`                                              | 2 sorpreso                                      |
+| `TIMER_EXPIRED`, `CHALLENGE_REMATCH`                                                 | 2 sorpreso                                      |
+| `ITEM_OVERFLOW`                                                                      | 2 sorpreso                                      |
+| ogni altro evento (`ROLLED`, `MOVED`, `TURN_ENDED`, `ROUND_STARTED`, `ITEM_USED`, …) | 0 neutro (e non azzera il mood precedente)      |
+
+**Non è collegata**, ed è voluto: senza `mascots.riv` il segnaposto è la testa dell'animale, ferma, e un
+segnaposto che occupa spazio senza fare niente è contro la regola di D-68 (in partita il segnaposto è il
+componente attuale, non un riquadro vuoto). La mappa si applica il giorno in cui il file arriva: il wrapper
+`MascotView` esiste già dal pacchetto G, con `mood` numerico.

@@ -1153,3 +1153,89 @@ partita**, che non è previsto.
   px non lo è.
 - Le pagine `/dev` (compresa `/dev/disposizioni`) esistono in sviluppo e rispondono **404 in produzione** (D-43): si
   verifica con `pnpm build` e `pnpm start`.
+
+## Registro · Pacchetto I (il vincolo di bordo, il budget di leggibilità, il congelamento, la mascotte) — branch `hermes/i-disposizioni`
+
+Prima di iniziare: **nessuna migrazione**, niente `pnpm db:reset` — questo pacchetto non tocca il database. Tutto
+quello che si guarda sta in `pnpm dev`. **Nessuna disposizione è congelata**: i semi e i nomi li scegli tu.
+
+### I1 · Le decorazioni non stanno sulla cornice (terzo vincolo di D-65)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/disposizioni>.
+2. In ogni riepilogo c'è la riga **Decorazioni**: sono le forme piene del tabellone (`disc`, `crescent`, `hill`,
+   `diamond`) con le loro caselle. Guardale **dentro il tabellone**.
+3. Atteso: nessuna decorazione su una **casella di bordo** — prima o ultima riga, prima o ultima colonna. Lì la
+   cornice (spessa, disegnata **dopo** le decorazioni) si mangia il margine di 12 unità e i due neri diventano uno:
+   era il disco sulle caselle 4-5 della `classic`, il caso che hai corretto a mano.
+4. Il caso da guardare per primo è il **seme 1**, dove prima c'era `hill` sulla casella 81 (di bordo): ora non c'è
+   più. Anche la `classic` in `/dev/hotseat` è a posto (collo 46, disco 64, rombo 84, tutte interne).
+5. Quante decorazioni ci stanno **non** è più quattro per forza: dipende da quante caselle libere restano, interne e
+   che nulla attraversa. Sui semi 1-4 di questa pagina puoi vederne due, tre o quattro. È la regola (D-65) che vince
+   sul numero — se preferisci **sempre** quattro forme, dimmelo: si allarga il margine o si tocca la cornice, ma è
+   una tua decisione di disegno.
+6. `npx vitest run src/engine/board-geometry.test.ts src/engine/board-generator.test.ts` → verdi. Fra le prove:
+   «non si decora mai una casella di bordo» e il conto delle caselle decorabili.
+
+**Esito:** _
+
+### I2 · Il budget di leggibilità (F7-02)
+
+1. Sempre in <http://localhost:3000/dev/disposizioni>, guarda la riga **Leggibilità** di ogni tabellone: dice
+   quante caselle hanno più di una linea e quante linee al massimo passano su una casella, con il tetto accanto.
+2. Atteso sui tabelloni generati: **6 caselle** con più di una linea e **2 linee** al massimo per casella (il tetto,
+   `RULES.board.maxCrossings` / `maxLinesPerCell`), quindi la spunta ✓.
+3. **Il numero da confrontare con il tuo occhio**: la `classic`, che è disegnata a mano, con **questa** misura
+   segna **17 caselle con più di una linea** e 2 linee al massimo — non 3 come le avevi contate. La misura conta
+   l'**inchiostro intero** di una linea (i montanti di una scala sono larghi 62 unità e toccano anche le caselle che
+   sfiorano), mentre a occhio si contano le linee che si vedono attraversarsi (nella `classic` sono 2). Quindi i
+   tabelloni generati escono **più ordinati della `classic`**: se ti sembrano troppo vuoti, il numero da girare è
+   `maxCrossings` in `src/engine/config.ts` (con `budget: null` nel generatore il budget si spegne del tutto).
+4. Guarda anche la riga **Decorazioni** dei semi 1-4: con le linee piazzate senza sovrapporsi le caselle libere
+   diminuiscono, quindi qualche tabellone porta due o tre forme invece di quattro (su 200 semi: quattro in 130, tre
+   in 43, due in 21, una in 5, nessuna in uno). Non è un difetto da correggere: è il conto da fare, e il tetto degli
+   incroci è la manopola.
+5. `npx vitest run src/engine/board-readability.test.ts src/engine/board-generator.test.ts` → verdi.
+
+**Esito:** _
+
+### I3 · Congelare una disposizione (F7-03, la parte meccanica)
+
+1. Nel terminale: `pnpm board:freeze 12 "Prova a tavola"` (niente `--` prima degli argomenti: con pnpm 11 il
+   separatore fa fallire lo script).
+2. Atteso: scrive `src/content/boards/prova-a-tavola.ts` (la disposizione **intera** come dato) e riscrive
+   `src/content/boards/frozen.ts`, l'elenco; stampa scale, serpenti, decorazioni ed esporta `provaATavola`.
+3. Ricarica <http://localhost:3000/dev/disposizioni>: in testa c'è la sezione **Disposizioni congelate** con il
+   tabellone, i suoi numeri e il nome che le hai dato.
+4. Rilancia lo stesso comando con lo stesso nome: deve **rifiutare** («esiste già: una disposizione congelata non si
+   sovrascrive»). È il punto del congelamento: da lì non si muove, nemmeno se un giorno cambia il generatore.
+5. `pnpm check` → verde. Il file nuovo è validato dagli stessi test della `classic` (7 scale, 6 serpenti, i vincoli di
+   `rules.md`). Se il barrel `frozen.ts` non corrisponde ai file presenti, una prova te lo dice.
+6. **Nessuna disposizione entra in gioco**: la lobby continua a offrire la `classic` (`boards` in
+   `src/content/boards/index.ts`), e la scelta di quali entrano — con il salvataggio del tabellone sulla riga della
+   partita — è una decisione di prodotto che non è in questo pacchetto (D-73).
+7. Per togliere una congelata: cancella il file e rilancia `pnpm board:freeze` su un altro seme (o rigenera l'elenco
+   con `pnpm check` che te lo chiede).
+
+**Esito:** _
+
+### I4 · La mascotte: niente da provare, solo da approvare
+
+Non è collegata da nessuna parte, quindi non c'è niente da guardare in partita: è **solo la decisione scritta**
+(D-74). Da controllare: che il posto sia quello giusto (**pannello di destra della partita**, un animale per posto,
+lo stesso della pedina) e che la **mappa evento → mood** (la tabella in D-74) sia quella che vuoi; il mood lo
+muovono gli stessi `GameEvent[]` delle animazioni e non è mai l'unico canale di un'informazione (D-69). Si applica
+il giorno in cui disegni `mascots.riv`.
+
+**Esito:** _
+
+### Note su come sono state fatte queste prove
+
+- **I numeri dei semi da 1 a 20 (prima e dopo)** sono misurati con la stessa formula del modulo
+  (`cellsAlongPath` con l'inchiostro intero, casella non ritirata) sul generatore **di `main`** e su quello nuovo:
+  il script temporaneo non è rimasto nel repository, ma la misura è nel modulo (`measureReadability`) e i numeri
+  sono nel log del pacchetto I.
+- **Il tetto impossibile** (0 incroci, 0 linee) è la prova che il generatore si ferma **dicendo** a quanto e con
+  che tetto: è un caso che non si vede in pagina, solo nei test.
+- **Il congelamento** è stato provato per davvero prima di consegnarlo: congelati tre semi di prova, guardati in
+  `/dev/disposizioni` (con `pnpm check` verde sul file nuovo, `prettier --check` pulito, zero messaggi in console
+  all'idratazione), poi cancellati e l'elenco rigenerato — nel branch non è congelata nessuna disposizione.

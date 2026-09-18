@@ -24,6 +24,7 @@ export {
   cellRect,
   cellsAlongPath,
   crossedCells,
+  isBorderCell,
   ladderAxis,
   ladderRungs,
   samplePath,
@@ -34,6 +35,17 @@ export {
   type Point,
 } from "./board-geometry";
 export { generateBoard, type BoardGeneratorOptions, type IllustrationPool } from "./board-generator";
+export {
+  READABILITY_BUDGET,
+  addLine,
+  describeBudget,
+  fitsBudget,
+  measureReadability,
+  readabilityState,
+  type ReadabilityBudget,
+  type ReadabilityMeasure,
+  type ReadabilityState,
+} from "./board-readability";
 export { createInitialState, reduce } from "./reducer";
 export * from "./minigames";
 
