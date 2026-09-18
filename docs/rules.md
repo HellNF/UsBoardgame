@@ -83,9 +83,10 @@ il controllo, [D-11](decisions.md#d-11--nessuna-reazione-a-catena)).
   Sbagliata → si resta. Se la casella era già una domanda, **è la stessa domanda** ([D-07](decisions.md#d-07--casella-domanda--base-di-scala--una-sola-domanda)).
 - **Testa di un serpente:**
   - con un Antidoto: si consuma e si resta;
-  - altrimenti **sfida lampo** di [`challenges.snakeFlashSeconds` = 30] s (carta con `snakeFlash: true`):
-    se il giocatore è dichiarato vincente resta dov'è (+1 sfida vinta, nessuna moneta), altrimenti scende alla coda
-    (vale anche se la sfida è pareggio o scade: [D-36](decisions.md#d-36--prova-senza-riuscita-nessun-premio-a-nessuno)).
+  - altrimenti **sfida lampo** (durata suggerita [`challenges.snakeFlashSeconds` = 30] s, carta con
+    `snakeFlash: true`): se il giocatore è dichiarato vincente resta dov'è (+1 sfida vinta, nessuna moneta),
+    altrimenti scende alla coda (vale anche se la sfida è pareggio o se i due dicono che il tempo è finito:
+    [D-36](decisions.md#d-36--prova-senza-riuscita-nessun-premio-a-nessuno)).
 
 ### 5. Fine del turno
 
@@ -116,7 +117,7 @@ penalità (e senza salita, se era per una scala). Serve l'oggetto omonimo, che s
 
 ## Sfide
 
-Ogni carta: nome, categoria, modalità, verdetto, durata, istruzioni, premio (`src/content/challenges.ts`).
+Ogni carta: nome, categoria, modalità, verdetto, durata suggerita, istruzioni, premio (`src/content/challenges.ts`).
 
 | Modalità | Chi gioca                  | Verdetto ammesso                                     | Chi vince                     |
 | -------- | -------------------------- | ---------------------------------------------------- | ----------------------------- |
@@ -128,9 +129,12 @@ Ogni carta: nome, categoria, modalità, verdetto, durata, istruzioni, premio (`s
   Se no, entrambi scelgono rivincita o moneta (`RESOLVE_DISPUTE`); se scelgono in modo diverso decide la moneta.
 - **Prova:** l'altro dichiara la riuscita di chi ha giocato. Solo la riuscita dà il premio, che va sempre e solo a
   chi ha giocato ([D-36](decisions.md#d-36--prova-senza-riuscita-nessun-premio-a-nessuno)).
-- **Timer:** il server fissa `deadlineAt` (durata massima della carta, entro il massimo della serata:
-  [D-33](decisions.md#d-33--timer-e-rivincita-delle-sfide)); alla scadenza di una prova senza verdetto la prova è
-  fallita; di un duello si passa alla doppia conferma (e il minigioco, se c'era, si abbandona).
+- **Tempo (indicativo):** la carta dichiara una **durata suggerita** (`durationSeconds` nel contenuto, resa
+  sulla carta come `suggestedSeconds` = min(durata della carta, massimo della serata)) e nient'altro: nessun
+  orologio produce esiti da solo ([D-82](decisions.md#d-82--il-tempo-è-indicativo-e-la-carta-si-chiude-a-mano)).
+  La carta si chiude con un verdetto, oppure con `DECLARE_TIME_UP`: quando **entrambi** i giocatori dicono che
+  il tempo è finito, una prova senza verdetto è non riuscita e un duello passa alla doppia conferma (il
+  minigioco, se c'era, si abbandona). Una dichiarazione sola non chiude niente.
 - **Vittorie:** ogni sfida vinta (compresa la lampo) incrementa `challengesWon`.
 - **Emulatore DS:** sfida "a punteggio" sullo stesso livello; vince il tempo migliore; doppia conferma. Nessun
   file di gioco passa dal server.
@@ -159,7 +163,8 @@ chi è il turno, oppure `"both"` quando possono muovere entrambi (i riflessi).
   **prima** del segnale regala il punto all'altro, e il round ricomincia; il segnale del round dopo arriva dopo
   [`reflex.minDelayMs` … `reflex.maxDelayMs`] millisecondi.
 - **Sfide esterne:** si giocano fuori (link nella carta); la carta si può mettere in pausa e al ritorno chiede
-  «Chi ha vinto?», cioè la doppia conferma. La pausa è della schermata, non della partita.
+  «Chi ha vinto?», cioè la doppia conferma. La pausa è della schermata, non della partita — e da D-82 non ferma
+  nessun conto, perché non c'è più nessun conto che scade: si può stare fuori quanto serve.
 - **Chi vede cosa:** in una partita a due schermi ognuno vede solo i comandi del posto che guarda; l'altro legge
   cosa sta facendo l'altro ([D-56](decisions.md#d-56--la-carta-sa-chi-la-guarda-viewerseat)). Nella hot seat i
   comandi si vedono tutti.

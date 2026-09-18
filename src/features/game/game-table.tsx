@@ -55,7 +55,6 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
   );
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
 
   const allSettings = useMemo<GameSettings>(() => ({ ...HOTSEAT_SETTINGS, ...settings }), [settings]);
   const ctx = useMemo(
@@ -84,12 +83,6 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
     },
     [ctx],
   );
-
-  // Orologio della pagina: serve al conto alla rovescia delle sfide.
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   /** Strumenti di prova: toccano lo stato direttamente, senza passare dalle regole. */
   const tweak = useCallback((change: (draft: GameState) => void) => {
@@ -337,7 +330,6 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
             question={question}
             challenge={challenge}
             act={act}
-            now={now}
             names={names}
             /* Hot seat: i due giocatori sono davanti allo stesso schermo e vedono tutti i comandi. */
             viewerSeat="all"

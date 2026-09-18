@@ -84,23 +84,16 @@ function ViewerSwitch({ viewer, onChange }: { viewer: Viewer; onChange: (viewer:
 }
 
 /**
- * La carta dello scenario. Si monta solo nel browser: la scadenza dei timer è un istante
- * assoluto, quindi renderla anche sul server darebbe un conto alla rovescia diverso da
- * quello del client.
+ * La carta dello scenario. Si monta solo nel browser: il segnale dei riflessi è un istante
+ * assoluto, quindi renderla anche sul server darebbe un segnale diverso da quello del client.
  */
 function ScenarioLive({ scenario }: ScenarioCardProps) {
   const mounted = useMounted();
   const ctx = useMemo(() => createHotseatContext({ seed: 7 }), []);
   const [state, setState] = useState<GameState>(() => startState(scenario));
-  const [now, setNow] = useState(() => Date.now());
   const [error, setError] = useState<string | null>(null);
   // Chi guarda la carta: è l'interruttore della pagina, per vedere le due viste senza database.
   const [viewer, setViewer] = useState<Viewer>(1);
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Il reducer vuole lo stato più fresco: il ref evita di ricreare `act` a ogni azione.
   const stateRef = useRef(state);
@@ -146,7 +139,6 @@ function ScenarioLive({ scenario }: ScenarioCardProps) {
           question={question}
           challenge={challenge}
           act={act}
-          now={now}
           names={SCENARIO_NAMES}
           viewerSeat={viewer}
         />

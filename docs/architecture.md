@@ -33,7 +33,7 @@ flowchart LR
 | `src/lib`           | Client Supabase, env                                                                       | `@/engine`                                                                 | `admin.ts` solo da `src/server`                                              |
 | `src/features`      | UI per area (tabellone, carte, lobby...)                                                   | `@/engine`, `@/content`, `@/art`, `@/components`, `@/lib/supabase/browser` | `@/server`, `@/lib/supabase/admin` (imposto da ESLint)                       |
 | `src/art`           | Illustrazioni SVG e wrapper Rive                                                           | React, Motion, Rive                                                        | dati e server                                                                |
-| `src/components/ui` | Componenti UI generici (bottoni, pannelli, timer)                                          | React                                                                      | logica di gioco                                                              |
+| `src/components/ui` | Componenti UI generici (bottoni, pannelli)                                                 | React                                                                      | logica di gioco                                                              |
 | `src/app`           | Routing: pagine sottili che compongono `features`, route API sottili che chiamano `server` | tutto                                                                      | —                                                                            |
 
 ## Flusso di un'azione
@@ -88,9 +88,10 @@ dal contenitore e restituiscono azioni, non calcolano mai l'esito di una mossa.
   riquadro ha l'interruttore «Guarda come posto 1 / posto 2 / Tutti e due», che è come si controllano le due viste
   di una partita a due schermi senza database (D-56).
 
-Il timer delle sfide non è un componente a sé: il conto alla rovescia sta dentro
-`features/cards/challenge-card.tsx` (che manda `TIMER_EXPIRED` quando scade) e l'orologio di pagina è in
-`features/game/game-table.tsx`.
+Il **tempo delle sfide** non è più un conto alla rovescia: nessun orologio produce esiti (D-82). La carta porta
+la sua durata suggerita (`suggestedSeconds`) e si chiude con un verdetto o con la dichiarazione di **entrambi** i
+giocatori (`DECLARE_TIME_UP`), che sta in `features/cards/challenge-card.tsx` insieme al resto dei comandi della
+carta.
 
 ## Motore: moduli ed eventi
 
@@ -101,7 +102,7 @@ Il timer delle sfide non è un componente a sé: il conto alla rovescia sta dent
 | `reducer.ts`          | `createInitialState`, `reduce` (instrada le azioni), il tiro dei dadi                                                     |
 | `turn.ts`             | stato di lavoro `Draft`, fine turno, round e fine partita (stelle bonus, vincitore)                                       |
 | `resolution.ts`       | effetto della casella d'arrivo, scale e serpenti, pesca di domande e sfide, chiusura della sfida                          |
-| `cards.ts`            | azioni delle carte: domande, sfide (giudice, doppia conferma, disputa, timer, minigiochi), stella, imprevisti             |
+| `cards.ts`            | azioni delle carte: domande, sfide (giudice, doppia conferma, disputa, tempo finito, minigiochi), stella, imprevisti     |
 | `items.ts`            | acquisto, uso e scarto degli oggetti                                                                                      |
 | `economy.ts`          | guadagni, perdite, trasferimenti e raddoppio da 71 in su                                                                  |
 | `board.ts`            | coordinate a serpentina e ricerca di scale e serpenti                                                                     |
@@ -127,7 +128,8 @@ racconta. Ogni evento ha `seat` (il posto a cui si riferisce, `null` per gli eve
 - **domande:** `QUESTION_DRAWN`, `QUESTION_ANSWERED` (la risposta data è qui, per il diario), `QUESTION_JUDGED`,
   `QUESTION_SKIPPED`;
 - **sfide:** `CHALLENGE_DRAWN`, `CHALLENGE_CLAIMED`, `CHALLENGE_DISPUTED`, `CHALLENGE_RESOLVED`, `CHALLENGE_REMATCH`,
-  `TIMER_EXPIRED`, `MINIGAME_STARTED`, `MINIGAME_MOVED`, `MINIGAME_FINISHED`;
+  `TIME_UP_DECLARED` (uno dei due dice che il tempo è finito), `CHALLENGE_TIME_UP` (lo dicono entrambi),
+  `MINIGAME_STARTED`, `MINIGAME_MOVED`, `MINIGAME_FINISHED`;
 - **oggetti, scale e serpenti, stella, imprevisti:** `ITEM_BOUGHT`, `ITEM_USED`, `ITEM_RECEIVED`, `ITEM_DISCARDED`,
   `ITEM_OVERFLOW`, `CLIMBED_LADDER`, `SLID_DOWN_SNAKE`, `SNAKE_BLOCKED`, `STAR_OFFERED`, `STAR_BOUGHT`,
   `STAR_DECLINED`, `EVENT_DRAWN`, `EVENT_RESOLVED`.

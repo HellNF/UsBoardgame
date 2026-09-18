@@ -77,16 +77,10 @@ export function OnlineTable(props: OnlineTableProps) {
   const [events, setEvents] = useState<GameEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     versionRef.current = version;
   }, [version]);
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   const act = useCallback(
     async (action: Action) => {
@@ -298,7 +292,6 @@ export function OnlineTable(props: OnlineTableProps) {
             question={question}
             challenge={challenge}
             act={(action) => void act(action)}
-            now={now}
             names={props.names}
             /* Partita vera: ogni schermo vede i comandi del posto che guarda. */
             viewerSeat={props.seat}

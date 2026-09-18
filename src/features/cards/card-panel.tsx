@@ -22,8 +22,6 @@ export type CardPanelProps = {
   /** Contenuto della sfida attiva dal catalogo. */
   challenge: ChallengeContent | null;
   act: CardAct;
-  /** Adesso in millisecondi epoch, aggiornato ogni secondo dal chiamante. */
-  now: number;
   names: Record<Seat, string>;
   /**
    * Il posto di chi guarda questa carta: in una partita vera ognuno vede i comandi suoi,

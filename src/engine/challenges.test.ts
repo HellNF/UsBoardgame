@@ -234,6 +234,17 @@ describe("il tempo è indicativo (docs/rules.md § Sfide, D-82)", () => {
     expect(card.suggestedSeconds).toBe(10);
   });
 
+  it("una sfida lampo non suggerisce più dei secondi di `snakeFlashSeconds`", () => {
+    const lunga: ChallengeCard = { ...trial, snakeFlash: true, durationSeconds: { min: 30, max: 300 } };
+    const game = createTestGame({ challenges: [lunga], settings: { maxChallengeSeconds: 600 } });
+    game.place(1, 13);
+    game.test.setRandom([0, 0]);
+    game.do({ type: "ROLL", seat: 1 }); // 15: testa del serpente 15→4, quindi sfida lampo
+    const card = game.state.card as Extract<typeof game.state.card, { type: "challenge" }>;
+    expect(card.snakeFlash).toBe(true);
+    expect(card.suggestedSeconds).toBe(RULES.challenges.snakeFlashSeconds);
+  });
+
   it("l'orologio che passa non chiude la carta e non produce nessun evento", () => {
     const game = openChallenge([trial]);
     const before = structuredClone(game.state);

@@ -110,11 +110,14 @@ export function drawQuestionCard(
 }
 
 /**
- * Durata suggerita di una sfida: la durata della carta, entro il massimo della serata.
- * È un numero per la schermata, non una scadenza: nessuno chiude la carta al suo posto (D-82).
+ * Durata suggerita di una sfida: la durata della carta, entro il massimo della serata e — per la sfida
+ * lampo — entro [`challenges.snakeFlashSeconds`]. È un numero per la schermata, non una scadenza:
+ * nessuno chiude la carta al suo posto (D-82).
  */
 export function challengeSuggestedSeconds(ctx: EngineContext, card: ChallengeCard): number {
-  return Math.max(1, Math.min(card.durationSeconds.max, ctx.settings.maxChallengeSeconds));
+  const serata = Math.min(card.durationSeconds.max, ctx.settings.maxChallengeSeconds);
+  const flash = card.snakeFlash ? RULES.challenges.snakeFlashSeconds : serata;
+  return Math.max(1, Math.min(serata, flash));
 }
 
 /**
