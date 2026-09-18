@@ -20,13 +20,13 @@ export function MemoriesPhone({ x = 0, y = 0, size = 100, className }: Illustrat
       aria-hidden="true"
       className={className}
     >
-      {/* Cornetta appoggiata sul corpo (i due padiglioni sono pieni) e disco al centro. */}
-      <rect x="24" y="42" width="52" height="16" rx="8" />
-      <circle cx="30" cy="50" r="10" fill="currentColor" />
-      <circle cx="70" cy="50" r="10" fill="currentColor" />
-      <rect x="16" y="60" width="68" height="26" rx="5" />
-      <circle cx="50" cy="73" r="8" fill="currentColor" />
-      <path d="M84 62c6 8 4 16-2 20" strokeWidth={3.5} />
+      {/* Telefono a disco: corpo, disco in basso a sinistra e cornetta appoggiata sopra. */}
+      <path d="M14 54h72v24a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4z" />
+      <circle cx="38" cy="69" r="9" strokeWidth={5} />
+      <circle cx="38" cy="69" r="3" fill="currentColor" />
+      <path d="M26 54c0-11 8-17 24-17s24 6 24 17" strokeWidth={9} strokeLinecap="round" />
+      <circle cx="26" cy="51" r="7" fill="currentColor" />
+      <circle cx="74" cy="51" r="7" fill="currentColor" />
     </svg>
   );
 }

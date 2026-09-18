@@ -20,13 +20,13 @@ export function DeepRoots({ x = 0, y = 0, size = 100, className }: IllustrationP
       aria-hidden="true"
       className={className}
     >
-      {/* Chioma piena a tre lobi, tronco corto e radici sotto la linea di terra. */}
-      <circle cx="50" cy="16" r="10" fill="currentColor" />
-      <circle cx="35" cy="25" r="10" fill="currentColor" />
-      <circle cx="65" cy="25" r="10" fill="currentColor" />
-      <path d="M45 32h10v16H45z" />
-      <path d="M12 52h76" strokeWidth={5} />
-      <path d="M50 52v24M50 62c-8 6-14 8-18 18M50 68c8 6 12 8 16 14" strokeWidth={4} />
+      {/* Radici: dal tronco si aprono, si allargano e si biforcano in punte sottili. */}
+      <path d="M46 12h8v18h-8z" fill="currentColor" />
+      <path d="M14 38h72" strokeWidth={2.5} strokeDasharray="5 7" />
+      <path d="M50 30v14M50 38c-9 8-15 14-19 28M50 38c9 8 15 14 19 28" strokeWidth={5} />
+      <path d="M32 64c-4 6-6 10-8 16M32 64c1 7 1 11-1 16" strokeWidth={3.5} />
+      <path d="M68 64c4 6 6 10 8 16M68 64c-1 7-1 11 1 16" strokeWidth={3.5} />
+      <path d="M50 68c-2 6-3 10-4 14M50 68c2 6 3 10 4 14" strokeWidth={3.5} />
     </svg>
   );
 }
