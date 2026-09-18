@@ -262,7 +262,10 @@ Dopo la fase 3: **prima serata giocabile**.
   caselle domanda hanno 35 disegni diversi. Dal pacchetto G le **decorazioni** multi-cella sono forme piene
   (`disc`, `crescent`, `hill`, `diamond` in `board.tsx`, scelte in `src/content/boards/classic.ts`, D-65) e i tre
   disegni che a 48 px non si leggevano (`deep-mirror`, `deep-roots`, `memories-phone`) sono rifatti. Verificato in
-  locale il 2026-09-18, decorazioni e tre disegni compresi; resta l'occhio del proprietario (voci G1 e G2 del Registro).
+  locale il 2026-09-18: le decorazioni sono state spostate sulle caselle 46 e 90 (sulla 23 e sulla 26 si fondevano
+  con il serpente e con la scala) e il rombo è pieno e non più un anello; `memories-phone` ora si legge. Restano
+  aperti `deep-mirror` (ambiguo) e `deep-roots` (a 48 px è ancora un omino): sono giudizi del proprietario, voci
+  G1 e G2 del Registro.
 - [L] **F6-03** Scale e serpenti definitivi (montanti e pioli, corpo a macchie, testa con occhio).
   Nota: fatti nel pacchetto F (macchie, occhio, lingua, coda che si assottiglia; scale con montanti e pioli
   bianchi bordati di nero), con `geometry.test.ts`. Verificato in locale il 2026-09-18: si leggono anche sopra le

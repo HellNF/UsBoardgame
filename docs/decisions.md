@@ -619,13 +619,24 @@ Di conseguenza la stessa serata è sia quella mostrata sia nell'archivio: il dia
 diagonale e un rettangolo, tutti **a filo** (contorno, tratto 6). Accanto alle 38 illustrazioni nuove — campiture
 nere piene con dettagli di carta — stonavano. Ora sono forme piene in inchiostro, contenute nel gruppo di caselle
 che la disposizione indica con un margine di 12 unità dai bordi: `disc` (disco, anche su due caselle),
-`crescent` (falce), `hill` (mezzo disco appoggiato in basso), `diamond` (rombo con un rombo di carta dentro). I
+`crescent` (falce), `hill` (mezzo disco appoggiato in basso), `diamond` (rombo). I
 nomi dei segnaposto (`circle`, `half-circle`, `diagonal`, `filled`) escono dal tipo `DecorationShape`.
 Stanno sotto scale, serpenti e numeri, quindi non rubano leggibilità a niente: dove passa una scala o un serpente
 vincono loro, e il numero della casella resta staccato dal nero dall'alone di A1.
 _Perché:_ l'alternativa era togliere le decorazioni; il tabellone è pieno, ma le quattro forme piene danno il
 ritmo che sulle caselle libere mancava, nello stesso linguaggio delle illustrazioni. Il disco su due caselle
 copre il bordo in mezzo: le due caselle restano leggibili dai loro numeri.
+
+Due vincoli che vengono dal guardare il tabellone vero, e che la verifica locale ha corretto:
+
+1. **Una decorazione va su caselle che nessuna scala e nessun serpente attraversa.** «Sta sotto» non basta:
+   sotto un nero pieno c'è un altro nero pieno e i due si fondono in una macchia. Le prime scelte (23, dove passa
+   il serpente 62→18, e 26, dove **arriva** la scala 8→26) si leggevano come un fungo e come una freccia spezzata;
+   sono state spostate su 46 e 90. Lo z-order separa solo se la forma sopra porta del bianco (i pioli delle scale).
+2. **Forme piene, mai anelli.** Il numero della casella si disegna nell'angolo in alto a sinistra con il suo alone
+   di carta, quindi ogni decorazione riceve **sempre** un morso lì. Una forma piena lo regge (si legge come una
+   tacca); una fascia sottile si interrompe e la forma cambia significato. Il rombo era nato come anello — un rombo
+   di carta dentro quello nero — e si leggeva come una freccia: ora è pieno.
 
 ### D-66 · Un riquadro in `/dev/scenari` per ogni minigioco che si vuole guardare (G3)
 

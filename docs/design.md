@@ -45,9 +45,12 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   stessa forma).
 - **Decorazioni multi-cella** (`decorations` nella disposizione): forme **piene** in inchiostro, contenute nel
   gruppo di caselle indicato con un margine di 12 unità dai bordi — `disc` (disco), `crescent` (falce),
-  `hill` (mezzo disco appoggiato in basso), `diamond` (rombo con un rombo di carta dentro). Stanno sotto scale,
+  `hill` (mezzo disco appoggiato in basso), `diamond` (rombo). Stanno sotto scale,
   serpenti e numeri: dove passa una scala o un serpente vincono loro, e il numero della casella resta leggibile
   grazie all'alone (A1). Niente più segnaposto a filo (G1, D-65).
+  Due vincoli su dove e come (D-65): si mettono su caselle che **nessuna scala e nessun serpente attraversa**
+  (due neri pieni uno sull'altro si fondono in una macchia), e sono **piene, mai anelli** (l'alone del numero
+  morde sempre l'angolo in alto a sinistra: una forma piena lo regge, una fascia sottile si spezza).
 - Le caselle domanda e stella portano **l'illustrazione** del registro (`src/art/illustrations`) dentro un tondo di
   carta, nello strato dei numeri: è l'alone di A1, e il numero della casella si disegna sopra a tutto.
 

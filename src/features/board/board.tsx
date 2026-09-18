@@ -196,13 +196,11 @@ function DecorationShape({ shape, cells }: { shape: DecorationShapeKind; cells: 
       );
     case "diamond":
     default:
-      // Rombo pieno con un rombo di carta dentro: le caselle si leggono come una piastrella.
-      return (
-        <>
-          <path d={rhombus(box, DECORATION_MARGIN)} fill={ink} />
-          <path d={rhombus(box, DECORATION_MARGIN + 20)} fill={paper} />
-        </>
-      );
+      // Rombo pieno. Era un anello (un rombo di carta dentro quello nero) e si rompeva:
+      // l'alone del numero della casella sta proprio sull'angolo in alto a sinistra e mangiava
+      // la fascia, così la forma si leggeva come una freccia. Le forme piene un morso lo
+      // reggono, gli anelli no (D-65).
+      return <path d={rhombus(box, DECORATION_MARGIN)} fill={ink} />;
   }
 }
 
