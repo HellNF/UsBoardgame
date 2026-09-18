@@ -62,11 +62,17 @@ export type Ladder = { from: CellNumber; to: CellNumber };
 export type Snake = { from: CellNumber; to: CellNumber };
 
 /**
+ * La forma di una decorazione multi-cella (G1): solo grafica, piena e in inchiostro, contenuta
+ * dentro il gruppo di caselle con un margine dai bordi. Stanno sotto scale, serpenti e numeri.
+ */
+export type DecorationShape = "disc" | "crescent" | "hill" | "diamond";
+
+/**
  * Forme geometriche decorative che occupano più celle (cerchi, semicerchi,
  * diagonali). Solo grafica: l'effetto della casella dipende da `Cell.kind`.
  */
 export type BoardDecoration = {
-  shape: "circle" | "half-circle" | "diagonal" | "filled";
+  shape: DecorationShape;
   /** Celle coperte dalla forma. */
   cells: CellNumber[];
   variant?: string;

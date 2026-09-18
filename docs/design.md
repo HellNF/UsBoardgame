@@ -49,27 +49,49 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 | Libera          | bianca vuota                                                              |
 
 - **Scale:** due montanti neri spessi, pioli bianchi bordati di nero, generate dagli estremi `from`/`to`.
-- **Serpenti:** curva di Bézier sinuosa generata dagli estremi, corpo nero o bianco a macchie, testa con occhio.
-  La generazione deve essere deterministica per disposizione (stesso tabellone = stessa forma).
-- **Segnaposto (fino alla fase 6):** celle geometriche vere; illustrazioni = iniziale della categoria in corsivo.
+- **Serpenti:** curva di Bézier sinuosa generata dagli estremi, corpo nero a macchie, coda che si assottiglia,
+  testa con un occhio e la lingua. La generazione deve essere deterministica per disposizione (stesso tabellone =
+  stessa forma).
+- **Decorazioni multi-cella** (`decorations` nella disposizione): forme **piene** in inchiostro, contenute nel
+  gruppo di caselle indicato con un margine di 12 unità dai bordi — `disc` (disco), `crescent` (falce),
+  `hill` (mezzo disco appoggiato in basso), `diamond` (rombo con un rombo di carta dentro). Stanno sotto scale,
+  serpenti e numeri: dove passa una scala o un serpente vincono loro, e il numero della casella resta leggibile
+  grazie all'alone (A1). Niente più segnaposto a filo (G1, D-65).
+- Le caselle domanda e stella portano **l'illustrazione** del registro (`src/art/illustrations`) dentro un tondo di
+  carta, nello strato dei numeri: è l'alone di A1, e il numero della casella si disegna sopra a tutto.
+
+| Tipo di casella | Resa                                                                      |
+| --------------- | ------------------------------------------------------------------------- |
+| Domanda         | bianca + illustrazione della categoria                                    |
+| Sfida           | nera piena, numero in bianco                                              |
+| Imprevisto      | metà nera in diagonale                                                    |
+| Monete          | cerchio nero pieno (+3) o vuoto (−2), anche come semicerchio su più celle |
+| Stella          | illustrazione di stella                                                   |
+| Libera          | bianca vuota (può avere una decorazione piena)                            |
 
 ## Illustrazioni SVG (`src/art/illustrations`)
 
-- Un componente per file: `rose-bell.tsx` esporta `RoseBell`; registro `index.ts` con `IllustrationId → componente`.
-- `viewBox="0 0 100 100"`, margine interno di 12 unità, `fill` e `stroke` solo `currentColor` o `var(--color-paper)`.
-- Tratto `strokeWidth` 5-6, `strokeLinecap="round"`, `strokeLinejoin="round"`; almeno una campitura nera piena per
+- Un componente per file: `tastes-bottle.tsx` esporta `TastesBottle`; registro `index.ts` con
+  `IllustrationId → componente` (`Illustration` rende un id con `createElement`, o niente se l'id non c'è).
+- `viewBox="0 0 100 100"`, margine interno di 12 unità, `fill` e `stroke` solo `currentColor` o
+  `var(--color-paper)`. `x`, `y` e `size` posizionano il disegno dentro l'SVG che lo contiene (il tabellone è
+  1000 × 1000, una casella 100).
+- Tratto `strokeWidth` 5,5, `strokeLinecap="round"`, `strokeLinejoin="round"`; almeno una campitura piena per
   illustrazione. Nessun testo dentro gli SVG.
 - Leggibili a 48 px: niente dettagli sotto le 3 unità.
-- Elenco da produrre (~45): 35 per le domande (almeno 3-4 per categoria, vedi tabella delle categorie in specs),
-  3 stelle, decorazioni.
+- Prodotto (F6-02): **38 disegni**, 35 per le domande (7 per categoria) e 3 stelle. Le decorazioni multi-cella
+  non sono file: sono le forme di `decorations` disegnate nel tabellone.
+- La pagina `/dev/art` (solo sviluppo, 404 in produzione) li mostra tutti a 48 px e a 200 px: è la misura con cui
+  si decide se un disegno si capisce (`npx vitest run src/art` tiene il registro e la disposizione d'accordo).
 
-| Categoria            | Illustrazioni                                    |
-| -------------------- | ------------------------------------------------ |
-| Gusti (`tastes`)     | bottiglia, calici, vinile, chitarra              |
-| Ricordi (`memories`) | lettera, cornice, macchina da scrivere, telefono |
-| Futuro (`future`)    | anello, casa, gabbia aperta, mappa               |
-| Profonde (`deep`)    | specchio, rosa nella campana, serratura          |
-| Buffe (`funny`)      | occhio, spazzolino, dado, mela                   |
+| Categoria            | Illustrazioni                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| Gusti (`tastes`)     | bottiglia, calici, vinile, chitarra, tazza, cono gelato, pane                      |
+| Ricordi (`memories`) | lettera, cornice, macchina da scrivere, telefono, biglietto, musicassetta, valigia |
+| Futuro (`future`)    | anello, casa, gabbia aperta, mappa, chiave, aereo di carta, piantina               |
+| Profonde (`deep`)    | specchio, rosa, serratura, candela, luna, radici, clessidra                        |
+| Buffe (`funny`)      | occhio, spazzolino, dado, mela, calzino, banana, sveglia                           |
+| Stelle (`stars`)     | stella, ammasso di stelle, stella grande                                           |
 
 ## Animazioni Rive (`public/rive`, `src/art/rive`)
 

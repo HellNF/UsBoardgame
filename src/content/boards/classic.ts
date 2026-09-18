@@ -132,9 +132,9 @@ export const classic: BoardLayout = {
     { from: 98, to: 79 },
   ],
   decorations: [
-    { shape: "circle", cells: [4, 5] },
-    { shape: "half-circle", cells: [9] },
-    { shape: "diagonal", cells: [23] },
-    { shape: "filled", cells: [26] },
+    { shape: "disc", cells: [4, 5] },
+    { shape: "crescent", cells: [9] },
+    { shape: "hill", cells: [23] },
+    { shape: "diamond", cells: [26] },
   ],
 };

@@ -7,6 +7,7 @@ import {
   type BoardLayout,
   type Cell,
   type CellNumber,
+  type DecorationShape as DecorationShapeKind,
   type GameState,
   type PlayerColor,
   type Seat,
@@ -144,38 +145,63 @@ function CellMarks({ cell }: { cell: Cell }) {
   );
 }
 
-/** Casella coperta da una forma geometrica decorativa (solo grafica). */
-function DecorationShape({ shape, cells }: { shape: string; cells: CellNumber[] }) {
+/** Margine fra una decorazione e il bordo delle sue caselle, in unità SVG. */
+const DECORATION_MARGIN = 12;
+
+/** Rombo inscritto nel gruppo di caselle, con un margine dal bordo. */
+function rhombus(box: { x: number; y: number; w: number; h: number }, inset: number): string {
+  const x = box.x + box.w / 2;
+  const y = box.y + box.h / 2;
+  const rx = box.w / 2 - inset;
+  const ry = box.h / 2 - inset;
+  return `M ${x} ${y - ry} L ${x + rx} ${y} L ${x} ${y + ry} L ${x - rx} ${y} Z`;
+}
+
+/**
+ * Una decorazione multi-cella (G1): una forma **piena** in inchiostro, contenuta dentro il gruppo
+ * di caselle che la disposizione le assegna, con un margine dai bordi.
+ *
+ * Sta sotto scale, serpenti e numeri (`docs/design.md` § Tabellone): dove una scala o un serpente
+ * la attraversano vincono loro, e il numero della casella resta leggibile perché l'alone di A1 lo
+ * stacca dal nero. Il "morso" di carta della falce è largo apposta meno del margine: non arriva
+ * sui bordi delle caselle.
+ */
+function DecorationShape({ shape, cells }: { shape: DecorationShapeKind; cells: CellNumber[] }) {
   const box = cellsBounds(cells);
   const cx = box.x + box.w / 2;
   const cy = box.y + box.h / 2;
-  const stroke = { fill: "none", stroke: "var(--color-ink)", strokeWidth: 6 } as const;
+  const ink = "var(--color-ink)";
+  const paper = "var(--color-paper)";
+  const radius = Math.min(box.w, box.h) / 2 - DECORATION_MARGIN;
 
   switch (shape) {
-    case "circle":
-      return <circle cx={cx} cy={cy} r={Math.min(box.w, box.h) / 2 - 6} {...stroke} />;
-    case "half-circle":
+    case "disc":
+      // Disco pieno al centro del gruppo: su due caselle è largo quanto l'altezza.
+      return <circle cx={cx} cy={cy} r={radius} fill={ink} />;
+    case "crescent":
+      // Falce di luna: un disco pieno e un morso di carta che resta dentro la casella.
+      return (
+        <>
+          <circle cx={cx - 4} cy={cy} r={radius} fill={ink} />
+          <circle cx={cx + 14} cy={cy} r={radius - 8} fill={paper} />
+        </>
+      );
+    case "hill":
+      // Mezzo disco appoggiato sul fondo delle caselle, come un colle.
       return (
         <path
-          d={`M ${box.x + 6} ${box.y + box.h - 6} A ${box.w / 2 - 6} ${box.w / 2 - 6} 0 0 1 ${box.x + box.w - 6} ${box.y + box.h - 6}`}
-          {...stroke}
+          d={`M ${box.x + DECORATION_MARGIN} ${box.y + box.h - DECORATION_MARGIN} A ${box.w / 2 - DECORATION_MARGIN} ${box.h / 2 - DECORATION_MARGIN} 0 0 1 ${box.x + box.w - DECORATION_MARGIN} ${box.y + box.h - DECORATION_MARGIN} Z`}
+          fill={ink}
         />
       );
-    case "diagonal":
-      return (
-        <line x1={box.x + 10} y1={box.y + box.h - 10} x2={box.x + box.w - 10} y2={box.y + 10} {...stroke} />
-      );
-    case "filled":
+    case "diamond":
     default:
+      // Rombo pieno con un rombo di carta dentro: le caselle si leggono come una piastrella.
       return (
-        <rect
-          x={box.x + 8}
-          y={box.y + 8}
-          width={box.w - 16}
-          height={box.h - 16}
-          rx={12}
-          fill="var(--color-ink)"
-        />
+        <>
+          <path d={rhombus(box, DECORATION_MARGIN)} fill={ink} />
+          <path d={rhombus(box, DECORATION_MARGIN + 20)} fill={paper} />
+        </>
       );
   }
 }

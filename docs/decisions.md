@@ -611,3 +611,18 @@ nuova quando non trovava una serata aperta: bastava **ricaricare una pagina qual
 finale — le stelle bonus scoperte una alla volta, il vincitore, la posta in palio — sparisse per sempre, e al suo
 posto ci fosse una lobby vuota. È il momento per cui si è giocata la serata: deve reggere una ricarica.
 Di conseguenza la stessa serata è sia quella mostrata sia nell'archivio: il diario la scrive **una volta sola**.
+
+### D-65 · Le decorazioni multi-cella sono forme piene, non segnaposto a filo
+
+**Derivata, su indicazione del proprietario (F6-02, pacchetto G).** Le quattro decorazioni della disposizione
+`classic` (caselle 4-5, 9, 23, 26) erano i segnaposto geometrici del pacchetto C: un cerchio, un semicerchio, una
+diagonale e un rettangolo, tutti **a filo** (contorno, tratto 6). Accanto alle 38 illustrazioni nuove — campiture
+nere piene con dettagli di carta — stonavano. Ora sono forme piene in inchiostro, contenute nel gruppo di caselle
+che la disposizione indica con un margine di 12 unità dai bordi: `disc` (disco, anche su due caselle),
+`crescent` (falce), `hill` (mezzo disco appoggiato in basso), `diamond` (rombo con un rombo di carta dentro). I
+nomi dei segnaposto (`circle`, `half-circle`, `diagonal`, `filled`) escono dal tipo `DecorationShape`.
+Stanno sotto scale, serpenti e numeri, quindi non rubano leggibilità a niente: dove passa una scala o un serpente
+vincono loro, e il numero della casella resta staccato dal nero dall'alone di A1.
+_Perché:_ l'alternativa era togliere le decorazioni; il tabellone è pieno, ma le quattro forme piene danno il
+ritmo che sulle caselle libere mancava, nello stesso linguaggio delle illustrazioni. Il disco su due caselle
+copre il bordo in mezzo: le due caselle restano leggibili dai loro numeri.
