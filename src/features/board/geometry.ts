@@ -1,60 +1,29 @@
-import { cellToCoord, RULES, type CellNumber } from "@/engine";
+import { type CellNumber } from "@/engine";
+import {
+  BOARD,
+  CELL,
+  cellCenter,
+  cellCorner,
+  ladderAxis,
+  ladderRungs,
+  LADDER_HALF_WIDTH,
+  snakeBodyPoints,
+  smoothPath,
+  type Point,
+} from "@/engine";
 
 /**
- * Geometria del tabellone in unità SVG (docs/design.md § Tabellone): una casella è
- * 100 × 100, il tabellone 1000 × 1000, l'origine in alto a sinistra.
- * Le forme di scale e serpenti si generano **solo** dagli estremi: stesso tabellone,
- * stessa forma.
+ * Geometria del tabellone in unità SVG (docs/design.md § Tabellone): una casella è 100 × 100,
+ * il tabellone 1000 × 1000, l'origine in alto a sinistra.
+ * Le forme di scale e serpenti si generano **solo** dagli estremi: stesso tabellone, stessa forma.
+ *
+ * L'asse di una scala e il corpo di un serpente vengono da `src/engine/board-geometry`: è lo
+ * stesso modulo da cui il generatore di disposizioni (F7-02) misura quali caselle un tratto
+ * attraversa, così il disegno e il generatore non possono andare d'accordo solo per caso. Qui
+ * resta ciò che è solo disegno — montanti, pioli, macchie, coda, riquadri delle decorazioni.
  */
 
-export const CELL = 100;
-export const BOARD = CELL * RULES.board.size;
-
-export type Point = { x: number; y: number };
-
-const round = (value: number): number => Math.round(value * 10) / 10;
-
-/** Centro della casella. */
-export function cellCenter(n: CellNumber): Point {
-  const { row, col } = cellToCoord(n);
-  return { x: col * CELL + CELL / 2, y: (RULES.board.size - 1 - row) * CELL + CELL / 2 };
-}
-
-/** Angolo in alto a sinistra della casella. */
-export function cellCorner(n: CellNumber): Point {
-  const { row, col } = cellToCoord(n);
-  return { x: col * CELL, y: (RULES.board.size - 1 - row) * CELL };
-}
-
-const sub = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
-const add = (a: Point, b: Point): Point => ({ x: a.x + b.x, y: a.y + b.y });
-const scale = (a: Point, k: number): Point => ({ x: a.x * k, y: a.y * k });
-const length = (a: Point): number => Math.hypot(a.x, a.y);
-
-function unit(a: Point): Point {
-  const len = length(a) || 1;
-  return { x: a.x / len, y: a.y / len };
-}
-
-/** Curva morbida (Catmull-Rom trasformata in Bézier cubiche) che passa per i punti. */
-export function smoothPath(points: Point[]): string {
-  if (points.length < 2) return "";
-  const parts = [`M ${round(points[0].x)} ${round(points[0].y)}`];
-  for (let i = 0; i < points.length - 1; i++) {
-    const p0 = points[i - 1] ?? points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] ?? p2;
-    const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
-    const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
-    parts.push(`C ${round(c1.x)} ${round(c1.y)} ${round(c2.x)} ${round(c2.y)} ${round(p2.x)} ${round(p2.y)}`);
-  }
-  return parts.join(" ");
-}
-
-// ---------------------------------------------------------------------------
-// Scale
-// ---------------------------------------------------------------------------
+export { BOARD, CELL, cellCenter, cellCorner, smoothPath, type Point };
 
 export type LadderGeometry = {
   /** I due montanti. */
@@ -65,35 +34,17 @@ export type LadderGeometry = {
 
 /** Scala fra base e cima: montanti paralleli all'asse e pioli regolari. */
 export function ladderGeometry(from: CellNumber, to: CellNumber): LadderGeometry {
-  const base = cellCenter(from);
-  const top = cellCenter(to);
-  // La scala appoggia sul bordo della casella di base e arriva al bordo della cima.
-  const start: Point = { x: base.x, y: base.y - CELL / 2 + 10 };
-  const end: Point = { x: top.x, y: top.y + CELL / 2 - 10 };
-  const axis = unit(sub(end, start));
-  const normal: Point = { x: -axis.y, y: axis.x };
+  const { start, end, normal } = ladderAxis(from, to);
   // Montanti sottili e distanti, pioli in mezzo: la scala si legge come un disegno a
   // linee (docs/reference/board/boardReference.png), non come una banda nera.
-  const half = 24;
+  const half = LADDER_HALF_WIDTH;
 
   const railLeft = { from: add(start, scale(normal, half)), to: add(end, scale(normal, half)) };
   const railRight = { from: add(start, scale(normal, -half)), to: add(end, scale(normal, -half)) };
   const rails = `M ${round(railLeft.from.x)} ${round(railLeft.from.y)} L ${round(railLeft.to.x)} ${round(railLeft.to.y)} M ${round(railRight.from.x)} ${round(railRight.from.y)} L ${round(railRight.to.x)} ${round(railRight.to.y)}`;
 
-  const span = length(sub(end, start));
-  const count = Math.max(3, Math.round(span / 62));
-  const rungs = Array.from({ length: count - 1 }, (_, index) => {
-    const t = (index + 1) / count;
-    const middle = add(start, scale(sub(end, start), t));
-    return { a: add(middle, scale(normal, half - 6)), b: add(middle, scale(normal, -(half - 6))) };
-  });
-
-  return { rails, rungs };
+  return { rails, rungs: ladderRungs(from, to) };
 }
-
-// ---------------------------------------------------------------------------
-// Serpenti
-// ---------------------------------------------------------------------------
 
 export type SnakeGeometry = {
   /** Corpo sinuoso, dalla testa alla coda. */
@@ -116,30 +67,21 @@ export type SnakeGeometry = {
 function tangentAngle(points: Point[], index: number): number {
   const previous = points[Math.max(0, index - 1)];
   const next = points[Math.min(points.length - 1, index + 1)];
-  return (Math.atan2(next.y - previous.y, next.x - previous.x) * 180) / Math.PI;
+  const angle = (Math.atan2(next.y - previous.y, next.x - previous.x) * 180) / Math.PI;
+  // Un decimale: l'angolo finisce in un attributo `transform`, e Node e il browser non calcolano
+  // `Math.atan2` con gli stessi ultimi bit (hydration, vedi `board-geometry`).
+  return Math.round(angle * 10) / 10;
 }
 
 /**
- * Serpente fra testa e coda: onde intere lungo l'asse, ampiezza fissa.
- * Corpo, macchie e coda si generano **solo** dagli estremi: stesso tabellone, stessa forma.
+ * Serpente fra testa e coda: il corpo è la curva di `src/engine/board-geometry`; qui si aggiungono
+ * macchie, coda assottigliata e orientamento della testa.
  */
 export function snakeGeometry(from: CellNumber, to: CellNumber): SnakeGeometry {
-  const head = cellCenter(from);
-  const tip = cellCenter(to);
-  const delta = sub(tip, head);
-  const axis = unit(delta);
-  const normal: Point = { x: -axis.y, y: axis.x };
-  const span = length(delta);
-
-  const waves = Math.max(2, Math.min(5, Math.round(span / 180)));
-  const amplitude = 30;
-  const samples = waves * 8;
-  const points = Array.from({ length: samples + 1 }, (_, index) => {
-    const t = index / samples;
-    // Si smorza agli estremi: il corpo entra ed esce dal centro delle due caselle.
-    const wave = Math.sin(t * Math.PI * 2 * waves) * amplitude * Math.sin(Math.PI * t);
-    return add(add(head, scale(delta, t)), scale(normal, wave));
-  });
+  const points = snakeBodyPoints(from, to);
+  const head = points[0];
+  const tip = points[points.length - 1];
+  const delta = { x: tip.x - head.x, y: tip.y - head.y };
 
   // Macchie: una sì e una no, tenute lontane dalla testa e dalla coda.
   const spots: SnakeGeometry["spots"] = [];
@@ -161,7 +103,7 @@ export function snakeGeometry(from: CellNumber, to: CellNumber): SnakeGeometry {
     body: smoothPath(points),
     points,
     head,
-    headAngle: (Math.atan2(delta.y, delta.x) * 180) / Math.PI,
+    headAngle: Math.round((Math.atan2(delta.y, delta.x) * 180) / Math.PI * 10) / 10,
     spots,
     tail,
   };
@@ -185,3 +127,11 @@ export function cellsBounds(cells: CellNumber[], margin = 0): { x: number; y: nu
 
 /** Punti del centro di una serie di caselle (per le animazioni). */
 export const centersOf = (cells: CellNumber[]): Point[] => cells.map(cellCenter);
+
+// ---------------------------------------------------------------------------
+// Aritmetica dei punti (solo disegno)
+// ---------------------------------------------------------------------------
+
+const round = (value: number): number => Math.round(value * 10) / 10;
+const add = (a: Point, b: Point): Point => ({ x: a.x + b.x, y: a.y + b.y });
+const scale = (a: Point, k: number): Point => ({ x: a.x * k, y: a.y * k });

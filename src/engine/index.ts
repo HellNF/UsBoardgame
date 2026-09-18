@@ -11,6 +11,29 @@ export {
   nearestSnakeHeadBehind,
 } from "./board";
 export { validateBoard, assertValidBoard } from "./board-validation";
+export {
+  BOARD,
+  CELL,
+  DECORATION_INSET,
+  LADDER_HALF_WIDTH,
+  LADDER_STROKE,
+  SNAKE_AMPLITUDE,
+  SNAKE_BODY_WIDTH,
+  cellCenter,
+  cellCorner,
+  cellRect,
+  cellsAlongPath,
+  crossedCells,
+  ladderAxis,
+  ladderRungs,
+  samplePath,
+  snakeBodyPoints,
+  smoothPath,
+  type CrossedOptions,
+  type LadderAxis,
+  type Point,
+} from "./board-geometry";
+export { generateBoard, type BoardGeneratorOptions, type IllustrationPool } from "./board-generator";
 export { createInitialState, reduce } from "./reducer";
 export * from "./minigames";
 
