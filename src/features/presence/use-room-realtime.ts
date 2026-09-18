@@ -8,13 +8,17 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 /**
  * Tempo reale e presenza della stanza (F2-03, F2-04).
  *
- * Un solo canale per la stanza:
+ * Un solo canale per la stanza, **privato** (J3):
  *  - `postgres_changes` su `games` → la partita è cambiata (nuovo stato, nuova versione);
  *  - `postgres_changes` su `game_events` → è successo qualcosa, da animare o raccontare;
  *  - Presence → chi è collegato (`{ seat, screen }`).
  *
- * RLS filtra gli eventi: a un browser arrivano solo le righe della propria stanza (e il canale
- * di Presence è privato della stanza perché il nome del canale contiene l'id della stanza).
+ * Il canale è `private: true` e si chiama `room:<id della stanza>`: chi si iscrive deve passare le
+ * policy su `realtime.messages` (migrazione `20260918180000_private_realtime.sql`), che ammettono
+ * solo chi ha una sessione in quella stanza. Prima di allora il nome del canale bastava a iscriversi
+ * e a **vedere la presenza** — i dati di gioco no, li filtravano già la RLS delle tabelle.
+ *
+ * RLS filtra gli eventi: a un browser arrivano solo le righe della propria stanza.
  *
  * Il client non ricalcola mai l'esito di una mossa: quando arriva uno stato nuovo lo prende
  * così com'è, e quando il proprio `POST` risponde `409` si riallinea (`refresh`).
@@ -48,7 +52,9 @@ export function useRoomRealtime(input: UseRoomRealtimeInput): RoomRealtimeState 
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
-    const channel = supabase.channel(`room:${roomId}`, { config: { presence: { key: String(seat) } } });
+    const channel = supabase.channel(`room:${roomId}`, {
+      config: { private: true, presence: { key: String(seat) } },
+    });
 
     if (gameId) {
       channel
