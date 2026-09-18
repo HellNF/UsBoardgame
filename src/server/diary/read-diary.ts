@@ -283,8 +283,13 @@ export async function readDiary(
 ): Promise<{ entries: DiaryEntryRow[]; archive: ArchiveRow[] }> {
   const dateFormat = new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric" });
   const archive: ArchiveRow[] = [];
+  // La stessa serata può arrivare due volte: a partita conclusa la stanza mostra quella
+  // (D-64) **ed** è nell'archivio. Una serata è un momento solo, quindi si scrive una volta.
+  const already = new Set<string>();
   for (const game of games) {
     if (game.status !== "finished" || game.state === null) continue;
+    if (already.has(game.id)) continue;
+    already.add(game.id);
     const state: GameState = parseGameState(game.state);
     archive.push({
       id: game.id,

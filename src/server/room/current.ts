@@ -6,6 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { BoardLayout, GameSettings, GameState, PawnId, PlayerColor, Seat } from "@/engine";
 import { loadBoard, parseGameState, parseSettings } from "@/server/game/context";
+import { roomGameChoice } from "@/server/game/game-status";
 import {
   DEFAULT_SETTINGS,
   createLobbyGame,
@@ -23,7 +24,8 @@ import {
  * policy lasciano vedere solo la propria stanza); disposizione e stato della partita li legge
  * il client con la secret key, perché al browser servono per disegnare il tabellone.
  *
- * Se non c'è nessuna serata aperta la crea qui: la stanza ha sempre una lobby pronta.
+ * Se non c'è nessuna serata aperta si mostra l'ultima conclusa (la schermata finale regge una
+ * ricarica, D-64); se la stanza non ne ha nessuna, la lobby si crea qui.
  */
 
 export type RoomContext = {
@@ -34,7 +36,7 @@ export type RoomContext = {
   colors: Record<Seat, PlayerColor>;
   pawns: Record<Seat, PawnId>;
   playerIds: Record<Seat, string>;
-  /** Partita aperta (lobby, sheets o playing): c'è sempre. */
+  /** La serata da mostrare: quella aperta, o l'ultima conclusa (D-64). C'è sempre. */
   game: GameRow;
   settings: GameSettings;
   state: GameState | null;
@@ -87,9 +89,17 @@ export async function currentRoom(code: string): Promise<RoomContext> {
   // la parte viva la fa il canale Realtime (F2-04).
   await admin.from("players").update({ last_seen_at: new Date().toISOString() }).eq("id", playerId);
 
-  let game = await findOpenGame(admin, meRow.room_id);
+  const finished = await findFinishedGames(admin, meRow.room_id).catch(() => []);
+
+  // Serata appena conclusa: si resta sulla schermata finale (D-64). Non se ne apre una nuova da
+  // sé, altrimenti basterebbe una ricarica a portare via il finale della serata — che è il
+  // momento per cui si è giocato. La lobby nuova la chiede «Nuova partita».
+  let game = roomGameChoice({
+    open: await findOpenGame(admin, meRow.room_id),
+    latestFinished: finished[0] ?? null,
+  });
   if (!game) {
-    // Nessuna serata aperta: la lobby si crea da sé. Se l'altro browser l'ha creata nello
+    // Stanza senza nessuna serata: la lobby si crea da sé. Se l'altro browser l'ha creata nello
     // stesso istante, l'indice univoco della stanza rifiuta la seconda e si rilegge quella.
     game =
       (await createLobbyGame(admin, meRow.room_id, DEFAULT_SETTINGS).catch(() => null)) ??
@@ -100,7 +110,6 @@ export async function currentRoom(code: string): Promise<RoomContext> {
   const settings = parseSettings(game.settings, DEFAULT_SETTINGS.boardId);
   const board = await loadBoard(admin, settings.boardId).catch(() => null);
   const state = game.state ? parseGameState(game.state) : null;
-  const finished = await findFinishedGames(admin, meRow.room_id).catch(() => []);
 
   return {
     code: wanted,

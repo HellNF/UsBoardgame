@@ -59,3 +59,17 @@ export function statusOnNewGame(status: GameStatus, phase: Phase | null): GameSt
   if (isConcludedGame(status, phase)) return "finished";
   return isOpenGame(status) ? "abandoned" : status;
 }
+
+/**
+ * Quale serata mostra la stanza (D-64).
+ *
+ * Con una serata aperta si mostra quella. Senza, ma con una **conclusa**, si resta sulla
+ * schermata finale: è il finale della serata, e deve reggere una ricarica. Solo una stanza
+ * senza nessuna serata ne apre una nuova da sé (`null` = «creane una»).
+ *
+ * Senza questa regola, appena la partita finiva bastava ricaricare una pagina qualsiasi della
+ * stanza perché nascesse una lobby nuova e il finale sparisse.
+ */
+export function roomGameChoice<T>(games: { open: T | null; latestFinished: T | null }): T | null {
+  return games.open ?? games.latestFinished ?? null;
+}

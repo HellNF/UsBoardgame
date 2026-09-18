@@ -5,6 +5,7 @@ import {
   isConcludedGame,
   isOpenGame,
   phaseOf,
+  roomGameChoice,
   statusAfterAction,
   statusOnNewGame,
   type GameStatus,
@@ -79,5 +80,21 @@ describe("games: gli stati del database sono quelli che il codice conosce", () =
     const open = COLUMN_STATUSES.filter(isOpenGame);
     expect(open).toEqual([...OPEN_GAME_STATUSES]);
     expect(COLUMN_STATUSES.filter((status) => !isOpenGame(status))).toEqual(["finished", "abandoned"]);
+  });
+});
+
+describe("quale serata mostra la stanza (D-64)", () => {
+  it("con una serata aperta si mostra quella", () => {
+    expect(roomGameChoice({ open: "aperta", latestFinished: "conclusa" })).toBe("aperta");
+  });
+
+  it("senza serata aperta ma con una conclusa si resta sulla schermata finale", () => {
+    // Senza questa regola bastava una ricarica per far nascere una lobby nuova e portare via
+    // il finale della serata.
+    expect(roomGameChoice({ open: null, latestFinished: "conclusa" })).toBe("conclusa");
+  });
+
+  it("stanza senza nessuna serata: se ne apre una", () => {
+    expect(roomGameChoice({ open: null, latestFinished: null })).toBe(null);
   });
 });

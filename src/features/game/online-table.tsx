@@ -133,6 +133,30 @@ export function OnlineTable(props: OnlineTableProps) {
     setEvents((previous) => [...previous, ...incoming]);
   }, []);
 
+  /**
+   * «Nuova partita» dalla schermata finale: apre davvero la serata nuova e porta in lobby.
+   * Prima si limitava a passare al diario, e da quando la serata conclusa resta la schermata
+   * finale (D-64) sarebbe un vicolo cieco: nessun modo di ricominciare.
+   */
+  const startNewEvening = useCallback(() => {
+    void (async () => {
+      try {
+        const response = await fetch(`/api/rooms/${props.code}/games`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "new" }),
+        });
+        if (!response.ok) {
+          setError("Non è stato possibile aprire una serata nuova: riprova.");
+          return;
+        }
+        router.push(`/r/${props.code}/lobby`);
+      } catch {
+        setError("Errore di rete: la serata nuova non è partita.");
+      }
+    })();
+  }, [props.code, router]);
+
   const { otherConnected } = useRoomRealtime({
     roomId: props.roomId,
     gameId: props.gameId,
@@ -211,7 +235,7 @@ export function OnlineTable(props: OnlineTableProps) {
               colors={props.colors}
               bonus={bonus}
               stake={props.settings.stake}
-              onRestart={() => router.push(`/r/${props.code}/diary`)}
+              onRestart={startNewEvening}
             />
           ) : (
             <>

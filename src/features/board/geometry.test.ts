@@ -41,7 +41,9 @@ describe("serpenti: corpo a macchie e coda assottigliata (F6-03)", () => {
     expect(snake.spots.length).toBeGreaterThan(4);
     const radius = 30; // l'ampiezza delle onde: una macchia non può allontanarsi più di così
     for (const spot of snake.spots) {
-      const nearest = Math.min(...snake.points.map((point) => Math.hypot(point.x - spot.at.x, point.y - spot.at.y)));
+      const nearest = Math.min(
+        ...snake.points.map((point) => Math.hypot(point.x - spot.at.x, point.y - spot.at.y)),
+      );
       expect(nearest).toBeLessThan(radius);
       expect(Number.isFinite(spot.angle)).toBe(true);
     }
