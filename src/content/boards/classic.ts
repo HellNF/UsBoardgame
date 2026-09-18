@@ -132,9 +132,11 @@ export const classic: BoardLayout = {
     { from: 98, to: 79 },
   ],
   decorations: [
-    { shape: "circle", cells: [4, 5] },
-    { shape: "half-circle", cells: [9] },
-    { shape: "diagonal", cells: [23] },
-    { shape: "filled", cells: [26] },
+    { shape: "disc", cells: [4, 5] },
+    { shape: "crescent", cells: [9] },
+    // Non sulle caselle 23 e 26: là passa il serpente 62→18 e ci arriva la scala 8→26, e due
+    // neri pieni uno sull'altro si fondono in una macchia (D-65).
+    { shape: "hill", cells: [46] },
+    { shape: "diamond", cells: [90] },
   ],
 };

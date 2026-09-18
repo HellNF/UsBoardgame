@@ -20,10 +20,10 @@ export function DeepMirror({ x = 0, y = 0, size = 100, className }: Illustration
       aria-hidden="true"
       className={className}
     >
-      {/* Specchio a mano: metà vetro è scura, come se ci fosse un riflesso. */}
-      <ellipse cx="50" cy="36" rx="24" ry="26" />
-      <path d="M50 10a24 26 0 0 1 0 52z" fill="currentColor" />
-      <path d="M50 62v26M40 62h20" strokeWidth={6} />
+      {/* Specchio da tavolo: cornice ovale, due zampe svasate e il piede a barra. */}
+      <ellipse cx="50" cy="34" rx="18" ry="22" strokeWidth={8} />
+      <path d="M43 53 36 70M57 53 64 70" strokeWidth={6} />
+      <path d="M28 73h44" strokeWidth={7} />
     </svg>
   );
 }

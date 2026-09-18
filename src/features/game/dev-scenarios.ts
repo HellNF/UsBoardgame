@@ -2,6 +2,7 @@ import { challenges } from "@/content/challenges";
 import { questions } from "@/content/questions";
 import { MINIGAMES } from "@/engine";
 import type { ActiveCard, EventCardId, GameState, ItemId, MinigameId, PlayerState, Seat } from "@/engine";
+import { HOTSEAT_CHALLENGE_CONTENT } from "./dev-context";
 
 /**
  * Scenari della pagina `/dev/scenari`: **stati fissati a mano**, uno per ogni carta e
@@ -110,12 +111,19 @@ function scriptedRandomInt(): (max: number) => number {
   };
 }
 
-/** Carta sfida dal catalogo vero, con i campi che lo scenario vuole cambiare. */
+/**
+ * Mazzo delle carte sfida degli scenari: il catalogo vero più le due sfide di prova della
+ * hot seat (`dev-forza-4`, `dev-memory`, D-44), che servono a provare i minigiochi che nel
+ * mazzo di `main` non ci sono.
+ */
+const CHALLENGE_DECK = [...challenges, ...HOTSEAT_CHALLENGE_CONTENT];
+
+/** Carta sfida dal catalogo vero (o dal mazzo di prova), con i campi che lo scenario vuole cambiare. */
 function challengeCard(
   challengeId: string,
   overrides: Partial<Extract<ActiveCard, { type: "challenge" }>> = {},
 ): Extract<ActiveCard, { type: "challenge" }> {
-  const found = challenges.find((challenge) => challenge.id === challengeId);
+  const found = CHALLENGE_DECK.find((challenge) => challenge.id === challengeId);
   if (!found) throw new Error(`Scenario: sfida sconosciuta \`${challengeId}\`.`);
   const minigameId = (found.minigame as MinigameId | undefined) ?? null;
   const quiz = found.quiz ?? null;
@@ -340,6 +348,28 @@ export const SCENARIOS: Scenario[] = [
     deadlineSeconds: 180,
     state: scenarioState({
       card: challengeCard("tic-tac-toe"),
+      players: { 1: player(1, 11), 2: player(2, 13) },
+    }),
+  },
+  {
+    id: "sfida-duello-automatica-forza-4",
+    title: "Sfida duello automatica · forza 4",
+    description:
+      "Sette colonne, sei righe: clicca una colonna e la pedina cade in fondo. Serve a guardare la caduta (F2-05): una mossa per volta, in coda — due clic veloci non si accavallano.",
+    deadlineSeconds: 180,
+    state: scenarioState({
+      card: challengeCard("dev-forza-4"),
+      players: { 1: player(1, 11), 2: player(2, 13) },
+    }),
+  },
+  {
+    id: "sfida-duello-automatica-memory",
+    title: "Sfida duello automatica · memory",
+    description:
+      "Dodici carte coperte, sei coppie. Clicca due carte che non combaciano: restano scoperte. Poi clicca la terza: le due si richiudono dopo l'occhiata di un secondo (F2-05).",
+    deadlineSeconds: 180,
+    state: scenarioState({
+      card: challengeCard("dev-memory"),
       players: { 1: player(1, 11), 2: player(2, 13) },
     }),
   },

@@ -611,3 +611,64 @@ nuova quando non trovava una serata aperta: bastava **ricaricare una pagina qual
 finale — le stelle bonus scoperte una alla volta, il vincitore, la posta in palio — sparisse per sempre, e al suo
 posto ci fosse una lobby vuota. È il momento per cui si è giocata la serata: deve reggere una ricarica.
 Di conseguenza la stessa serata è sia quella mostrata sia nell'archivio: il diario la scrive **una volta sola**.
+
+### D-65 · Le decorazioni multi-cella sono forme piene, non segnaposto a filo
+
+**Derivata, su indicazione del proprietario (F6-02, pacchetto G).** Le quattro decorazioni della disposizione
+`classic` (caselle 4-5, 9, 23, 26) erano i segnaposto geometrici del pacchetto C: un cerchio, un semicerchio, una
+diagonale e un rettangolo, tutti **a filo** (contorno, tratto 6). Accanto alle 38 illustrazioni nuove — campiture
+nere piene con dettagli di carta — stonavano. Ora sono forme piene in inchiostro, contenute nel gruppo di caselle
+che la disposizione indica con un margine di 12 unità dai bordi: `disc` (disco, anche su due caselle),
+`crescent` (falce), `hill` (mezzo disco appoggiato in basso), `diamond` (rombo). I
+nomi dei segnaposto (`circle`, `half-circle`, `diagonal`, `filled`) escono dal tipo `DecorationShape`.
+Stanno sotto scale, serpenti e numeri, quindi non rubano leggibilità a niente: dove passa una scala o un serpente
+vincono loro, e il numero della casella resta staccato dal nero dall'alone di A1.
+_Perché:_ l'alternativa era togliere le decorazioni; il tabellone è pieno, ma le quattro forme piene danno il
+ritmo che sulle caselle libere mancava, nello stesso linguaggio delle illustrazioni. Il disco su due caselle
+copre il bordo in mezzo: le due caselle restano leggibili dai loro numeri.
+
+Due vincoli che vengono dal guardare il tabellone vero, e che la verifica locale ha corretto:
+
+1. **Una decorazione va su caselle che nessuna scala e nessun serpente attraversa.** «Sta sotto» non basta:
+   sotto un nero pieno c'è un altro nero pieno e i due si fondono in una macchia. Le prime scelte (23, dove passa
+   il serpente 62→18, e 26, dove **arriva** la scala 8→26) si leggevano come un fungo e come una freccia spezzata;
+   sono state spostate su 46 e 90. Lo z-order separa solo se la forma sopra porta del bianco (i pioli delle scale).
+2. **Forme piene, mai anelli.** Il numero della casella si disegna nell'angolo in alto a sinistra con il suo alone
+   di carta, quindi ogni decorazione riceve **sempre** un morso lì. Una forma piena lo regge (si legge come una
+   tacca); una fascia sottile si interrompe e la forma cambia significato. Il rombo era nato come anello — un rombo
+   di carta dentro quello nero — e si leggeva come una freccia: ora è pieno.
+
+### D-66 · Un riquadro in `/dev/scenari` per ogni minigioco che si vuole guardare (G3)
+
+**Derivata, su richiesta del proprietario.** Le due animazioni del pacchetto F (le pedine dei
+minigiochi a una mossa per volta, D-62) si potevano vedere solo se la carta usciva per caso in
+partita: memory e forza 4 non avevano un riquadro in `/dev/scenari`, mentre il tris sì. È la
+ragione per cui quella pagina esiste.
+
+I due riquadri nuovi usano le carte di prova della hot seat (`dev-forza-4`, `dev-memory`, D-44), che
+prima non erano raggiungibili dagli scenari: il mazzo degli scenari è ora il catalogo vero più
+`HOTSEAT_CHALLENGE_CONTENT`. Il memory si apre coperto apposta: cliccando due carte che non
+combaciano si vede la coppia restare scoperta, e cliccando la terza si vede la pausa prima che si
+richiudano — le due cose che la coda regola.
+
+### D-67 · I wrapper Rive esistono, con il segnaposto e la sonda una volta per sessione (G4)
+
+I cinque wrapper di `public/rive/` sono in `src/art/rive/`: `PawnView` (6 artboard, `Pawn`),
+`DieView` (`Die`/`Roll`), `CardView` (`Card`/`Flip`), `MascotView` (6 artboard, `Mood`), `FinaleView`
+(`Finale`/`Reveal`). I `.riv` li disegna a mano il proprietario: nessun file è stato creato o
+modificato, e i nomi attesi stanno in `src/art/rive/files.ts` (una costante, un posto solo).
+
+Il segnaposto non è un ripiego: è quello che si vede finché il file non c'è, e deve reggere da solo.
+Ogni wrapper lo sceglie controllando la presenza del file con una richiesta `HEAD`, **una per file per
+sessione** (le sei pedine ne fanno una sola), con l'esito in memoria fuori da React
+(`useSyncExternalStore`, come `useHydrated`, D-60): sul server la risposta è sempre «non c'è», così il
+primo disegno è il segnaposto e l'idratazione non si disallinea. Conseguenza dichiarata: finché i
+`.riv` mancano la console mostra la riga di rete del 404 di ogni file — è il browser che registra la
+richiesta, non un errore dell'applicazione.
+
+Una correzione al contratto di `docs/design.md`: l'ingresso `winner` di `finale.riv` è un **numero**
+(0 pareggio, 1, 2), non un trigger. Un ingresso che scatta non può dire _chi_ ha vinto.
+
+I segnaposto si guardano tutti insieme in fondo a `/dev/art`. Non hanno test: il progetto non ha un
+ambiente DOM per i componenti (`vitest` gira in `node` e include solo `*.test.ts`), quindi la prova è
+la pagina.
