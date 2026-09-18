@@ -34,9 +34,10 @@ export function screenFor(status: string | null | undefined): Screen {
     case "sheets":
       return "sheet";
     case "playing":
-      return "game";
+    // Serata conclusa: si entra sulla schermata finale, non nel diario (D-64). È il finale
+    // della serata, e da lì si va al diario o si comincia una partita nuova.
     case "finished":
-      return "diary";
+      return "game";
     default:
       return "lobby";
   }

@@ -9,6 +9,7 @@ import { viewerActs, waitingLine, type Viewer } from "./viewer";
 import { useHydrated } from "./use-hydrated";
 import { WaitingRow } from "./waiting-row";
 import { Minigame } from "@/features/minigames/minigame";
+import { useMinigameQueue } from "@/features/minigames/use-minigame-queue";
 
 /** Il colore è solo dei giocatori: posto 1 rosso, posto 2 blu (docs/design.md § Token). */
 const SEAT_TEXT: Record<Seat, string> = { 1: "text-player-red", 2: "text-player-blue" };
@@ -65,6 +66,12 @@ export function ChallengeCard({
   const expiredRef = useRef<string | null>(null);
   // Costante locale: la narrowing regge anche dentro la callback di `onMove`.
   const minigame = card.minigame;
+  // Una mossa per volta anche nel minigioco (F2-05): la coda tiene indietro lo stato nuovo finché
+  // la scena precedente non si è vista, così due mosse ravvicinate non si accavallano e in memory
+  // la coppia sbagliata resta scoperta il tempo di vederla. Le decisioni (di chi è il turno, chi
+  // può cliccare) restano quelle dello stato vero: qui cambia solo cosa si disegna.
+  const scene = useMinigameQueue(minigame);
+  const shown = scene.state ?? minigame;
   // Sfida esterna: si va a giocare fuori e si torna a dichiarare (F4-05). La pausa è della
   // schermata, non della partita: lo stato condiviso resta quello del server.
   const [away, setAway] = useState(false);
@@ -283,7 +290,8 @@ export function ChallengeCard({
         <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">
           {viewerActs(viewerSeat, minigameTurn(minigame)) ? (
             <Minigame
-              state={minigame}
+              state={shown ?? minigame}
+              entering={scene.entering}
               seat={minigame.winner === null ? seatFor(minigame, viewerSeat, state.turn) : null}
               onMove={(move) =>
                 act({ type: "MINIGAME_MOVE", seat: seatFor(minigame, viewerSeat, state.turn), move })
@@ -292,7 +300,13 @@ export function ChallengeCard({
             />
           ) : (
             <>
-              <Minigame state={minigame} seat={null} onMove={() => {}} names={names} />
+              <Minigame
+                state={shown ?? minigame}
+                entering={scene.entering}
+                seat={null}
+                onMove={() => {}}
+                names={names}
+              />
               {/* La riga di attesa la decide `waitingLine` (D-56): qui non si riscrive a mano. */}
               <WaitingRow text={waitingLine(state, card, viewerSeat, names) ?? ""} />
             </>

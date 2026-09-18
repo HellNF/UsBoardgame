@@ -121,12 +121,17 @@ Dopo la fase 3: **prima serata giocabile**.
   Nota: dal pacchetto E il percorso della pedina è **cella per cella** (`src/features/board/route.ts`: un saltello
   per ogni casella, gradino per gradino sulle scale, lungo il corpo sui serpenti) e gli eventi di spostamento si
   **accodano** e si animano in ordine, uno per volta (`src/features/board/use-move-queue.ts`), anche nella partita
-  online, dove gli eventi arrivano dal tempo reale. Anche l'ingresso della carta è un'animazione (D-57). Manca
-  l'animazione delle pedine dei minigiochi dagli eventi `MINIGAME_MOVED` (tris, forza 4 e memory cambiano stato
-  senza animazione).
+  online, dove gli eventi arrivano dal tempo reale. Anche l'ingresso della carta è un'animazione (D-57).
+  Dal pacchetto F anche le **pedine dei minigiochi** si animano (D-62): tris, forza 4 e memory passano dalla
+  stessa coda (`src/features/minigames/use-minigame-queue.ts`, con i tempi puri e provati in `queue.ts`), e in
+  memory una coppia sbagliata resta scoperta il tempo di vederla prima di richiudersi.
   Verificato in parte in locale il 2026-09-18: online nessun movimento perso né tornato indietro, con la coda che
   regge anche mentre si apre una carta. Restano il saltello cella per cella guardato a occhio in due (da una
-  scheda di sfondo non si può campionare) e le pedine dei minigiochi (voce F2-05 del Registro).
+  scheda di sfondo non si può campionare) e le pedine dei minigiochi in partita vera: la voce F2-05 del Registro.
+  Dal pacchetto F le pedine dei minigiochi si animano una mossa per volta (D-62, `queue.ts` + `use-minigame-queue.ts`,
+  8 prove). Verificato in locale il 2026-09-18 che la coda è collegata ai tre tabellini e che le prove sono verdi;
+  i tempi in millisecondi non si misurano da qui, quindi l'occhio resta al proprietario. In `/dev/scenari` manca
+  un riquadro per memory e forza 4, che è il modo più semplice per guardarle.
 
 ## Fase 3 · Domande — _prima serata giocabile_
 
@@ -217,26 +222,40 @@ Dopo la fase 3: **prima serata giocabile**.
   plurale giusto («1 stella · 17 monete · 3 risposte giuste») e il pulsante che scopre le stelle una alla volta.
   L'assegnazione delle stelle bonus è già stata guardata nella hot seat; online non era giudicabile perché lo
   stato finale l'ho forzato a mano (voce F5-05 del Registro).
-- [~] **F5-06** Diario della serata e archivio delle partite.
-  Nota: la vista è in `src/features/diary` (momenti della serata + archivio) e si vede in `/dev/ui` su dati
-  finti; la lettura del diario dal database è del pacchetto D.
-  Dal pacchetto D: la pagina `/r/[code]/diary` legge i momenti da `game_events` con `src/server/diary/read-diary.ts`
-  (mappa evento → momento pura, con test: round, monete, oggetti, scale, serpenti, stelle) e l'archivio dalle
-  partite concluse; le risposte della scheda non entrano mai nel diario.
-  Dal pacchetto E il diario scrive il **testo** della domanda e il **nome** della sfida dal catalogo nel bundle
-  (D-54), non registra le monete a zero e i testi sono stati riletti.
-  Verificato in locale il 2026-09-18 sulla partita vera: testo della domanda, nome della sfida, monete col segno e
-  la provenienza, nessuna riga a zero. Corretto qui un difetto: una prova non riuscita era scritta «Vinta: +0
-  monete» e attribuita al giudice (D-59).
-  **Resta aperto l'archivio:** nessuno scrive mai `status = 'finished'`, quindi «Partite passate» non si riempie
-  mai, e una serata conclusa diventa `abandoned` quando se ne comincia un'altra — così non torna più. La
-  rilettura dei testi a voce resta del proprietario (voce F5-06 del Registro).
+- [x] **F5-06** Diario della serata e archivio delle partite.
+      Nota: la vista è in `src/features/diary` (momenti della serata + archivio) e si vede in `/dev/ui` su dati
+      finti; la lettura del diario dal database è del pacchetto D.
+      Dal pacchetto D: la pagina `/r/[code]/diary` legge i momenti da `game_events` con `src/server/diary/read-diary.ts`
+      (mappa evento → momento pura, con test: round, monete, oggetti, scale, serpenti, stelle) e l'archivio dalle
+      partite concluse; le risposte della scheda non entrano mai nel diario.
+      Dal pacchetto E il diario scrive il **testo** della domanda e il **nome** della sfida dal catalogo nel bundle
+      (D-54), non registra le monete a zero e i testi sono stati riletti.
+      Verificato in locale il 2026-09-18 sulla partita vera: testo della domanda, nome della sfida, monete col segno e
+      la provenienza, nessuna riga a zero. Corretto qui un difetto: una prova non riuscita era scritta «Vinta: +0
+      monete» e attribuita al giudice (D-59).
+      L'**archivio** è del pacchetto F: `apply_game_action` porta la partita a `finished` con `finished_at` nella
+      stessa transazione dell'azione che la conclude, e «Nuova serata» abbandona solo una partita non conclusa
+      (D-61, migrazione `20260918130000_finish_game.sql`, regole pure in `src/server/game/game-status.ts`,
+      controlli SQL in `supabase/tests/finish_game.sql`).
+      Chiuso in locale il 2026-09-18: serata giocata fino in fondo, riga `finished` con la data, «Partite passate» che
+      si riempie, e «Nuova partita» che non se la porta più via. Corretto qui il contraccolpo: la serata conclusa
+      resta sulla schermata finale invece di far nascere una lobby a ogni ricarica, e «Nuova partita» apre davvero la
+      serata nuova (D-64). Resta del proprietario solo la rilettura dei testi a voce.
+      Da verificare in locale con la voce F1 del Registro; la rilettura dei testi a voce resta del proprietario.
 
 ## Fase 6 · Illustrazioni — _estetica finale_ (in parallelo)
 
 - [ ] **F6-01** Reference in `docs/reference/` e revisione di [design.md](design.md) accanto alle immagini.
-- [ ] **F6-02** ~35 illustrazioni delle domande + 3 stelle + decorazioni (SVG).
-- [ ] **F6-03** Scale e serpenti definitivi (montanti e pioli, corpo a macchie, testa con occhio).
+- [~] **F6-02** ~35 illustrazioni delle domande + 3 stelle + decorazioni (SVG).
+  Nota: dal pacchetto F ci sono i 38 disegni (35 domande, 7 per categoria, + 3 stelle) in `src/art/illustrations`,
+  con registro `index.ts` e la pagina `/dev/art` (48 px e 200 px, 404 in produzione). Il tabellone li usa al posto
+  delle iniziali e le 35 caselle domanda hanno 35 disegni diversi. Verificato in locale il 2026-09-18.
+  Restano: le **decorazioni** (cerchi, mezzelune, diagonali) sono ancora i segnaposto geometrici del pacchetto C, e
+  tre disegni non si leggono (`deep-mirror`, `memories-phone`, `deep-roots` a 48 px). Voce F6-02 · F6-03 del Registro.
+- [L] **F6-03** Scale e serpenti definitivi (montanti e pioli, corpo a macchie, testa con occhio).
+  Nota: fatti nel pacchetto F (macchie, occhio, lingua, coda che si assottiglia; scale con montanti e pioli
+  bianchi bordati di nero), con `geometry.test.ts`. Verificato in locale il 2026-09-18: si leggono anche sopra le
+  caselle nere. Resta l'occhio del proprietario (voce F6-02 · F6-03 del Registro).
 - [ ] **F6-04** Rive: wrapper e segnaposto per pedine (6), dadi, carta; file `.riv` creati a mano nell'editor Rive.
 - [ ] **F6-05** Rive: wrapper e segnaposto per mascotte (6) e finale; file `.riv` creati a mano nell'editor Rive.
 - [ ] **F6-06** Suoni opzionali.

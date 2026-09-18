@@ -103,20 +103,37 @@ export type SnakeGeometry = {
   head: Point;
   /** Rotazione della testa in gradi (0 = verso destra). */
   headAngle: number;
+  /**
+   * Macchie chiare sul corpo (le disegna il tabellone sopra il corpo nero).
+   * Una sì e una no lungo la curva: sono la pelle a macchie di docs/design.md.
+   */
+  spots: { at: Point; angle: number; rx: number; ry: number }[];
+  /** Coda assottigliata: gli ultimi tratti del corpo, dal più grosso al più sottile. */
+  tail: { from: Point; to: Point; width: number }[];
 };
 
-/** Serpente fra testa e coda: onde intere lungo l'asse, ampiezza fissa. */
+/** Direzione della curva in un punto, in gradi: serve a orientare le macchie. */
+function tangentAngle(points: Point[], index: number): number {
+  const previous = points[Math.max(0, index - 1)];
+  const next = points[Math.min(points.length - 1, index + 1)];
+  return (Math.atan2(next.y - previous.y, next.x - previous.x) * 180) / Math.PI;
+}
+
+/**
+ * Serpente fra testa e coda: onde intere lungo l'asse, ampiezza fissa.
+ * Corpo, macchie e coda si generano **solo** dagli estremi: stesso tabellone, stessa forma.
+ */
 export function snakeGeometry(from: CellNumber, to: CellNumber): SnakeGeometry {
   const head = cellCenter(from);
-  const tail = cellCenter(to);
-  const delta = sub(tail, head);
+  const tip = cellCenter(to);
+  const delta = sub(tip, head);
   const axis = unit(delta);
   const normal: Point = { x: -axis.y, y: axis.x };
   const span = length(delta);
 
   const waves = Math.max(2, Math.min(5, Math.round(span / 180)));
   const amplitude = 30;
-  const samples = waves * 6;
+  const samples = waves * 8;
   const points = Array.from({ length: samples + 1 }, (_, index) => {
     const t = index / samples;
     // Si smorza agli estremi: il corpo entra ed esce dal centro delle due caselle.
@@ -124,11 +141,29 @@ export function snakeGeometry(from: CellNumber, to: CellNumber): SnakeGeometry {
     return add(add(head, scale(delta, t)), scale(normal, wave));
   });
 
+  // Macchie: una sì e una no, tenute lontane dalla testa e dalla coda.
+  const spots: SnakeGeometry["spots"] = [];
+  for (let index = 2; index < points.length - 2; index += 2) {
+    spots.push({ at: points[index], angle: tangentAngle(points, index), rx: 10, ry: 6 });
+  }
+
+  // Coda: gli ultimi tratti ridisegnati via via più sottili.
+  const widths = [22, 17, 12, 7];
+  const tailPoints = points.slice(Math.max(0, points.length - 9));
+  const step = (tailPoints.length - 1) / widths.length;
+  const tail: SnakeGeometry["tail"] = widths.map((width, index) => ({
+    from: tailPoints[Math.round(index * step)],
+    to: tailPoints[Math.round((index + 1) * step)],
+    width,
+  }));
+
   return {
     body: smoothPath(points),
     points,
     head,
     headAngle: (Math.atan2(delta.y, delta.x) * 180) / Math.PI,
+    spots,
+    tail,
   };
 }
 

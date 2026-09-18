@@ -324,12 +324,13 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
       doppia conferma, che è già dove si dichiara), ma va deciso se la pausa deve fermare anche il conto.
 - [ ] Tentativi di accesso: il contatore del ritardo è in memoria del processo (D-50); se il sito diventasse
       pubblico va spostato su Postgres (una tabella di tentativi per stanza).
-- [ ] **L'archivio delle partite non si riempie mai.** Nessuno scrive `status = 'finished'`: quando il motore
-      arriva alla fine la riga resta `playing` (e va bene per la schermata finale, che si riapre anche
-      rientrando), ma `findFinishedGames` cerca `status = 'finished'`, quindi «Partite passate» nel diario resta
-      vuoto; e con «Nuova partita» la serata conclusa diventa `abandoned`, cioè non torna più. Si chiude
-      portando la partita a `finished` (con `finished_at`) nella stessa transazione dell'azione che la conclude,
-      dentro `apply_game_action`. Trovato in locale il 2026-09-18 (F5-06).
+- [x] **L'archivio delle partite non si riempie mai.** Nessuno scriveva `status = 'finished'`: quando il motore
+      arrivava alla fine la riga restava `playing` (e andava bene per la schermata finale, che si riapre anche
+      rientrando), ma `findFinishedGames` cerca `status = 'finished'`, quindi «Partite passate» nel diario restava
+      vuoto; e con «Nuova partita» la serata conclusa diventava `abandoned`, cioè non tornava più. Trovato in
+      locale il 2026-09-18 (F5-06). **Chiuso dal pacchetto F (D-61):** `apply_game_action` porta la partita a
+      `finished` con `finished_at` nella stessa transazione dell'azione che la conclude, e «Nuova partita»
+      abbandona solo una serata non conclusa. La verifica in locale è la voce F1 del Registro.
 
 ---
 
@@ -503,8 +504,8 @@ sfide (D-25); un modulo che legge l'orologio da sé darebbe due gare diverse.
 
 **Derivata, su indicazione del proprietario (F3-03, F4-02, F4-06, F5-05).** `CardPanel` riceve il posto di chi
 guarda: chi guarda vede i comandi suoi, l'altro legge una riga di attesa che dice cosa sta facendo l'altro
-(«Marta sta scrivendo la risposta…», «Leo sta giudicando…», «Tocca a Marta muovere»). Nella hot seat e nella pagina
-degli scenari il valore è `"all"` e i comandi si vedono tutti, come prima; `/dev/scenari` ha un interruttore per
+(«Marta sta scrivendo la risposta…», «Leo sta giudicando…», «Tocca a Marta muovere»). Nella hot seat il valore è `"all"` e i comandi si vedono
+tutti, come prima; la pagina degli scenari parte da «posto 1» (è il caso interessante) e ha l'interruttore; `/dev/scenari` ha un interruttore per
 guardare la stessa carta dal posto 1, dal posto 2 o da tutti e due, così le due viste si controllano senza
 database. Le regole stanno in `src/features/cards/viewer.ts`, pure e provate; i componenti delle carte non le
 ripetono.
@@ -558,3 +559,55 @@ riflessi compaiono dopo l'idratazione (`useHydrated` in `src/features/cards/use-
 _Perché:_ `Date.now()` nel primo disegno vale un secondo sul server e un altro nel browser, quindi React buttava
 via l'albero appena idratato con «Hydration failed because the server rendered text didn't match the client» —
 un errore in console a ogni caricamento con una carta a tempo aperta.
+
+---
+
+## L'archivio e l'estetica (pacchetto F)
+
+### D-61 · La serata conclusa entra nell'archivio, nella transazione dell'azione
+
+**Derivata, trovata in locale (F5-06).** Quando lo stato applicato ha `phase = "finished"`, `apply_game_action`
+scrive anche `status = 'finished'` e `finished_at = now()` (migrazione `20260918130000_finish_game.sql`): una sola
+transazione, come vuole D-52. Nessun secondo `update` dal lato TypeScript, che potrebbe lasciare la riga con lo
+stato salvato e l'archivio no. Solo una partita **non conclusa** diventa `abandoned` con «Nuova partita»
+(`statusOnNewGame` in `src/server/game/game-status.ts`, con la condizione dello stato anche nell'`update`, così
+una partita che finisce fra la lettura e la scrittura non viene toccata).
+La decisione è scritta anche in TypeScript, pura e provata (`statusAfterAction`, `isConcludedGame`,
+`statusOnNewGame`): è la stessa regola, come `readyOutcome` per la lobby (D-53).
+_Perché:_ con la riga ferma a `playing` l'archivio del diario restava vuoto per sempre e una serata giocata fino
+in fondo spariva; portare a `finished` la riga **senza** data avrebbe lasciato «Partite passate» senza la sua
+data, e farlo da fuori avrebbe aperto la finestra in cui lo stato è salvato ma l'archivio no.
+_Effetto collaterale accettato:_ dopo la fine, rientrando nella pagina della partita non si riapre più la
+schermata finale (la riga non è più aperta): si arriva al diario, dove la serata è nell'archivio. È la voce F1
+del Registro, da guardare in locale.
+
+### D-62 · Le mosse dei minigiochi si accodano e si animano una per volta
+
+**Derivata, su indicazione del proprietario (F2-05).** Tris, forza 4 e memory ricevevano `MINIGAME_MOVED` ma
+ridisegnavano lo stato **senza transizione**: due mosse ravvicinate (l'altra schermata che muove, il tempo reale
+che consegna due righe insieme) cambiavano il disegno nello stesso istante. Ora `useMinigameQueue`
+(`src/features/minigames/use-minigame-queue.ts`) è lo stesso impianto di `useMoveQueue` per la pedina del
+tabellone: ogni stato nuovo del minigioco entra in coda e va in scena uno per volta, e gli elementi comparsi
+adesso entrano con Motion (`enteringCells` dice quali sono, `useEnterFrom` li anima e si spegne con
+`prefers-reduced-motion`).
+L'attesa la decide `revealDelay` (`src/features/minigames/queue.ts`, puro e provato): il minimo fra due scene è
+320 ms, e il memory ha i suoi tempi perché le sue mosse sono giri di carte — la prima carta del turno resta
+leggibile 600 ms, la seconda si vede accanto alla prima, e una **coppia sbagliata resta scoperta 900 ms** prima
+che la mossa successiva la richiuda.
+_Non serve nessun evento:_ ogni stato nuovo del minigioco **è** una mossa, quindi la coda si costruisce dal solo
+`state` e vale identica nella hot seat, negli scenari e nella partita vera.
+_Perché:_ con il solo disegno nuovo e nessuna coda il tabellone saltava da una posizione all'altra e in memory
+una coppia sbagliata poteva sparire prima di essere vista; la coda invece non dipende dai tempi della rete.
+
+### D-64 · La serata conclusa resta sulla schermata finale
+
+**Derivata, trovata in locale (F1, pacchetto F).** Finché la coppia non comincia una partita nuova, la stanza
+mostra l'**ultima serata conclusa**: `currentRoom` prende la partita aperta, e se non c'è l'ultima `finished`
+(`roomGameChoice` in `src/server/game/game-status.ts`, pura e provata); `/r/[code]/game` non rimanda più al
+diario; `screenFor("finished")` porta alla partita, non al diario. «Nuova partita» sulla schermata finale chiama
+davvero `{ action: "new" }` e porta in lobby.
+_Perché:_ con D-61 la riga diventa `finished` appena il motore finisce, e `currentRoom` apriva da sé una lobby
+nuova quando non trovava una serata aperta: bastava **ricaricare una pagina qualsiasi** perché la schermata
+finale — le stelle bonus scoperte una alla volta, il vincitore, la posta in palio — sparisse per sempre, e al suo
+posto ci fosse una lobby vuota. È il momento per cui si è giocata la serata: deve reggere una ricarica.
+Di conseguenza la stessa serata è sia quella mostrata sia nell'archivio: il diario la scrive **una volta sola**.

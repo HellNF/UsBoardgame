@@ -249,21 +249,23 @@ diventa "healthy" e la CLI ferma tutto (`LegacyHealthCheckTimeoutError`). Il gir
 ### F0-03 · `pnpm room:create`
 
 1. `pnpm room:create` (senza argomenti) → stampa l'uso e non tocca il database.
-2. `pnpm room:create -- --code COPPIA42 --name1 Nicolò --name2 Marta`: chiede la password **due volte**, e mentre
+2. `pnpm room:create --code COPPIA42 --name1 Nicolò --name2 Marta`: chiede la password **due volte**, e mentre
    la scrivi non si vede (l'eco è spento). Atteso: `Stanza COPPIA42 creata (id …)` e i due posti con il loro id.
 3. In Studio: `select code, left(password_hash, 20) from public.rooms;` → l'hash comincia con `scrypt$16384$8$1$`;
    la password in chiaro non compare da nessuna parte.
 4. Rilancia lo stesso comando: atteso `La stanza COPPIA42 esiste già: …` (non nasce una seconda stanza).
 5. In Studio: `select seat, display_name, pawn, color from public.players order by seat;` → due righe, posto 1 e
    posto 2, con pedina e colore scelti.
-6. `pnpm room:create -- --code COPPIA42 --name1 A --name2 B --pawn1 fox --pawn2 fox` → rifiuta pedine o colori
+6. `pnpm room:create --code COPPIA42 --name1 A --name2 B --pawn1 fox --pawn2 fox` → rifiuta pedine o colori
    uguali **prima** di chiedere la password.
 
 **Esito:** verificato il 2026-09-17 (Opus, con Docker): crea la stanza e i due posti, la password è chiesta a
 terminale e salvata come hash scrypt; `--help` e gli argomenti sbagliati stampano l'uso.
 **Due difetti:** (1) l'invocazione scritta nell'aiuto — `pnpm room:create -- --code …` — **non funziona** con pnpm
 11.25: il `--` arriva allo script e risponde "Argomento inatteso". Va scritta senza `--`
-(`pnpm room:create --code COPPIA42 --name1 Leo --name2 Marta`): correggere il messaggio di aiuto e i documenti.
+(`pnpm room:create --code COPPIA42 --name1 Leo --name2 Marta`).
+**Corretto nel pacchetto F:** l'aiuto di `scripts/lib/room-args.ts`, il commento in cima a `scripts/create-room.ts`
+e le due righe di questo Registro sono senza `--`.
 (2) la password digitata resta visibile a terminale mentre si scrive.
 
 ### F0-04 · Accesso alla stanza, posto legato al browser, uscita
@@ -700,3 +702,129 @@ prove qui sopra).
   riuscita, attribuendola al giudice (D-59); la riga di attesa del quiz diceva «muovere» ed era scritta a mano
   nella carta invece di venire da `waitingLine`; il timer della carta faceva un errore di idratazione a ogni
   caricamento (D-60).
+
+---
+
+## Registro · Pacchetto F (l'archivio, le pedine dei minigiochi, le illustrazioni) — branch `hermes/f-archivio-e-arte`
+
+Prima di iniziare, due cose che valgono per tutte le voci:
+
+- **c'è una migrazione nuova**: `supabase/migrations/20260918130000_finish_game.sql`. `pnpm db:reset` la applica;
+  dopo il reset lancia `pnpm db:types` e committa il file se `git diff --stat` non è vuoto (la funzione di prima
+  resta la stessa, quindi i tipi **non** dovrebbero cambiare: è un controllo).
+- i ponti senza database sono `/dev/scenari` (le carte rare) e la nuova `/dev/art` (illustrazioni e segnaposto
+  Rive): tutte e due **404 in produzione** (D-43).
+
+### F1 · La serata conclusa entra nell'archivio (D-61)
+
+**Il controllo veloce (un minuto, senza giocare):** incolla `supabase/tests/finish_game.sql` nel SQL editor di
+Studio ed eseguilo → tutti i NOTICE `ok:` e nessun ERROR (chiude con `ROLLBACK`, non lascia righe). Sette
+controlli: l'azione normale non tocca la riga, il conflitto di versione non conclude niente, l'azione finale
+scrive `finished` e `finished_at` insieme, dopo la conclusione la stanza può cominciarne una nuova, «Nuova
+partita» non abbandona una serata conclusa, la riparazione archivia le righe vecchie.
+
+Poi la prova a occhio, che è quella che conta:
+
+1. `pnpm db:reset && pnpm dev`, stanza di prova, due finestre (normale + incognito), posto 1 e posto 2, partita
+   avviata.
+2. **Arriva in fondo senza giocare due ore.** In Studio:
+   `update public.games set state = jsonb_set(jsonb_set(state, '{players,1,position}', '98'), '{players,2,position}', '97') where status = 'playing';`
+   Poi in partita tira i dadi con il posto 1 (la 98 più il dado supera la 100: conta come arrivo) e lasciate
+   finire il round.
+3. Atteso: la schermata finale si apre in entrambe le finestre e la serata si chiude.
+4. In Studio: `select id, status, finished_at from public.games order by created_at;` → la serata appena finita ha
+   `status = finished` e `finished_at` valorizzato (prima restava `playing` con la data vuota).
+   **Nota sulle serate già giocate:** la migrazione archivia da sé le righe rimaste `playing` con lo stato
+   `phase = "finished"` (partite finite prima di questo pacchetto). Dopo `pnpm db:reset` controlla
+   `select created_at, status, finished_at from public.games;`: quelle righe sono `finished` e la data è
+   l'istante della migrazione (quella vera non esiste da nessuna parte).
+5. Apri `/r/COPPIA42/diary`: «Partite passate» mostra la serata conclusa con data, vincitore, stelle e monete
+   dei due posti.
+6. **La parte che conta:** premi «Nuova serata» in lobby (crea la partita nuova), poi ricarica il diario e in
+   Studio `select created_at, status from public.games order by created_at;` → la serata conclusa è **ancora**
+   `finished` e sta ancora in «Partite passate»; solo la partita nuova è `lobby`. Prima la vecchia diventava
+   `abandoned` e spariva per sempre.
+7. Prova anche la pagina della partita sulla serata conclusa (`/r/COPPIA42/game`): la riga non è più aperta,
+   quindi si finisce in lobby (o nel diario) e **non** si riapre la schermata finale. È il prezzo dichiarato in
+   D-61: se la schermata finale deve restare raggiungibile, va aggiunto un collegamento dal diario.
+8. Due turni in una serata **non** conclusa e poi «Nuova serata»: quella partita diventa `abandoned` (è il
+   comportamento di prima, che resta giusto: non era finita).
+9. `npx vitest run src/server/game/game-status.test.ts` → verde (le regole pure: fase → stato della riga, e
+   «Nuova partita» che abbandona solo una serata non conclusa).
+
+**Esito:** verificato il 2026-09-18 (Opus, con Docker). `pnpm db:reset` applica la migrazione nuova; `pnpm db:types`
+non cambia una riga (a patto di passare il formatter: `supabase gen types` scrive senza Prettier, quindi a prima
+vista sembra un diff da 750 righe — è solo formattazione).
+
+- `supabase/tests/finish_game.sql` eseguito su Supabase vero: **tutti i NOTICE `ok:`**, nessun ERROR, `ROLLBACK`.
+- Serata giocata fino in fondo dai due posti: la riga diventa `finished` **con** `finished_at`, nella stessa
+  azione che conclude la partita. «Partite passate» nel diario mostra la serata con data, vincitore, stelle e
+  monete — la prima volta da quando esiste il diario.
+- «Nuova partita»: la serata conclusa **resta** `finished` e resta nell'archivio; solo una serata non conclusa
+  diventa `abandoned`; la partita nuova nasce in `lobby`.
+
+**Due difetti trovati qui, corretti (D-64):**
+
+1. Appena la serata si concludeva, `currentRoom` non trovava più una partita aperta e ne **apriva una nuova da
+   sé**: bastava ricaricare una pagina qualsiasi della stanza perché la schermata finale sparisse e al suo posto
+   comparisse una lobby vuota. Ora la stanza resta sull'ultima serata conclusa finché non se ne comincia un'altra
+   (il punto 7 del Registro, scritto come «prezzo dichiarato», non vale più: la schermata finale si riapre).
+2. Il pulsante «Nuova partita» della schermata finale si limitava a passare al diario: non apriva nessuna serata.
+   Con la correzione di sopra sarebbe diventato un vicolo cieco. Ora chiama `{ action: "new" }` e porta in lobby —
+   provato dal vivo: la partita nuova compare in `lobby` e quella conclusa resta nell'archivio.
+   Terzo, minore e corretto: con la serata conclusa mostrata **e** in archivio, il diario la scriveva **due volte**
+   fra le «Partite passate».
+
+### F2-05 · Le pedine dei minigiochi si animano (D-62)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/scenari>: riquadro «Sfida duello automatica · tris», interruttore
+   su **«Tutti e due (hot seat)»**.
+2. Clicca due caselle libere a distanza di un istante (anche due clic velocissimi uno dietro l'altro): atteso
+   **due segni in fila, mai nello stesso momento** — il primo entra con uno scatto, il secondo mezzo secondo
+   dopo, e nessuna delle due mosse va persa (alla fine il tabellone ha due segni, uno per posto).
+3. Forza 4 e memory: nella hot seat (`/dev/hotseat`) quando esce `dev-forza-4` o `dev-memory` come carta sfida
+   (D-44). In forza 4 la pedina **cade** dall'alto; in memory la carta girata si scopre con un mezzo giro e una
+   **coppia sbagliata resta scoperta circa un secondo** prima di richiudersi (è `MEMORY_PEEK_MS` in
+   `src/features/minigames/queue.ts`).
+4. In partita vera (due finestre) una sfida a turni: la mossa dell'altro posto compare **una mossa per volta**,
+   anche se ne arrivano due dal tempo reale, e le due schermate non si accavallano.
+5. `npx vitest run src/features/minigames/queue.test.ts` → verde (i tempi: 320 ms fra due scene, 600/500/900 ms
+   del memory, e quali caselle si animano).
+6. Con `prefers-reduced-motion` acceso (Chrome → strumenti per sviluppatori → Rendering → «Emulate CSS media
+   feature: prefers-reduced-motion»): le pedine entrano **senza** animazione (docs/design.md).
+
+**Esito:** verificato in parte il 2026-09-18 (Opus, con Docker). `npx vitest run
+src/features/minigames/queue.test.ts` verde (8 prove: i tempi e quali caselle entrano), e la coda è collegata a
+tris, forza 4 e memory, in hot seat, negli scenari e nella partita vera (`use-minigame-queue.ts`, stessa forma di
+`useMoveQueue`). Nel browser il primo clic sul tris mette il segno e passa il turno, come deve.
+**Non misurato:** i tempi in millisecondi. Chrome strozza `setTimeout` e `requestAnimationFrame` nella scheda
+guidata da qui — un'attesa di 120 ms ne diventa una di 1000 — quindi il campionamento non dice niente. È lo stesso
+limite già annotato nel pacchetto E. Resta da guardare a occhio: i punti 2, 3, 4 e 6 sono per voi, e bastano
+pochi secondi ciascuno.
+
+**Da fare, piccolo:** in `/dev/scenari` non c'è un riquadro per **memory** né per **forza 4**, quindi le due
+animazioni si vedono solo se la carta esce per caso in partita. Hermes si era offerto di aggiungerli: vale la
+pena (è la ragione per cui esiste quella pagina).
+
+### F6-02 · F6-03 · Le illustrazioni e i serpenti nuovi
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/art>: 38 disegni (35 delle domande, 7 per categoria, più 3 stelle),
+   ognuno a **48 px** (la misura che si vede davvero in una casella) e a 200 px.
+   Guardali a 48 px: è lì che si decide se un disegno si capisce.
+2. <http://localhost:3000/dev/hotseat>: il tabellone con le illustrazioni dentro le caselle, al posto delle
+   iniziali delle categorie. Le 35 caselle domanda hanno 35 disegni **diversi** (prima 16 si ripetevano).
+3. Scale e serpenti: montanti e pioli bianchi bordati di nero; il serpente ha macchie, un occhio, la lingua e la
+   coda che si assottiglia. Devono restare leggibili **sopra** le caselle nere.
+4. In produzione `/dev/art` risponde **404**, come le altre pagine `/dev` (D-43).
+5. `npx vitest run src/art src/features/board/geometry.test.ts` → verde (registro delle illustrazioni e geometrie).
+
+**Esito:** verificato il 2026-09-18 (Opus): `/dev/art` mostra tutti e 38 i disegni alle due misure, il tabellone
+della hot seat li porta nelle caselle e i serpenti nuovi si leggono anche sopra le caselle nere; `pnpm check`
+verde compresi i test geometrici, che Hermes non aveva potuto eseguire. In produzione `/dev/art` è 404.
+**Quello che resta da decidere a voi** (è il vostro mestiere, non il mio):
+
+- `deep-mirror` si legge come una racchetta o un lecca-lecca, non come uno specchio: da rifare;
+- `memories-phone` non si riconosce come un telefono (Hermes l'aveva già ridisegnato una volta);
+- `deep-roots` a 48 px somiglia ancora a un omino;
+- le **decorazioni** del tabellone (i cerchi, le mezzelune, le diagonali su più caselle) sono ancora i segnaposto
+  geometrici del pacchetto C: accanto ai disegni nuovi stonano. Fanno parte di F6-02 e non sono state fatte.

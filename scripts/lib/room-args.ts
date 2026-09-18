@@ -6,7 +6,7 @@ import type { PawnId, PlayerColor } from "@/engine/types";
  * terminale, altrimenti finirebbe nella cronologia della shell.
  */
 
-export const USAGE = `Uso: pnpm room:create -- --code <CODICE> --name1 <nome> --name2 <nome>
+export const USAGE = `Uso: pnpm room:create --code <CODICE> --name1 <nome> --name2 <nome>
                       [--pawn1 fox|rabbit|cat|bear|frog|owl] [--pawn2 …]
                       [--color1 red|blue|green|ochre] [--color2 …]
 
@@ -15,6 +15,8 @@ export const USAGE = `Uso: pnpm room:create -- --code <CODICE> --name1 <nome> --
   --pawn1   pedina del posto 1      --pawn2   pedina del posto 2
   --color1  colore del posto 1      --color2  colore del posto 2
 
+  Le opzioni si scrivono senza «--» in mezzo: con pnpm 11 il separatore arriva allo
+  script e lo fa fallire con «Argomento inatteso».
   La password viene chiesta a terminale (due volte), mai negli argomenti.
   Le variabili di Supabase si leggono da .env.local (vedi .env.example).`;
 

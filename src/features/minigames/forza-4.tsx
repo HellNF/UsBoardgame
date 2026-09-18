@@ -1,6 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import type { Seat } from "@/engine";
+import { ENTER_TRANSITION, useEnterFrom } from "@/features/minigames/enter";
 import type { MinigameViewProps } from "@/features/minigames/minigame";
 
 /**
@@ -22,15 +24,30 @@ const statusText = (winner: Seat | "draw" | null, turn: Seat, names: Record<Seat
   return `Tocca a ${names[turn]}`;
 };
 
-/** Pedina piena per il posto 1, anello spesso per il posto 2; buco vuoto = cerchio sottile nero. */
-function Slot({ seat }: { seat: Seat | null }) {
-  if (seat === 1) return <span className="size-[72%] rounded-full bg-player-red" />;
-  if (seat === 2) return <span className="size-[72%] rounded-full border-[6px] border-player-blue" />;
-  return <span className="size-[72%] rounded-full border-2 border-ink" />;
+/**
+ * Pedina piena per il posto 1, anello spesso per il posto 2; buco vuoto = cerchio sottile nero.
+ * `enter` è vero quando la pedina è appena entrata in scena: cade dall'alto (F2-05).
+ */
+function Slot({ seat, enter }: { seat: Seat | null; enter: boolean }) {
+  const initial = useEnterFrom({ y: -38, opacity: 0 }, enter);
+  const shape =
+    seat === 1
+      ? "rounded-full bg-player-red"
+      : seat === 2
+        ? "rounded-full border-[6px] border-player-blue"
+        : "rounded-full border-2 border-ink";
+  return (
+    <motion.span
+      initial={initial}
+      animate={{ y: 0, opacity: 1 }}
+      transition={ENTER_TRANSITION}
+      className={`size-[72%] ${shape}`}
+    />
+  );
 }
 
 export function ConnectFourBoard(props: MinigameViewProps) {
-  const { state, seat, onMove, names } = props;
+  const { state, seat, onMove, names, entering = [] } = props;
 
   // Il dispatcher passa sempre lo stato giusto: il controllo è solo difensivo.
   if (state.kind !== "connect-four") return null;
@@ -79,7 +96,8 @@ export function ConnectFourBoard(props: MinigameViewProps) {
         {rowsTopDown.map((row) =>
           columns.map((column) => (
             <div key={`${row}-${column}`} className="flex aspect-square items-center justify-center bg-paper">
-              <Slot seat={state.board[row][column]} />
+              {/* L'indice è quello di `enteringCells`: riga * colonne + colonna. */}
+              <Slot seat={state.board[row][column]} enter={entering.includes(row * COLUMNS + column)} />
             </div>
           )),
         )}

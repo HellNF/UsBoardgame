@@ -8,7 +8,8 @@ import { currentRoom } from "@/server/room/current";
  *
  * Qui il motore **non** gira nel browser (regola 1 di AGENTS.md): lo stato arriva dal server e
  * ogni mossa parte da `POST /api/games/[gameId]/actions`. Se la serata non è ancora cominciata
- * la pagina rimanda alla schermata giusta; se la partita è finita il diario raccoglie la serata.
+ * la pagina rimanda alla schermata giusta; a serata **conclusa** resta qui la schermata finale
+ * (D-64), che si riapre anche ricaricando: da lì si va al diario o si comincia una serata nuova.
  */
 
 export default async function GamePage({ params }: PageProps<"/r/[code]/game">) {
@@ -17,7 +18,7 @@ export default async function GamePage({ params }: PageProps<"/r/[code]/game">) 
 
   if (room.game.status === "lobby") redirect(`/r/${room.code}/lobby`);
   if (room.game.status === "sheets") redirect(`/r/${room.code}/sheet`);
-  if (room.game.status === "finished") redirect(`/r/${room.code}/diary`);
+  // `finished` non rimanda più al diario: la schermata finale è il finale della serata.
 
   if (!room.state || !room.board) {
     return (

@@ -1,6 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import type { Seat } from "@/engine";
+import { ENTER_TRANSITION, useEnterFrom } from "@/features/minigames/enter";
 import type { MinigameViewProps } from "@/features/minigames/minigame";
 
 /** Memory: 12 carte (6 coppie) in griglia 4 × 3. */
@@ -17,8 +19,28 @@ const statusText = (winner: Seat | "draw" | null, turn: Seat, names: Record<Seat
   return `Tocca a ${names[turn]}`;
 };
 
+/**
+ * La faccia della carta girata adesso. `enter` è vero quando la carta si è appena scoperta
+ * (F2-05): entra con un mezzo giro, così si vede che qualcuno l'ha girata. Le carte che si
+ * richiudono spariscono senza animazione — la coppia sbagliata resta scoperta il tempo di
+ * vederla (lo decide `revealDelay`), e dopo coprirla è la mossa successiva.
+ */
+function Face({ symbol, enter }: { symbol: string; enter: boolean }) {
+  const initial = useEnterFrom({ scale: 0.7, opacity: 0 }, enter);
+  return (
+    <motion.span
+      initial={initial}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={ENTER_TRANSITION}
+      className="font-display text-3xl italic"
+    >
+      {symbol}
+    </motion.span>
+  );
+}
+
 export function MemoryBoard(props: MinigameViewProps) {
-  const { state, seat, onMove, names } = props;
+  const { state, seat, onMove, names, entering = [] } = props;
 
   // Il dispatcher passa sempre lo stato giusto: il controllo è solo difensivo.
   if (state.kind !== "memory") return null;
@@ -65,7 +87,7 @@ export function MemoryBoard(props: MinigameViewProps) {
               } ${faceUp ? "border-2 border-ink bg-paper" : "bg-ink"}`}
             >
               {faceUp ? (
-                <span className="font-display text-3xl italic">{symbol}</span>
+                <Face symbol={symbol} enter={entering.includes(index)} />
               ) : (
                 // Rombo bianco: la faccia coperta è un rettangolo nero pieno.
                 <span className="size-3 rotate-45 bg-paper" aria-hidden="true" />

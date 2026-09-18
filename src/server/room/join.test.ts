@@ -27,7 +27,8 @@ describe("schermata da aprire secondo la fase della serata (F0-04)", () => {
     expect(screenFor("lobby")).toBe("lobby");
     expect(screenFor("sheets")).toBe("sheet");
     expect(screenFor("playing")).toBe("game");
-    expect(screenFor("finished")).toBe("diary");
+    // Serata conclusa: la schermata finale, non il diario (D-64).
+    expect(screenFor("finished")).toBe("game");
     expect(screenFor("abandoned")).toBe("lobby");
   });
 });

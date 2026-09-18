@@ -98,6 +98,10 @@ segnaposto, basandosi sulla tabella qui sotto.
 
 Pedina che salta casella per casella (percorso = sequenza di centri cella), salita lungo la scala, discesa lungo il
 serpente (seguendo la stessa curva dell'SVG), carte che entrano nel pannello. Durate brevi (150-400 ms per passo).
+Le **pedine dei minigiochi** (tris, forza 4, memory) seguono la stessa regola: una mossa per volta, in coda
+(`src/features/minigames/use-minigame-queue.ts`), e ogni pedina o carta entrata adesso entra con Motion — in memory
+la coppia sbagliata resta scoperta il tempo di vederla prima di richiudersi (D-62). Con `prefers-reduced-motion`
+nessuna di queste animazioni parte.
 
 ## Suoni
 

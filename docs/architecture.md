@@ -47,7 +47,9 @@ flowchart LR
    `drawQuestion` (legge `questions`, `used_questions`, `sheet_answers`), `drawChallenge`, `checkMultipleChoice`.
 6. `reduce(state, action, ctx)` → `{ ok, state, events }` oppure errore `422`.
 7. In una sola transazione (funzione SQL o update condizionato): `update games set state, version = version + 1
-where id and version = expected`, insert in `game_events`, insert in `used_questions` se serve.
+where id and version = expected`, insert in `game_events`, insert in `used_questions` se serve. Se lo stato
+   applicato è `phase = "finished"` la stessa transazione scrive anche `status = 'finished'` e `finished_at`
+   (D-61): la serata entra nell'archivio senza una seconda scrittura.
 8. Realtime notifica entrambi i client; il client che ha agito usa anche la risposta HTTP.
 9. Il client anima la differenza tra stato vecchio e nuovo usando gli `events` (es. `ROLLED`, `MOVED`,
    `CLIMBED_LADDER`), non ricalcolando le regole.
