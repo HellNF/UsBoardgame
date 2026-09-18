@@ -913,3 +913,22 @@ Tre cose che questa scelta ha portato con sé:
 
 La carta sta al centro dello schermo quando è bassa e scorre dall'inizio quando è più alta (i minigiochi lo sono):
 verificato che a 600, 300 e 200 px di altezza disponibile la cima della carta resta visibile e non viene tagliata.
+
+### D-77 · Il tabellone della serata si sceglie in lobby
+
+**Decisione del proprietario** (2026-09-18), che chiude la voce aperta «quale disposizione usa una serata nuova».
+In lobby si sceglie fra la **Classica** — preselezionata — e le due o tre disposizioni congelate (F7-03), ognuna
+con un nome dicibile.
+
+Non serve nessuna migrazione, ed è la ragione per cui questa strada è quella giusta: `games.settings.boardId` è
+**già** scritto sulla riga della partita quando la serata nasce (`src/server/room/lobby.ts`), quindi una serata
+passata sa da sé quale tabellone ha usato e il diario si ridisegna uguale. Resta il vincolo dell'altra metà: un
+tabellone pubblicato non cambia più (regola 7 di `AGENTS.md` estesa ai tabelloni), altrimenti l'id sulla riga
+punterebbe a un contenuto diverso da quello giocato.
+
+Chi fa cosa: le disposizioni congelate le scelgo guardandole (con i nomi), e vanno congelate **dopo** il vincolo
+dei 18° — una congelata non si muove più, e non si fissa un tabellone con le scale che si leggono come sbarre.
+La scelta in lobby è codice, quindi di Hermes.
+
+Scartate: «sempre la classica», che non usa il generatore; e «una a sorte ogni serata», che è una sorpresa ma non
+fa tornare la disposizione che vi è piaciuta.

@@ -1,7 +1,15 @@
 /**
- * Telefono a disco — illustrazione di categoria «ricordi» (id `memories-phone`).
- * Corpo, cornetta staccata e disco di crema.
- * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
+ * Telefono — illustrazione di categoria «ricordi» (id `memories-phone`).
+ * Forme e tinte dalla reference del proprietario (D-75): docs/design.md § Illustrazioni SVG.
+ *
+ * Terza versione, e le due precedenti dicono cos'è che fa leggere un telefono a 48 px. Non è il
+ * disco: è la **cornetta appoggiata di traverso sopra il corpo**. Prima la cornetta era un arco
+ * che curvava in alto con due palle alle estremità — a quella misura è un *manico*, e con un
+ * corpo rettangolare sotto il disegno diventava una borsa o una macchina fotografica.
+ *
+ * Adesso la cornetta è una sbarra orizzontale con le estremità tonde, staccata dal corpo da una
+ * striscia di carta, e il corpo è un **trapezio** (più largo in basso): due segni che un telefono
+ * ha e una borsa no. Sta tutto sotto y 40, quindi fuori dall'alone del numero della casella.
  */
 import type { IllustrationProps } from "./types";
 
@@ -21,18 +29,15 @@ export function MemoriesPhone({ x = 0, y = 0, size = 100, className }: Illustrat
       aria-hidden="true"
       className={className}
     >
-      {/* Corpo di rosso col disco di crema, e la cornetta appoggiata sopra, staccata. */}
-      <path d="M24 56h52v18a8 8 0 0 1-8 8H32a8 8 0 0 1-8-8z" fill="var(--color-art-red)" />
-      <circle cx="50" cy="69" r="10" fill="var(--color-art-cream)" />
-      <circle cx="50" cy="69" r="3.5" fill="var(--color-art-navy)" stroke="none" />
-      <path
-        d="M28 46c0-9 6-14 13-14h18c7 0 13 5 13 14"
-        fill="none"
-        stroke="var(--color-art-red)"
-        strokeWidth={12}
-      />
-      <circle cx="29" cy="45" r="8" fill="var(--color-art-red)" />
-      <circle cx="71" cy="45" r="8" fill="var(--color-art-red)" />
+      {/* Il corpo: trapezio rosso, più largo in basso. */}
+      <path d="M27 57h46l5 25c0.5 3-1.5 5-4.5 5H26.5c-3 0-5-2-4.5-5z" fill="var(--color-art-red)" />
+      {/* Il disco, con il foro al centro. */}
+      <circle cx="50" cy="72" r="9.5" fill="var(--color-art-cream)" />
+      <circle cx="50" cy="72" r="3" fill="var(--color-art-navy)" stroke="none" />
+      {/* La cornetta appoggiata sopra: sbarra con le estremità tonde. */}
+      <rect x="26" y="40" width="48" height="11" rx="5.5" fill="var(--color-art-red)" />
+      <circle cx="27" cy="45.5" r="7.5" fill="var(--color-art-red)" />
+      <circle cx="73" cy="45.5" r="7.5" fill="var(--color-art-red)" />
     </svg>
   );
 }
