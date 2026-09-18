@@ -1,5 +1,5 @@
 import { cellToCoord, coordToCell, rowOf } from "./board";
-import { crossedCells } from "./board-geometry";
+import { crossedCells, isBorderCell } from "./board-geometry";
 import { RULES } from "./config";
 import {
   QUESTION_CATEGORIES,
@@ -27,9 +27,10 @@ import {
  * serpente), niente che parta o arrivi sulla 1 e sulla 100, una scala o un serpente che coprono
  * al massimo `board.maxSpanRows` file, nessuna testa di serpente fra la 2 e la 12.
  *
- * E le **decorazioni** (D-65) solo su caselle libere che nessuna scala e nessun serpente
- * attraversa, misurate con la geometria di `board-geometry` — la stessa che disegna il tabellone,
- * così il generatore non può rifare il difetto che due neri pieni si fondono in una macchia.
+ * E le **decorazioni** (D-65) solo su caselle libere, che nessuna scala e nessun serpente
+ * attraversa e che non stanno sulla cornice, misurate con la geometria di `board-geometry` — la
+ * stessa che disegna il tabellone, così il generatore non può rifare il difetto che due neri pieni
+ * si fondono in una macchia (e che sul bordo si fonde con la cornice).
  *
  * Le illustrazioni arrivano da fuori (`illustrations`): il registro sta in `src/art/illustrations`,
  * che non è del motore. Senza abbastanza id per una categoria il generatore **lancia**: meglio un
@@ -204,12 +205,17 @@ function pickDisjoint<T extends { from: CellNumber; to: CellNumber }>(
 }
 
 /**
- * Le decorazioni su caselle che nulla attraversa (D-65).
+ * Le decorazioni su caselle che nulla attraversa e che stanno dentro il tabellone (D-65).
  *
  * Le misure sono quelle vere — l'ingombro dei montanti di una scala, metà del corpo di un
  * serpente, con la decorazione dentro il suo margine di 12 unità — perché con un inchiostro
  * pieno sotto un altro inchiostro pieno la forma si fonde in una macchia, ed è il difetto che il
  * proprietario ha corretto a mano sulla 23 e sulla 26.
+ *
+ * I vincoli sono tre e vengono dal guardare il tabellone vero: casella **libera**, **non
+ * attraversata** da una scala o da un serpente, **non di bordo** (la cornice è spessa 16 unità e
+ * si disegna dopo le decorazioni: sul bordo si mangia il margine di 12 e i due neri diventano uno,
+ * era il disco sulle caselle 4-5 della `classic`).
  *
  * Le forme previste sono quattro, ma la regola viene prima del numero: se le caselle libere che
  * nulla attraversa sono meno di quattro, si mette quello che ci sta. Il disco preferisce due
@@ -222,7 +228,9 @@ function chooseDecorations(
   next: () => number,
 ): BoardDecoration[] {
   const order = shuffled(
-    board.cells.filter((cell) => cell.kind === "free" && !crossed.has(cell.n)).map((cell) => cell.n),
+    board.cells
+      .filter((cell) => cell.kind === "free" && !crossed.has(cell.n) && !isBorderCell(cell.n))
+      .map((cell) => cell.n),
     next,
   );
 

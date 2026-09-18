@@ -52,7 +52,8 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   (due neri pieni uno sull'altro si fondono in una macchia), **mai su una casella di bordo** (la cornice è spessa
   16 unità e si disegna dopo: si mangia il margine), e sono **piene, mai anelli** (l'alone del numero morde sempre
   l'angolo in alto a sinistra: una forma piena lo regge, una fascia sottile si spezza). Le caselle legali le
-  calcola `crossedCells` in `src/engine/board-geometry.ts`, non l'occhio.
+  calcolano `crossedCells` e `isBorderCell` in `src/engine/board-geometry.ts`, non l'occhio: è la stessa misura che
+  usa il generatore di disposizioni (F7-02).
 - Le caselle domanda e stella portano **l'illustrazione** del registro (`src/art/illustrations`) dentro un tondo di
   carta, nello strato dei numeri: è l'alone di A1, e il numero della casella si disegna sopra a tutto.
 

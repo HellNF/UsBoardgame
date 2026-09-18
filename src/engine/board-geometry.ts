@@ -73,6 +73,20 @@ export function cellRect(n: CellNumber, margin = 0): { x: number; y: number; w: 
   return { x: corner.x - margin, y: corner.y - margin, w: CELL + margin * 2, h: CELL + margin * 2 };
 }
 
+/**
+ * Vero se la casella sta sulla **cornice**: prima o ultima fila, prima o ultima colonna.
+ *
+ * È il terzo vincolo di D-65. La cornice del tabellone è spessa e si disegna **dopo** le decorazioni
+ * (docs/design.md § Tabellone), quindi su una casella di bordo si mangia il margine di
+ * `DECORATION_INSET` e i due neri diventano uno: il disco sulle caselle 4-5 della `classic` si
+ * fondeva con la cornice di sotto. Il generatore di disposizioni (F7-02) filtra con questa, il
+ * bordo non è una casella «attraversata» da niente: è una casella dove la decorazione non entra.
+ */
+export function isBorderCell(n: CellNumber): boolean {
+  const { row, col } = cellToCoord(n);
+  return row === 0 || col === 0 || row === RULES.board.size - 1 || col === RULES.board.size - 1;
+}
+
 /** Curva morbida (Catmull-Rom trasformata in Bézier cubiche) che passa per i punti. */
 export function smoothPath(points: Point[]): string {
   if (points.length < 2) return "";
@@ -205,6 +219,9 @@ export type CrossedOptions = {
  * Le caselle attraversate da scale e serpenti della disposizione (D-65, F7-02).
  * Con i valori di partenza sono le caselle su cui una decorazione piena si fonderebbe con
  * un'altra forma piena: è la misura che il generatore usa per scegliere dove decorare.
+ *
+ * Il **bordo** non è di questo conto — lì il nero che si fonde è quello della cornice, non quello di
+ * una scala — e lo tiene fuori `isBorderCell`, il terzo vincolo di D-65.
  */
 export function crossedCells(board: BoardLayout, options: CrossedOptions = {}): Set<CellNumber> {
   const inset = options.inset ?? DECORATION_INSET;

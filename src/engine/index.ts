@@ -24,6 +24,7 @@ export {
   cellRect,
   cellsAlongPath,
   crossedCells,
+  isBorderCell,
   ladderAxis,
   ladderRungs,
   samplePath,

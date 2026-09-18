@@ -642,8 +642,10 @@ Due vincoli che vengono dal guardare il tabellone vero, e che la verifica locale
    uno: il disco sulle caselle 4-5 si fondeva con la cornice di sotto. La cornice è il terzo nero, dopo le scale e
    i serpenti; questa regola è arrivata dopo le altre due, guardando il tabellone renderizzato (H).
 
-Il conto lo fa `crossedCells` in `src/engine/board-geometry.ts` (lo stesso modulo che usa il generatore, D-70):
-si decora solo una casella libera, interna e non attraversata. Nella disposizione `classic` ne restano **quattro**
+Il conto lo fanno `crossedCells` e `isBorderCell` in `src/engine/board-geometry.ts` (lo stesso modulo che usa il
+generatore, D-70): si decora solo una casella libera, non attraversata e interna. Il vincolo di bordo è arrivato al
+generatore col pacchetto I, che lo applica nel piazzamento delle decorazioni. Nella disposizione `classic` ne
+restano **quattro**
 — 35, 46, 64, 84 — e le uniche due adiacenti sono la 35 e la 46, quindi la disposizione scritta a mano porta
 **tre** decorazioni su tre righe diverse (46, 64, 84) e nessuna forma su due caselle: quella la usa il generatore,
 dove i vincoli lasciano più spazio. La falce resta fuori da `classic` perché somiglia all'illustrazione
