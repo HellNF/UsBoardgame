@@ -81,6 +81,40 @@ export function fallbackCategories(preferred: QuestionCategory): QuestionCategor
   return all.filter((category) => category !== preferred);
 }
 
+/** Un tentativo di pesca: quale sottoinsieme provare e con quali domande "in scheda". */
+export type DrawAttempt = {
+  knowMeOnly: boolean;
+  /** Id considerati rispondibili in questo tentativo. */
+  answerable: readonly string[];
+};
+
+/**
+ * I tentativi di pesca in ordine, dal migliore al ripiego (D-58).
+ *
+ * Il primo è la richiesta del motore. Se una "quanto mi conosci" non è pescabile — succede
+ * con «Gioca lo stesso» e le schede vuote (D-28) — si ripiega in due passi:
+ *  1. una **breve** anche senza risposta in scheda: il verdetto lo dà l'interrogato, quindi
+ *     non serve la scheda e la domanda può ancora far salire una scala (D-07);
+ *  2. una **aperta**: si discute e si va avanti (rules.md § Domande: "se il sottoinsieme
+ *     scelto è vuoto si usa l'altro").
+ * Per una domanda aperta non c'è ripiego: le aperte non chiedono niente alla scheda.
+ */
+export function drawAttempts(input: {
+  knowMeOnly: boolean;
+  /** Id per cui l'interrogato ha una risposta in scheda. */
+  answerable: readonly string[];
+  /** Id di tutte le domande `short` del catalogo. */
+  shortIds: readonly string[];
+}): DrawAttempt[] {
+  const first: DrawAttempt = { knowMeOnly: input.knowMeOnly, answerable: input.answerable };
+  if (!input.knowMeOnly) return [first];
+  return [
+    first,
+    { knowMeOnly: true, answerable: input.shortIds },
+    { knowMeOnly: false, answerable: input.answerable },
+  ];
+}
+
 /** Righe che il registro di `used_questions` deve cancellare per azzerare un sottoinsieme. */
 export type UsedQuestionsReset = { roomId: string; seat: number | null };
 
