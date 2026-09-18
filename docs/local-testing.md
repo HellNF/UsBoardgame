@@ -1292,7 +1292,17 @@ Due cose da sapere prima di iniziare:
 6. `npx vitest run src/engine/board-geometry.test.ts src/engine/board-generator.test.ts` → verdi (fra le prove:
    «nessuna scala o serpente generato sta sotto la soglia» e la `classic`, che sta a 18,4° sulla scala 51→67).
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus), con una misura mia indipendente su 200 semi:
+**zero** linee sotto soglia su 2600, minima **18,4°** su tutte, e nessun seme che si ferma sotto 7 scale e 6
+serpenti. La soglia di `RULES.board.minAngleDegrees` combacia con quella che avevo misurato sulla `classic`
+(la scala 51→67 è il caso limite). `elementAngle` è la misura giusta: l'angolo fra i centri delle due caselle,
+cioè quello che si vede, non la lunghezza della linea.
+
+Sul costo dichiarato — le linee più ripide coprono più caselle, quindi restano meno caselle decorabili — la
+decisione è mia e la soglia **resta 18°**: un tabellone si legge per le sue linee, non per le decorazioni, e sui
+200 semi tre o più decorazioni ci stanno in **185**. Quando scelgo i semi da congelare scarto quelli poveri: il
+seme 1, che ne ha zero, semplicemente non lo scelgo. La correzione di prova dichiarata («se una casella decorabile
+c'è, si decora», al posto di «almeno una») è quella giusta, perché è la proprietà del meccanismo e non del caso.
 
 ### J2 · Un tabellone pubblicato non si riscrive (F3-05)
 
@@ -1317,7 +1327,19 @@ quello locale: • classic (Classico)`, la regola e le due strade. **Niente è s
 7. `npx vitest run scripts/lib` → verdi: la sequenza è provata con un client finto (un tabellone cambiato ferma
    tutto **prima** di ogni scrittura; `--force` va fino in fondo; un errore di lettura non scrive).
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus) **sul database locale**, e il guard ha fatto una cosa meglio di
+quanto chiesto: si è fermato da solo, con uscita 3, nominando `classic` — perché `supabase/seed.sql` era rimasto
+indietro rispetto al file dopo che avevo spostato le decorazioni. Cioè ha trovato una disallineatura vera che non
+sapevo di avere, che è esattamente il suo mestiere. Il messaggio dice l'id, la regola e le due strade, e si legge.
+
+Poi `pnpm content:seed` (rigenerato `seed.sql`, committato), `pnpm db:reset`, e di nuovo `pnpm content:push`:
+«1 già identici · nessun tabellone nuovo · nessuno riscritto». Quindi funzionano entrambe le strade, il fermo e il
+passaggio pulito, e il confronto su JSON canonico regge — un confronto testuale avrebbe detto «diverso» anche
+quando le due copie coincidono.
+
+**Il remoto resta da riallineare** e ho scelto la strada 1 (ripubblicare una volta con `-- --force`): nessuna
+serata è stata giocata, quindi non c'è storia da proteggere, e `classic-2` costerebbe churn per difenderla.
+Si fa quando si torna sul remoto, prima della prima partita vera: da quel momento la finestra è chiusa.
 
 ### J3 · Il canale della stanza è privato (F2-03, F2-04) — la voce che conta
 
@@ -1345,7 +1367,21 @@ Serve Docker, Supabase locale e **due sessioni vere** (una finestra normale e un
    `drop policy "realtime: la propria stanza (invio)" on realtime.messages;` (SQL editor di Studio) e
    `private: false` in `src/features/presence/use-room-realtime.ts`.
 
-**Esito:** _
+**Esito:** verificato **in parte** il 2026-09-18 (Opus). Quello che si può controllare senza due sessioni è a
+posto: la migrazione `20260918180000_private_realtime.sql` si applica in un `pnpm db:reset` pulito insieme alle
+altre tre, nel database ci sono le **due policy** su `realtime.messages` («la propria stanza (ascolto)» in SELECT
+e «(invio)» in INSERT), l'helper `public.current_room_id()` esiste ed è `security definer`, e il client apre il
+canale con `private: true` senza mandare nulla in più.
+
+**Non verificato, ed è la parte che conta:** che le mosse continuino ad arrivare da un posto all'altro. Serve la
+prova a due sessioni descritta qui sopra, e va fatta **prima della prima serata vera**: il canale privato è lo
+stesso che porta `postgres_changes` di `games` e `game_events`, quindi una policy troppo stretta non spegne il
+pallino della presenza — ferma la partita a distanza. Hermes ha scritto bene come distinguere i due casi in un
+minuto, ed è quello da usare.
+
+Resta anche l'interruttore **«Allow public access»** di Realtime Settings sul progetto remoto, da spegnere a mano
+dal dashboard: finché è acceso un canale non privato con lo stesso topic resta raggiungibile, e la chiusura è a
+metà. Non è una migrazione e non lo può fare un agente.
 
 ### Note su come sono state fatte queste prove
 
