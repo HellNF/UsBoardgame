@@ -318,3 +318,88 @@ compila ("saved as a workbench to pick from, not to merge") e tocca sei file —
 che in `main` esistono in versione riscritta e verificata dal vivo (pacchetto D). Nessun pezzo rimasto indietro:
 niente da ripescare. Stessa pulizia per i branch locali ormai uniti (`hermes/a-engine`, `hermes/b-content`,
 `hermes/c-ui`, `hermes/d-server`, `hermes/e-ui-fix`).
+
+## Pacchetto G · L'estetica finale — 2026-09-18
+
+Branch: `hermes/g-estetica` (da `main` a `1dcd66d`) · Un commit per punto, ognuno con `pnpm check` verde prima del
+commit e pushato subito: `94e2a44` (G1, le decorazioni del tabellone), `383cfbb` (G2, tre disegni rifatti), `d294175`
+(G3, i riquadri memory e forza 4 in `/dev/scenari`), `476d933` (G4, i wrapper Rive), più il commit di questa
+documentazione. Nessuna migrazione: il pacchetto non tocca il database, quindi niente `db:reset` e niente `db:types`.
+
+- **Fatto:**
+  - **G1 (F6-02)** `[L]`: le quattro decorazioni multi-cella non sono più i segnaposto a filo del pacchetto C. Sono
+    forme **piene** in inchiostro, della pasta dei disegni nuovi, e stanno dentro il gruppo di caselle che la
+    disposizione indica con un margine di 12 unità dal bordo: `disc` (caselle 4-5), `crescent` (9), `hill` (23),
+    `diamond` (26). I nomi vecchi sono spariti dal tipo `BoardDecoration` (`src/engine/types.ts`), il disegno è in
+    `board.tsx` e la scelta in `src/content/boards/classic.ts` (D-65). Le illustrazioni delle caselle e l'alone dei
+    numeri restano sopra: nessuna modifica a posizioni, scale o serpenti.
+  - **G2 (F6-02)** `[L]`: rifatti i tre disegni che a 48 px non si leggevano — `deep-mirror` (cornice ovale su due
+    zampe con il piede), `deep-roots` (tronco che si apre in forcelle sotto una linea di terra tratteggiata),
+    `memories-phone` (telefono a disco: corpo, disco, cornetta appoggiata sopra).
+  - **G3 (F2-05)** `[L]`: in `/dev/scenari` ci sono i due riquadri che mancavano, memory e forza 4: usano le carte di
+    prova della hot seat (`dev-forza-4`, `dev-memory`, D-44), che prima non erano raggiungibili dagli scenari — il
+    mazzo degli scenari è ora il catalogo vero più `HOTSEAT_CHALLENGE_CONTENT` (D-66). Riquadri: da 27 a **29**.
+  - **G4 (F6-04, F6-05)** `[L]`: i cinque wrapper Rive esistono in `src/art/rive/` (`PawnView`, `DieView`, `CardView`,
+    `MascotView`, `FinaleView`), ognuno col suo segnaposto che regge da solo e con la sonda che prende il file appena
+    c'è in `public/rive/` (una richiesta per file per sessione, esito fuori da React con `useSyncExternalStore`,
+    D-67). Nessun `.riv` creato o modificato: i nomi attesi stanno in `src/art/rive/files.ts` e la lista per l'editor
+    è nella voce F6-04 · F6-05 del Registro. Corretto anche il contratto in `docs/design.md`: l'ingresso `winner` di
+    `finale.riv` è un **numero** (0 pareggio, 1, 2), non un trigger. I segnaposto si guardano in fondo a `/dev/art`.
+- **Verificato da me:** comandi eseguiti davvero, con l'esito reale:
+  - `pnpm check` — verde a ogni commit: **360 prove su 34 file** (il numero di `main`), `tsc` e `eslint` puliti anche
+    sui file nuovi dei wrapper.
+  - `pnpm dev` + Chrome vero (CDP):
+    - **tabellone** (`/dev/hotseat`) guardato a tre ingrandimenti: le quattro forme nuove si leggono come forme volute,
+      i numeri 4, 5, 9, 23, 26 restano leggibili, scale e serpenti passano sopra le decorazioni. Effetto collaterale
+      visto e dichiarato: il disco delle caselle 4-5 copre il bordo fra le due (si vedono i numeri, non la linea).
+    - **`/dev/art`**: i tre disegni rifatti guardati a **48 px** (ingranditi 3×) e a 200 px, uno per uno, in più giri:
+      il telefono ora si legge come un telefono a disco, le radici come radici, lo specchio come uno specchio da
+      tavolo (è quello che mi convince di meno: a 48 px si può leggere anche come un cavalletto — vedi le domande).
+    - **`/dev/scenari`**: i 29 riquadri; nel riquadro memory due clic a 90 ms con la traccia raccolta ogni 250 ms →
+      le carte si scoprono **una dopo l'altra** (`su: [1]`, poi `su: [1,2]`), mai insieme, e la coppia sbagliata resta
+      scoperta; in forza 4 una pedina per clic, nella colonna giusta e del colore giusto.
+    - **`/dev/art`, sezione «Segnaposto Rive»**: i cinque segnaposto a schermo (sei pedine, dado, carta davanti e
+      dietro, sei mascotte, tre finali), **zero** elementi `canvas` in pagina e una sonda per file (`pawns`, `dice`,
+      `card`, `mascots`, `finale` → 404, come deve essere finché i `.riv` non ci sono).
+  - `curl` sulle rotte di sviluppo: `/dev/hotseat`, `/dev/art`, `/dev/scenari` → **200** in sviluppo.
+- **Non verificato da me / non verificabile da qui:**
+  - il comportamento dei wrapper **con** il file `.riv`: senza i file non c'è niente da caricare. La prova è del
+    proprietario, appena esporta il primo (il segnaposto deve sparire da solo);
+  - i **tempi in millisecondi** delle animazioni dei minigiochi: Chrome strozza `setTimeout` e
+    `requestAnimationFrame` nella scheda guidata da qui, quindi l'ordine è verificato e la durata no (stesso limite
+    del pacchetto E);
+  - i **wrapper non sono collegati alle schermate**: F6-04 e F6-05 chiedevano solo i wrapper, quindi il tabellone usa
+    ancora la pedina di `features/board/pawn.tsx` e il dado e la carta i loro segnaposto attuali. Il collegamento è un
+    passo che non era in questo pacchetto: va fatto quando i `.riv` esistono (o subito, se preferisci vedere i
+    segnaposto in partita al posto dei disegni di adesso);
+  - **nessun test nuovo**: le decorazioni sono disegno puro (i test geometrici coprono scale e serpenti, non le
+    decorazioni), i due riquadri degli scenari e i wrapper Rive sono componenti React e il progetto non ha un ambiente
+    DOM per provarli (`vitest` gira in `node` e include solo `*.test.ts`). La prova sta nelle pagine.
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), sezione «Pacchetto G»:
+  **G1** (le decorazioni del tabellone), **G2** (i tre disegni a 48 px), **G3** (i due riquadri, che è F2-05),
+  **G4** (i segnaposto Rive e la lista dei file da disegnare). Non serve Docker né Supabase: tutto in `pnpm dev`.
+- **Decisioni Derivate aggiunte:** D-65 (le decorazioni sono forme piene), D-66 (un riquadro in `/dev/scenari` per
+  ogni minigioco che si vuole guardare), D-67 (i wrapper Rive con il segnaposto e la sonda una volta per sessione).
+  D-64 era tua (la serata conclusa che resta raggiungibile): non l'ho toccata.
+- **Domande per il proprietario:**
+  1. **Le decorazioni restano?** Le ho rifatte come forme piene e secondo me il tabellone ci guadagna (D-65), ma è la
+     pagina più piena del progetto: se ti sembrano di troppo si tolgono con `decorations: []` in
+     `src/content/boards/classic.ts`, una riga. E se il disco sulle caselle 4-5 che copre il bordo fra le due non ti
+     piace, si cambia con una forma che non attraversa il bordo.
+  2. **`deep-mirror` basta?** È l'unico dei tre che non mi convince del tutto a 48 px: si legge come uno specchio da
+     tavolo, ma anche come un cavalletto. Se vuoi lo rifaccio, ma mi serve sapere **cosa deve sembrare a chi guarda**
+     (uno specchio a mano? da tavolo? di profilo?) — la prima volta l'ho sbagliato perché pensavo all'oggetto e non al
+     segno.
+  3. **I wrapper Rive li collego subito o quando ci sono i file?** Adesso in partita si vedono i segnaposto vecchi
+     (pedina del tabellone, dado, carta); i wrapper nuovi non sono chiamati da nessuna schermata. Posso collegarli
+     quando vuoi, anche prima dei `.riv` (cambierebbe l'aspetto di pedine, dado e carta con i segnaposto nuovi).
+- **Limiti noti / debito tecnico:**
+  - finché i `.riv` mancano, la console mostra **una riga di rete per file** (`GET /rive/pawns.riv 404`): è il browser
+    che registra la richiesta della sonda, non un errore dell'applicazione. Se preferisci zero righe, si può togliere
+    la sonda e dichiarare i file disponibili in una costante da aggiornare a mano;
+  - le **mascotte** sono sei teste disegnate in codice come segnaposto (le stesse sei forme delle pedine): quando
+    arrivano i `.riv` le sostituiscono per intero, espressioni comprese;
+  - il `mood` della mascotte, l'`active` della pedina e gli altri ingressi sono passati al `.riv` ma **non hanno
+    effetto sul segnaposto**: è voluto (il segnaposto è fermo per contratto, `docs/design.md`);
+  - la lista dei `.riv` è un contratto scritto in due posti (`src/art/rive/files.ts` e la tabella di
+    `docs/design.md`): se cambi un nome, vanno cambiati tutti e due (e la voce del Registro).

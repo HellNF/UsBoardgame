@@ -32,21 +32,12 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   (riga 0 in basso: `y = (9 - row) * 100`).
 - Bordi delle celle sottili (≈ 2 unità); cornice esterna spessa (≈ 16) con angoli arrotondati; numero della
   casella piccolo in alto a sinistra (Space Grotesk).
-- Livelli, dal basso: celle → geometrie multi-cella (`decorations`) → illustrazioni → scale → serpenti →
+- Livelli, dal basso: celle → decorazioni multi-cella (`decorations`) → illustrazioni → scale → serpenti →
   cornice → **numeri e simboli delle caselle** → pedine.
 - **Numeri e simboli sopra scale e serpenti:** il numero della casella, il simbolo della stella, i cerchi delle
-  monete e l'iniziale della categoria si disegnano nell'ultimo strato, ognuno con un **alone del colore della
+  monete e l'illustrazione della categoria si disegnano nell'ultimo strato, ognuno con un **alone del colore della
   casella** (carta, o inchiostro sulle caselle sfida) frapposto fra il segno e ciò che c'è sotto. Dove una scala o
   un serpente passano su una casella, numero e simbolo restano leggibili: senza l'alone finiscono sotto la linea.
-
-| Tipo di casella | Resa                                                                      |
-| --------------- | ------------------------------------------------------------------------- |
-| Domanda         | bianca + illustrazione della categoria                                    |
-| Sfida           | nera piena, numero in bianco                                              |
-| Imprevisto      | metà nera in diagonale                                                    |
-| Monete          | cerchio nero pieno (+3) o vuoto (−2), anche come semicerchio su più celle |
-| Stella          | illustrazione di stella                                                   |
-| Libera          | bianca vuota                                                              |
 
 - **Scale:** due montanti neri spessi, pioli bianchi bordati di nero, generate dagli estremi `from`/`to`.
 - **Serpenti:** curva di Bézier sinuosa generata dagli estremi, corpo nero a macchie, coda che si assottiglia,

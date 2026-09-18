@@ -137,8 +137,9 @@ Dopo la fase 3: **prima serata giocabile**.
   scheda di sfondo non si può campionare) e le pedine dei minigiochi in partita vera: la voce F2-05 del Registro.
   Dal pacchetto F le pedine dei minigiochi si animano una mossa per volta (D-62, `queue.ts` + `use-minigame-queue.ts`,
   8 prove). Verificato in locale il 2026-09-18 che la coda è collegata ai tre tabellini e che le prove sono verdi;
-  i tempi in millisecondi non si misurano da qui, quindi l'occhio resta al proprietario. In `/dev/scenari` manca
-  un riquadro per memory e forza 4, che è il modo più semplice per guardarle.
+  Dal pacchetto G in `/dev/scenari` ci sono i **due riquadri che mancavano** (memory e forza 4, gli stessi due clic:
+  due mosse ravvicinate si disegnano una per volta), quindi le due animazioni si guardano senza aspettare che la carta
+  esca in partita: voce F2-05 del Registro, sezione G3.
 
 ## Fase 3 · Domande — _prima serata giocabile_
 
@@ -255,18 +256,26 @@ Dopo la fase 3: **prima serata giocabile**.
 ## Fase 6 · Illustrazioni — _estetica finale_ (in parallelo)
 
 - [ ] **F6-01** Reference in `docs/reference/` e revisione di [design.md](design.md) accanto alle immagini.
-- [~] **F6-02** ~35 illustrazioni delle domande + 3 stelle + decorazioni (SVG).
-  Nota: dal pacchetto F ci sono i 38 disegni (35 domande, 7 per categoria, + 3 stelle) in `src/art/illustrations`,
-  con registro `index.ts` e la pagina `/dev/art` (48 px e 200 px, 404 in produzione). Il tabellone li usa al posto
-  delle iniziali e le 35 caselle domanda hanno 35 disegni diversi. Verificato in locale il 2026-09-18.
-  Restano: le **decorazioni** (cerchi, mezzelune, diagonali) sono ancora i segnaposto geometrici del pacchetto C, e
-  tre disegni non si leggono (`deep-mirror`, `memories-phone`, `deep-roots` a 48 px). Voce F6-02 · F6-03 del Registro.
+- [L] **F6-02** ~35 illustrazioni delle domande + 3 stelle + decorazioni (SVG).
+  Nota: i 38 disegni (35 domande, 7 per categoria, + 3 stelle) sono in `src/art/illustrations`, con registro `index.ts`
+  e la pagina `/dev/art` (48 px e 200 px, 404 in produzione); il tabellone li usa al posto delle iniziali e le 35
+  caselle domanda hanno 35 disegni diversi. Dal pacchetto G le **decorazioni** multi-cella sono forme piene
+  (`disc`, `crescent`, `hill`, `diamond` in `board.tsx`, scelte in `src/content/boards/classic.ts`, D-65) e i tre
+  disegni che a 48 px non si leggevano (`deep-mirror`, `deep-roots`, `memories-phone`) sono rifatti. Verificato in
+  locale il 2026-09-18, decorazioni e tre disegni compresi; resta l'occhio del proprietario (voci G1 e G2 del Registro).
 - [L] **F6-03** Scale e serpenti definitivi (montanti e pioli, corpo a macchie, testa con occhio).
   Nota: fatti nel pacchetto F (macchie, occhio, lingua, coda che si assottiglia; scale con montanti e pioli
   bianchi bordati di nero), con `geometry.test.ts`. Verificato in locale il 2026-09-18: si leggono anche sopra le
   caselle nere. Resta l'occhio del proprietario (voce F6-02 · F6-03 del Registro).
-- [ ] **F6-04** Rive: wrapper e segnaposto per pedine (6), dadi, carta; file `.riv` creati a mano nell'editor Rive.
-- [ ] **F6-05** Rive: wrapper e segnaposto per mascotte (6) e finale; file `.riv` creati a mano nell'editor Rive.
+- [L] **F6-04** Rive: wrapper e segnaposto per pedine (6), dadi, carta; file `.riv` creati a mano nell'editor Rive.
+  Nota: dal pacchetto G i wrapper ci sono (`src/art/rive/`: `PawnView`, `DieView`, `CardView`, `MascotView`,
+  `FinaleView`), ognuno col suo segnaposto e con la sonda che prende il file appena c'è (nome esatto in `files.ts`,
+  contratto in docs/design.md § Animazioni Rive). I `.riv` restano da disegnare a mano: la lista degli artboard, delle
+  macchine a stati e degli ingressi è nella voce F6-04 · F6-05 del Registro. I wrapper **non sono ancora collegati**
+  alle schermate: il tabellone usa la pedina di `features/board/pawn.tsx`.
+- [L] **F6-05** Rive: wrapper e segnaposto per mascotte (6) e finale; file `.riv` creati a mano nell'editor Rive.
+  Nota: come F6-04 — stesso pacchetto, stessi wrapper, stessa voce del Registro; i segnaposto si guardano tutti
+  insieme in fondo a `/dev/art`.
 - [ ] **F6-06** Suoni opzionali.
 
 ## Fase 7 · Extra — _versione rifinita_

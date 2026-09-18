@@ -856,3 +856,106 @@ verde compresi i test geometrici, che Hermes non aveva potuto eseguire. In produ
 - `deep-roots` a 48 px somiglia ancora a un omino;
 - le **decorazioni** del tabellone (i cerchi, le mezzelune, le diagonali su più caselle) sono ancora i segnaposto
   geometrici del pacchetto C: accanto ai disegni nuovi stonano. Fanno parte di F6-02 e non sono state fatte.
+
+---
+
+## Registro · Pacchetto G (le decorazioni, i tre disegni, i riquadri dei minigiochi, i wrapper Rive) — branch `hermes/g-estetica`
+
+Prima di iniziare: **nessuna migrazione**, niente `pnpm db:reset` — questo pacchetto non tocca il database. Tutto quello
+che si guarda sta in `pnpm dev`.
+
+### G1 · Le decorazioni del tabellone (chiude F6-02)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/hotseat>.
+2. Guarda il tabellone: le quattro decorazioni multi-cella non sono più i segnaposto a filo del pacchetto C (cerchio,
+   mezzaluna, diagonale, rettangolo pieno) ma forme **piene in inchiostro**, della stessa pasta dei disegni nuovi: il
+   **disco** sulle caselle 4-5, la **falce** sulla 9, il **colle** sulla 23, il **rombo** sulla 26.
+3. Atteso: i numeri 4, 5, 9, 23, 26 restano leggibili (l'alone di A1 li stacca dal nero); scale e serpenti passano
+   **sopra** le decorazioni; ogni forma sta dentro il suo gruppo di caselle con un margine dal bordo.
+4. Sui due posti il tabellone è lo stesso: le decorazioni non dipendono da chi guarda.
+5. **Se ti sembrano di troppo** si tolgono con una riga: `decorations: []` in `src/content/boards/classic.ts`. Nello
+   stesso posto si cambiano le forme (i nomi sono `disc`, `crescent`, `hill`, `diamond`) — sono quattro, tutte nel
+   gruppo di caselle che la disposizione indica.
+
+**Esito:** guardato il 2026-09-18 (Hermes, Chrome via CDP, tabellone a tre ingrandimenti). Le quattro forme si leggono
+come forme volute e non più come segnaposto: il disco dà al tabellone un punto di nero pieno in mezzo a due caselle
+vuote, la falce e il rombo funzionano a 48 px, il colle resta leggibile anche dove passa un serpente. L'effetto
+collaterale da decidere: il disco sulle caselle **4-5 copre il bordo in mezzo alle due** (i numeri restano, ma la linea
+del bordo non si vede più sotto il nero). Se dà fastidio, la forma della coppia si cambia in una che non attraversa il
+bordo (per esempio `hill`, che si appoggia in basso) o si toglie. **Resta il tuo occhio:** se le decorazioni sono un
+guadagno o un di troppo, la risposta cambia la voce F6-02.
+
+### G2 · I tre disegni rifatti a 48 px
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/art>.
+2. Guarda `deep-mirror`, `deep-roots` e `memories-phone` **a 48 px** (la misura vera nelle caselle: è la colonna di
+   sinistra; quella a 200 px a destra serve solo a vedere i dettagli).
+3. Atteso: lo specchio si legge come uno specchio (cornice ovale su due zampe con il piede), le radici come radici
+   (tronco che si apre in forcelle sotto una linea di terra tratteggiata), il telefono come un telefono a disco
+   (corpo, disco, cornetta appoggiata sopra).
+4. Poi guardali **sul tabellone**, dove stanno davvero: `/dev/hotseat`, caselle 21 (`deep-mirror`), 26 (`deep-roots`),
+   ？...
+
+Hmm — which cells do these illustrations land on? I should not invent cell numbers. Let me phrase it without the numbers: "poi guardali sul tabellone in `/dev/hotseat`, che è la prova vera: le tre stelle di categoria e le caselle che li portano".
+
+Let me write it more carefully and honestly:
+
+```
+4. Poi guardali **sul tabellone**: in `/dev/hotseat` le caselle domanda portano ognuna il suo disegno — è lì che si
+   vede se il disegno regge accanto agli altri e dentro il tondo di carta.
+```
+
+Esito + what I saw + my doubts:
+"**Esito:** guardato il 2026-09-18 (Hermes, a 3× sui 48 px e a 200 px, su `/dev/art`). Il telefono ora si legge come un
+telefono a disco e le radici come radici. Lo **specchio è quello che mi convince di meno**: regge a 200 px, ma a 48 px
+è una cornice ovale su due zampe, e chi non sa che lì c'è uno specchio può leggere un cavalletto o una lente su un
+piedino. Se anche a te non basta, dimmi **cosa deve sembrare a chi guarda** (uno specchio da tavolo? uno specchio a
+mano? un oggetto che si vede di profilo?) e lo rifaccio su quella descrizione: la prima volta ho sbagliato perché
+pensavo a un oggetto generico invece che a un segno leggibile a 48 px.
+Se invece ti vanno bene tutti e tre, la voce è chiusa e resta solo il tuo occhio."
+
+### F2-05 · I riquadri memory e forza 4 in /dev/scenari
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/scenari>: ora i riquadri sono **29** (erano 27), e in fondo alla sezione
+   delle sfide ci sono «Sfida duello automatica · forza 4» e «… · memory».
+2. Nel riquadro **forza 4**: interruttore su «Tutti e due (hot seat)», clicca due colonne a distanza di un istante → le
+   due pedine cadono **una per volta**, in ordine, e nessuna delle due mosse va persa.
+3. Nel riquadro **memory**: clicca due carte che **non** combaciano → restano scoperte; clicca la terza → le due si
+   richiudono dopo l'occhiata di circa un secondo (`MEMORY_PEEK_MS`) e la terza si scopre.
+4. Con `prefers-reduced-motion` (Chrome → Rendering → «Emulate CSS media feature») nessuna delle due animazioni parte,
+   ma la mossa c'è lo stesso.
+
+**Esito:** verificato il 2026-09-18 (Hermes, Chrome via CDP) con due clic a 90 ms nel riquadro memory: le carte si
+scoprono **una dopo l'altra**, mai insieme — la traccia raccolta ogni 250 ms dice `su: [1]` e solo dopo `su: [1,2]`,
+con la prima carta scoperta ~750 ms e la seconda ~1250 ms dopo il primo clic. In forza 4 una pedina per clic, in
+fondo alla colonna giusta, colori dei due posti corretti. **Non misurato:** i tempi in millisecondi (Chrome strozza i
+timer nella scheda guidata da qui, come nel pacchetto E): l'ordine è verificato, la durata no.
+
+### F6-04 · F6-05 · I wrapper Rive e i segnaposto
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/art> e scorri in fondo: sezione **«Segnaposto Rive»**.
+2. Atteso: le sei pedine (gettone colorato col numero del posto), il dado (numero in un quadrato), la carta (davanti e
+   dietro), le sei mascotte (testa dell'animale, ferma) e il finale (tre stelle e il nome di chi vince). Sono i
+   segnaposto dei cinque wrapper, disegnati per funzionare **da soli**.
+3. Quando disegni un file `.riv`, mettilo in `public/rive/` con il nome esatto della tabella qui sotto e ricarica: il
+   wrapper lo prende e il segnaposto sparisce, **senza toccare il codice** (i nomi stanno in `src/art/rive/files.ts`).
+4. In console, finché i file mancano, c'è **una riga di rete per file** (`GET /rive/pawns.riv 404`): è il browser che
+   registra la richiesta della sonda, non un errore dell'applicazione. Quando il file c'è, la riga sparisce.
+5. I wrapper **non sono ancora collegati alle schermate**: il tabellone usa la pedina di `features/board/pawn.tsx`, il
+   dado e la carta i loro segnaposto attuali. F6-04 e F6-05 chiedono solo i wrapper; il collegamento è il passo
+   successivo (e una volta collegati, i `.riv` si vedono in partita).
+
+**I file che ti aspetti in `public/rive/`** — è la lista con cui sedersi davanti all'editor:
+
+| file          | artboard                                                       | macchina a stati | ingressi                                                 | segnaposto                          |
+| ------------- | -------------------------------------------------------------- | ---------------- | -------------------------------------------------------- | ----------------------------------- |
+| `pawns.riv`   | una per animale: `fox`, `rabbit`, `cat`, `bear`, `frog`, `owl` | `Pawn`           | trigger `hop`, `celebrate`; bool `active`                | gettone colorato + numero del posto |
+| `dice.riv`    | `Die`                                                          | `Roll`           | trigger `roll`; number `value` 1-6                       | numero in un quadrato               |
+| `card.riv`    | `Card`                                                         | `Flip`           | trigger `flip`                                           | transizione CSS (mezzo giro)        |
+| `mascots.riv` | una per forma: le **stesse sei** delle pedine                  | `Mood`           | number `mood` 0-4                                        | testa dell'animale, ferma           |
+| `finale.riv`  | `Finale`                                                       | `Reveal`         | trigger `revealStar`; number `winner` (0 pareggio, 1, 2) | tre stelle e il nome del vincitore  |
+
+**Esito:** verificato il 2026-09-18 (Hermes, Chrome via CDP): `/dev/art` mostra i segnaposto, **zero** elementi
+`canvas` in pagina (nessun `.riv` caricato) e la sonda fa una richiesta per file (`pawns`, `dice`, `card`, `mascots`,
+`finale` → tutte 404). Il comportamento dei wrapper **con** il file non è verificabile senza i file: la prova è tua,
+appena esporti il primo `.riv`.
