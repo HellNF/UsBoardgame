@@ -311,6 +311,11 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
       rifiutava già le azioni non proprie (403), quindi era un problema di chiarezza, non di sicurezza.
 - [ ] Presenza non protetta: chi conosce l'id di una stanza può iscriversi al suo canale e vedere la presenza
       (i dati di gioco no, li filtra RLS). Si chiude con i canali privati e RLS su `realtime.messages`.
+      **Fatto nel codice dal pacchetto J (D-77)**: canale `private: true` e due policy su `realtime.messages` che
+      ammettono solo chi ha una sessione in **quella** stanza. **Non è chiusa**: manca la verifica in locale con due
+      sessioni vere (Registro J3) e, sul progetto remoto, l'interruttore «Allow public access» di Realtime Settings —
+      un'impostazione del dashboard, non una migrazione. Si chiude quando una serata a distanza funziona con il
+      canale privato.
 - [x] `pnpm db:start` non arrivava in fondo (il container dei log `vector` non diventa "healthy"):
       **chiusa il 2026-09-17** con `[analytics] enabled = false` in `supabase/config.toml` (commit `d7658fe`).
 - [x] Il diario mostrava l'id della domanda invece del testo e registrava le monete a zero: **chiusa dal pacchetto
@@ -808,6 +813,11 @@ una serata passata si può ridisegnare finché quella riga non cambia: se un gio
 diario di una serata vecchia mostrerebbe un altro tabellone. Salvare la disposizione (o il suo seme) **sulla riga
 della partita** è la soluzione, ma la decisione e la migrazione non sono di questo pacchetto.
 
+_Risposta del proprietario (18/09, Registro I4):_ sulla riga della partita va **solo l'id**, e un tabellone
+pubblicato è **immutabile** — se deve cambiare prende un id nuovo (`classic-2`). Copiare cento caselle di JSON su
+ogni serata duplicherebbe i dati per difendersi da una cosa che si può semplicemente vietare. La regola è D-76, e
+`content:push` la fa rispettare.
+
 ### D-74 · La mascotte sta nel pannello di destra e la muovono gli stessi eventi della grafica
 
 **Derivata, su indicazione del proprietario (F6-05, pacchetto I).** La mascotte è l'asset Rive che era rimasto
@@ -851,6 +861,12 @@ segnaposto che occupa spazio senza fare niente è contro la regola di D-68 (in p
 componente attuale, non un riquadro vuoto). La mappa si applica il giorno in cui il file arriva: il wrapper
 `MascotView` esiste già dal pacchetto G, con `mood` numerico.
 
+_Risposta del proprietario (18/09, Registro I4):_ il posto è **la riga del giocatore** di `SidePanel`
+(`PlayerRow`), accanto al pallino del colore e al nome, **piccola (28-32 px)**. Il pannello di destra ospita dadi,
+carta e pannello laterale, e a carta aperta non c'è spazio per un riquadro in più; la riga del giocatore si vede
+sempre — carta aperta o no — e non costa impaginazione. Una per posto, e il `mood` di ognuna segue gli eventi di
+quel posto.
+
 ### D-75 · Le illustrazioni hanno una tavolozza propria: il tabellone si colora
 
 **Su indicazione del proprietario** (F6-02, reference consegnata il 2026-09-18). Il riferimento sono i 38 disegni
@@ -883,3 +899,54 @@ ciò che sta sopra e a sinistra di circa (47, 41), colore o no.
 reference, 36 sono stati presi come erano; `deep-mirror` e `deep-roots` erano ridisegni delle versioni vecchie —
 quelle che a 48 px erano una «C» e un tavolo — e sono stati rifatti sulle forme nuove; `tastes-guitar` era l'ultimo
 illeggibile (un palloncino) e ha un corpo nuovo, con la vita invece di due cerchi sovrapposti.
+
+---
+
+## Prima della prima serata (pacchetto J)
+
+### D-76 · Un tabellone pubblicato è immutabile, e `content:push` lo fa rispettare
+
+**Derivata, su indicazione del proprietario (J2, pacchetto J).** Un tabellone pubblicato **non si riscrive**. La
+riga della partita porta solo l'id (`games.settings.boardId`) e il diario di una serata passata lo ridisegna
+leggendo `public.boards` (D-73): riscrivere un layout già usato cambierebbe il diario di una partita già giocata.
+Se un tabellone deve cambiare prende un **id nuovo** (`classic-2`), e il vecchio resta dov'è. È la regola 7 di
+AGENTS.md («id dei contenuti stabili») estesa ai tabelloni, la stessa che `pnpm board:freeze` applica rifiutando di
+sovrascrivere un file congelato.
+
+Finora `pnpm content:push` faceva upsert con `onConflict: "id"` su tutto, tabelloni compresi: ripubblicare dopo aver
+modificato `classic.ts` avrebbe riscritto **in silenzio** il layout di un id già in gioco. Adesso lo script legge
+prima i tabelloni pubblicati e **confronta** ognuno con il file locale — stesso id, stesso layout e stesso nome
+vuol dire «niente da fare»; un layout diverso **ferma lo script** (uscita 3) dicendo quale id è cambiato e le due
+strade: un id nuovo, oppure la scappatoia esplicita `pnpm content:push -- --force` (il `--` serve: pnpm si tiene i
+flag e non li passa allo script — `pnpm content:push --force` non arriva, verificato a mano con `board:freeze`). Il
+confronto è su **JSON canonico** (chiavi in ordine) perché `jsonb` non conserva l'ordine delle chiavi: un confronto
+testuale direbbe «diverso» a ogni pubblicazione identica. Il controllo viene **prima** della prima scrittura, così
+quando lo script si ferma non ha pubblicato mezzo contenuto. **Domande e sfide restano come erano**: i loro testi si
+correggono, e l'upsert per id è quello che serve.
+
+_Conseguenza (la sequenza sta nel log del pacchetto J):_ la `classic` locale e quella sul progetto remoto **non sono
+la stessa cosa** — le decorazioni sono state spostate dopo la pubblicazione (F0-06) — e il primo `content:push` con
+questa regola si fermerà su `classic`. Non essendo ancora stata giocata nessuna serata vera, la riga remota non ha
+storia da proteggere: si riallinea **una volta** con `--force`, e da lì in poi la regola vale. La scelta fra le due
+strade è del proprietario; la sequenza proposta (e perché conviene farla **prima** della prima serata) è nel log del
+pacchetto J.
+
+### D-77 · Si entra nel canale della stanza solo con una sessione in quella stanza
+
+**Derivata, chiude la voce «Presenza non protetta» (J3, pacchetto J).** Il canale della stanza è
+`supabase.channel("room:<id>", { config: { private: true } })` e due policy su `realtime.messages`
+(`supabase/migrations/20260918180000_private_realtime.sql`) ammettono solo chi ha una sessione in **quella** stanza:
+`realtime.topic() = 'room:' || public.current_room_id()` — l'helper RLS che dice in che stanza sta chi chiede, e che
+il database legge da `auth.uid()`: il client non manda nessun dato in più. Una policy per **ricevere** (`select`) e
+una per **inviare** (`insert`, che serve a `channel.track`, cioè alla presenza); l'invio accetta anche i messaggi
+`broadcast`, che il client non manda oggi — riceverne uno non cambia niente, perché la UI non ha nessun gestore
+`broadcast` e i dati di gioco arrivano dai `postgres_changes` filtrati dalla RLS delle tabelle.
+
+Prima bastava conoscere l'id della stanza: il nome del canale era l'unica cosa che lo rendeva «di quella stanza».
+
+_Due cose da sapere, non deducibili dal codice:_ sul canale passano **anche le mosse e gli eventi** (i
+`postgres_changes` di `games` e `game_events` stanno nella stessa sottoscrizione), quindi una policy troppo stretta
+non toglie la presenza, **ferma la partita a distanza** — la verifica in locale deve guardare tutte e due le cose
+(Registro J3). E su un progetto ospitato l'interruttore **«Allow public access»** di Realtime Settings va spento a
+mano: è un'impostazione del dashboard, non una migrazione (come l'accesso anonimo), e finché è acceso un canale
+_non_ privato con lo stesso topic resta raggiungibile da chiunque conosca l'id.

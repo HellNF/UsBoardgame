@@ -61,6 +61,9 @@ Dopo la fase 3: **prima serata giocabile**.
   a zero righe, scrittura diretta e `apply_game_action` dal client rifiutate.
   Restano: la stanza vera (`pnpm room:create` dal Terminale, serve un terminale vero per la password), il
   progetto Vercel con le tre variabili, e il deploy di prova. Vedi la voce «Due ambienti» del Registro.
+  **Da riallineare (pacchetto J, D-76):** il tabellone sul remoto è quello pubblicato **prima** che le decorazioni
+  della `classic` fossero spostate, quindi non è più uguale al file locale. Il primo `pnpm content:push` con la
+  regola nuova si fermerà su `classic` e dirà cosa fare; la sequenza proposta è nel log del pacchetto J.
 
 ## Fase 1 · Tabellone — _partita completa su un solo schermo_
 
@@ -124,6 +127,9 @@ Dopo la fase 3: **prima serata giocabile**.
 - [x] **F2-04** Presence: indicatore dell'altro giocatore e `last_seen_at`.
       Nota: Presence sul canale della stanza (`{ seat, screen }`) alimenta l'indicatore in lobby e in partita;
       `players.last_seen_at` si aggiorna a ogni caricamento di pagina della stanza (lato server).
+      **Dal pacchetto J (D-77)** il canale è **privato**: si iscrive solo chi ha una sessione in quella stanza (due
+      policy su `realtime.messages`), e sul canale passano anche mosse ed eventi — per questo la verifica in locale
+      con due sessioni vere guarda tutte e due le cose (voce J3 del Registro).
 - [~] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
   Nota: dal pacchetto E il percorso della pedina è **cella per cella** (`src/features/board/route.ts`: un saltello
   per ogni casella, gradino per gradino sulle scale, lungo il corpo sui serpenti) e gli eventi di spostamento si
@@ -173,6 +179,9 @@ Dopo la fase 3: **prima serata giocabile**.
       progetto remoto: Registro, voce F3-05.
       Chiuso il 2026-09-18: eseguito sul progetto remoto vero, 150 domande, 17 sfide e 1 tabellone pubblicati e
       ricontati sul database. Da rilanciare a ogni revisione dei testi.
+      **Dal pacchetto J (D-76)** i **tabelloni** non si riscrivono più: prima di scrivere, lo script confronta il
+      layout locale con quello pubblicato e, se è diverso, si ferma (uscita 3) dicendo quale id è cambiato; le due
+      strade sono un id nuovo oppure `pnpm content:push -- --force`. Domande e sfide restano come prima.
 
 ## Fase 4 · Sfide — _tutte le categorie tranne l'emulatore_
 

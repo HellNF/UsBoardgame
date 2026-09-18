@@ -638,3 +638,153 @@ tetto è 6 incroci, 2 linee per casella ✓`, il paragrafo in testa con il conto
     per una pagina `/dev` nuova, come dice il Registro del pacchetto E);
   - la mappa evento → mood di D-74 è scritta e non provata: quando la collegheremo, la mappa va in una funzione pura
     con i suoi test (oggi non c'è codice, quindi non c'è niente da testare).
+
+## Pacchetto J · Prima della prima serata — 2026-09-18
+
+Branch: `hermes/j-integrita` (da `main` a `aeeed06`) · Un commit per punto, ognuno con `pnpm check` verde prima del
+commit e `pnpm build` verde prima del push, pushato subito: `53be3b7` (J1, l'inclinazione minima), `210c7f8` (J2, un
+tabellone pubblicato non si riscrive), `62e8dc3` (J3, il canale privato), più il commit di questa documentazione.
+Niente merge in `main`. Nessuna illustrazione toccata, nessun colore, nessun `.riv`, nessuna disposizione congelata,
+nessuna modifica a F0-06, Vercel o ai file `.env`. **Niente di visivo da giudicare**: il pacchetto è misura, script e
+una migrazione — se un punto del prompt chiedesse un giudizio, sarebbe un errore del prompt.
+
+- **Fatto:**
+  - **J1 (F7-02)** `[L]`: la **soglia di inclinazione** di `docs/design.md` § Tabellone (18° sull'orizzontale, per
+    scale e serpenti) è diventata un vincolo del generatore. La misura è `elementAngle` in
+    `src/engine/board-geometry.ts` — l'angolo fra i **centri** delle due caselle, cioè quello che si legge guardando
+    (la scala 51→67 della `classic` sta a 18,4°) — e il numero è in `RULES.board.minAngleDegrees`. Come per il budget
+    di leggibilità il vincolo si applica **mentre pesca i candidati**: una scala sotto soglia non entra nemmeno
+    nell'elenco, quindi non si scarta mai un tabellone finito. Con la soglia in mano, l'elenco dei candidati perde
+    le scale «lunghe e piatta» (una fila e cinque colonne: 11°).
+  - **J2 (F3-05, D-76)** `[L]`: `pnpm content:push` non riscrive più un tabellone pubblicato. Legge prima i tabelloni
+    dal database e **confronta** ognuno con il file locale: stesso id, stesso layout e stesso nome vuol dire niente
+    da fare; un layout diverso **ferma lo script** (uscita 3) dicendo quale id è cambiato e le due strade (id nuovo,
+    oppure `pnpm content:push -- --force`). Il confronto è su **JSON canonico** (chiavi in ordine) perché `jsonb` non
+    conserva l'ordine delle chiavi: un confronto testuale direbbe «diverso» a ogni ripubblicazione identica. Il
+    controllo viene **prima** della prima scrittura, quindi un fermo non lascia mezzo contenuto pubblicato. Domande e
+    sfide restano con l'upsert normale: i testi si correggono. La sequenza sta in `scripts/lib/content-publish.ts`
+    (con i suoi test); `scripts/push-content.ts` è il guscio.
+  - **J3 (F2-03, F2-04, D-77)** `[L]`: il canale della stanza è **privato** (`private: true`) e una **migrazione
+    nuova** (`supabase/migrations/20260918180000_private_realtime.sql`) mette due policy su `realtime.messages`: una
+    per ricevere e una per inviare (la presenza fa `channel.track`), entrambe con
+    `realtime.topic() = 'room:' || public.current_room_id()` — l'helper RLS che dice in che stanza sta chi chiede,
+    letto dal database da `auth.uid()`: **il client non manda nessun dato in più** (l'id del giocatore non serve).
+    La migrazione è reversibile (due `drop policy` e `private: false`).
+- **Verificato da me, con i comandi e i risultati veri:**
+  - `pnpm check` verde prima di ogni commit: **438 prove su 40 file** (erano 413 su 38 in `main`), `pnpm build` verde
+    prima di ogni push. Nessun test disattivato, nessuna regola ESLint spenta, `prettier --check` pulito sui file
+    toccati (prettier non è in `pnpm check`: i file nuovi devono uscire già formattati).
+  - **J1, i numeri (prima = `main` a `aeeed06`, dopo = questo branch)**, misurati con lo stesso script
+    autosufficiente su due alberi (`git worktree add /tmp/jprima aeeed06`):
+
+    | seme | inclinazione minima prima | dopo        | decorazioni prima → dopo |
+    | ---- | ------------------------- | ----------- | ------------------------ |
+    | 1    | 8,1°/18,4°                | 36,9°/63,4° | 2 → 0                    |
+    | 2    | 18,4°/14,0°               | 18,4°/26,6° | 4 → 4                    |
+    | 3    | 18,4°/90,0°               | 26,6°/63,4° | 2 → 4                    |
+    | 4    | 18,4°/11,3°               | 18,4°/18,4° | 4 → 4                    |
+    | 5    | 18,4°/18,4°               | 18,4°/18,4° | 3 → 3                    |
+    | 6    | 8,1°/45,0°                | 23,2°/26,6° | 2 → 4                    |
+    | 7    | 14,0°/26,6°               | 26,6°/26,6° | 2 → 4                    |
+    | 8    | 18,4°/26,6°               | 18,4°/26,6° | 4 → 4                    |
+    | 9    | 26,6°/18,4°               | 26,6°/45,0° | 4 → 4                    |
+    | 10   | 8,1°/26,6°                | 33,7°/18,4° | 3 → 3                    |
+    | 11   | 14,0°/71,6°               | 23,2°/45,0° | 1 → 4                    |
+    | 12   | 11,3°/45,0°               | 21,8°/26,6° | 4 → 3                    |
+    | 13   | 26,6°/45,0°               | 33,7°/26,6° | 4 → 4                    |
+    | 14   | 31,0°/26,6°               | 26,6°/45,0° | 4 → 4                    |
+    | 15   | 8,1°/45,0°                | 26,6°/45,0° | 4 → 4                    |
+    | 16   | 7,1°/26,6°                | 26,6°/45,0° | 4 → 4                    |
+    | 17   | 9,5°/26,6°                | 38,7°/26,6° | 4 → 4                    |
+    | 18   | 23,2°/18,4°               | 26,6°/33,7° | 4 → 4                    |
+    | 19   | 18,4°/8,1°                | 18,4°/33,7° | 4 → 3                    |
+    | 20   | 11,3°/90,0°               | 26,6°/26,6° | 1 → 4                    |
+
+    **Le scale e i serpenti restano 7 e 6 su tutti e venti i semi** e su **200 semi nessuno si ferma corto** (il ramo
+    che lancia non è mai servito). Prima: 13 semi su 20 avevano almeno una linea sotto i 18°, il minimo assoluto era
+    6,3° (le scale) e 7,1° (i serpenti), e il 15,8% delle scale stava sotto i 20° (221 su 1.400). Dopo: **nessuna
+    linea sotto i 18°**, minimo 18,4° per scale e serpenti, e solo il 4,8% sotto i 20° (67 su 1.400, tutte a 18,4°,
+    cioè la pendenza della `classic`).
+
+  - **J1, la decorazione che si paga di nuovo** (dichiarata): linee più ripide coprono più caselle, quindi le
+    caselle decorabili diminuiscono ancora. Su 200 semi: quattro in **146** casi, tre in 33, due in 12, una in 7,
+    **nessuna in 2** (era 130/43/21/5/1 dopo il pacchetto I). Il seme 1, che prima aveva due decorazioni, ora **non
+    ne ha nessuna**: non gli resta una casella libera, interna e che nulla attraversa. La regola viene prima del
+    numero (D-65) e il proprietario ha già detto che quattro non è un minimo.
+  - **J1, la correzione di una prova, dichiarata**: «le decorazioni sono al massimo quattro, **almeno una**» perde
+    l'«almeno una» (il seme 1 non ne ha più) e diventa «al massimo quattro, una per forma»; al suo posto la prova
+    dice la proprietà del meccanismo: **se una casella decorabile c'è, si decora** (e non se ne mettono più di
+    quelle).
+  - **J2, cosa ho potuto provare da qui:** che lo script **esce prima di toccare il database** quando mancano le
+    variabili (`Variabili Supabase mancanti`, uscita 2 — su questa macchina non c'è `.env.local`), e la **sequenza
+    con un client finto**: un tabellone cambiato ferma tutto **prima** di ogni upsert (nessuna scrittura: la prova
+    controlla le chiamate fatte al finto client), `--force` arriva fino in fondo, un errore di lettura non scrive.
+    Le **18 prove nuove** stanno in `scripts/lib/board-publish.test.ts` (12) e
+    `scripts/lib/content-publish.test.ts` (6). Provato
+    anche **a mano** che `pnpm board:freeze --force` **non** passa il flag allo script e `pnpm board:freeze --
+--force` sì: per questo la scappatoia si scrive con il `--`.
+  - **J3, cosa ho potuto provare:** niente di RLS/Realtime (servono due sessioni vere, e il database qui non c'è
+    nemmeno in Docker). La migrazione è scritta sulla documentazione Supabase (Realtime Authorization:
+    `realtime.topic()`, `realtime.messages.extension`, RLS già attiva su `realtime.messages`), le policy sono due e
+    reversibili, e il client cambia di una riga (`private: true`). `pnpm check` e `pnpm build` verdi dicono solo che
+    il codice compila: **il comportamento lo vedi tu**.
+  - **Non verificato da me:** tutto J3 (RLS, Realtime, presenza, sincronia con due sessioni), e J2 contro un database
+    vero (l'ordine delle scritture è provato con un client finto, non con Supabase).
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), sezione «Pacchetto J»: **J1** (la
+  riga Inclinazione ≥ 18° su tutti i tabelloni, e guardare le scale che salgono di una fila), **J2** (il push che si
+  ferma su un tabellone modificato, senza scrivere, e la scappatoia `-- --force`), **J3** (due sessioni vere: la
+  presenza e le mosse con il canale privato, e come riconoscere una policy troppo stretta — l'elenco è scritto lì).
+- **Decisioni Derivate aggiunte:** D-76 (un tabellone pubblicato è immutabile, e `content:push` lo fa rispettare:
+  JSON canonico, controllo **prima** di ogni scrittura, uscita 3, `-- --force`) e D-77 (si entra nel canale della
+  stanza solo con una sessione in quella stanza: due policy su `realtime.messages`, `realtime.topic()` contro
+  `current_room_id()`). Aggiornati anche **D-73** e **D-74** con le risposte del proprietario (sulla riga della
+  partita va solo l'id; la mascotte sta nella riga del giocatore di `SidePanel`). `docs/architecture.md` § Tempo
+  reale, `docs/content.md` § Pubblicare i contenuti, `docs/design.md` § Tabellone (la soglia non manca più al
+  generatore), `docs/roadmap.md` (F7-02, F3-05, F2-04, F0-06) e la voce «Ancora aperte» della presenza (che resta
+  aperta: si chiude con la tua verifica).
+- **La `classic` locale e quella sul remoto: analisi, non implementata (la decisione è tua).** Il tabellone è stato
+  pubblicato una volta (F0-06, 2026-09-18) e **le decorazioni della `classic` sono state spostate dopo** (l'ultimo
+  commit su `classic.ts` è `02f94ba`, il tuo, della correzione del bordo). Quindi oggi le due righe non coincidono, e
+  il primo `content:push` con la regola nuova **si fermerà su `classic`**. Le due strade:
+  1. **ripubblicare una volta con la scappatoia** (`set -a; source .env.remoto; set +a; pnpm content:push -- --force`),
+     perché nessuna serata vera è ancora stata giocata: la riga remota non ha **storia da proteggere** (il diario di
+     una partita vecchia è l'unica cosa che la regola difende, e non esiste);
+  2. **un id nuovo** (`classic-2`): la regola vale dal primo giorno senza eccezioni, ma resta una riga `classic`
+     inutilizzata sul remoto, e cambiano `defaultBoardId`, i riferimenti nei documenti e nei test — churn per
+     proteggere una storia che non c'è.
+     **Consiglio mio: la strada 1, una volta sola, e adesso.** La sequenza esatta, che non richiede né migrazioni né
+     modifiche al codice:
+  3. `set -a; source .env.remoto; set +a; pnpm content:push` — **aspettati il fermo** (uscita 3) con
+     `• classic (Classico)`: è la conferma che il remoto è quello vecchio e che la regola funziona sul remoto;
+  4. la stessa riga **con la scappatoia**: `pnpm content:push -- --force` — scrive il tabellone corrente e lo dice
+     (`Riscritto con --force: classic`); domande e sfide si riallineano come sempre;
+  5. rilanciare `pnpm content:push` **senza** flag: deve dire `1 già identici · nessuno riscritto` — è la prova che
+     le due copie ora coincidono;
+  6. da lì in poi la regola vale: se un giorno cambi la `classic`, il push si ferma e la scelta è fra `--force` (che
+     sai cosa riscrive) e un id nuovo. Il momento buono è **prima della prima serata**: dopo, la strada 1 non è più
+     gratuita.
+     Una nota: la stanza vera sul remoto non esiste ancora (F0-06), quindi la finestra per farlo senza conseguenze è
+     aperta fino alla prima partita giocata davvero.
+- **Domande per il proprietario:**
+  1. **La strada 1 o la 2** per riallineare la `classic` (sopra): io farei la 1, una volta, adesso.
+  2. **Le decorazioni che calano ancora**: il seme 1 non ne ha più nessuna, e su 200 semi due casi restano senza
+     forme. La soglia di 18° è tua e non la tocco; se ti dà noia vedere un tabellone senza decorazioni, le strade
+     sono le stesse di prima (margine, cornice, decorare anche il bordo) — tutte di disegno.
+  3. **`pnpm board:freeze 5 --pippo` crea una disposizione chiamata «--pippo»** (un flag digitato male diventa un
+     nome). Non l'ho corretto — non è nel pacchetto: vuoi che rifiuti un nome che comincia con `-`?
+  4. **L'interruttore «Allow public access»** di Realtime Settings sul progetto remoto (dashboard): senza quello
+     spento la chiusura della presenza è **a metà**, perché un canale non privato con lo stesso topic resta
+     raggiungibile. È l'ultimo pezzo che non passa da una migrazione.
+- **Limiti noti / debito tecnico:**
+  - la soglia di inclinazione è un vincolo del **generatore**, non del validatore: una disposizione scritta a mano
+    (come la `classic`) può stare sotto i 18° senza che niente se ne accorga. La `classic` è a 18,4°, quindi il
+    caso non si dà; se un giorno si scrivesse a mano una disposizione più piatta, il posto giusto per accorgersene
+    è `validateBoard` (una riga, ma è una regola di `rules.md` e non di `design.md`: non l'ho preso io);
+  - `content:push` confronta **tutto** il layout, nome compreso: un ritocco al solo nome di un tabellone già
+    pubblicato ferma lo script, e per riallineare serve `--force` (o un id nuovo). È voluto — anche il nome entra
+    nel diario — ma è una cosa da sapere prima di rinominare qualcosa;
+  - le policy su `realtime.messages` sono le prime del progetto e non hanno test automatici: l'unica prova possibile
+    è la tua con due sessioni (Registro J3). Se un giorno cambia il formato del topic (`room:<id>`), la policy e il
+    client vanno cambiati **insieme**;
+  - J1 non ha toccato le decorazioni del bordo né la cornice: il secondo punto delle domande è la conseguenza
+    dichiarata, non un difetto da correggere da qui.
