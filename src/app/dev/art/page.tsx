@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { ILLUSTRATIONS, Illustration, illustrationGroups } from "@/art/illustrations";
+import { CardView, DieView, FinaleView, MascotView, PawnView } from "@/art/rive";
+import type { MascotForm } from "@/art/rive";
+import type { PawnId } from "@/engine";
 
 /**
  * Illustrazioni (task F6-02, `src/art/illustrations`): tutte insieme, a 48 px e a 200 px.
@@ -10,8 +13,14 @@ import { ILLUSTRATIONS, Illustration, illustrationGroups } from "@/art/illustrat
  * leggibili alla misura piccola (docs/design.md § Illustrazioni SVG: a 48 px niente dettagli
  * sotto le 3 unità).
  *
+ * In fondo ci sono i **segnaposto dei wrapper Rive** (F6-04, F6-05): i `.riv` non ci sono ancora,
+ * quindi si vedono i segnaposto — quelli che compaiono finché i file mancano.
+ *
  * Pagina **di sviluppo**: in produzione risponde 404 come `/dev/hotseat` e `/dev/scenari` (D-43).
  */
+const FORMS: MascotForm[] = ["fox", "rabbit", "cat", "bear", "frog", "owl"];
+const ANIMALS: PawnId[] = ["fox", "rabbit", "cat", "bear", "frog", "owl"];
+
 export default function ArtPage() {
   if (process.env.NODE_ENV === "production") notFound();
 
@@ -51,6 +60,96 @@ export default function ArtPage() {
           </div>
         </section>
       ))}
+
+      <section id="rive" className="flex flex-col gap-4 border-t-4 border-ink pt-4">
+        <h2 className="font-display text-2xl italic">Segnaposto Rive</h2>
+        <p className="text-sm text-ink/70">
+          I wrapper di <code>src/art/rive</code> mostrano il segnaposto finché il file non c&apos;è in{" "}
+          <code>public/rive/</code>. I `.riv` li disegna il proprietario nell&apos;editor: quando arriveranno,
+          il wrapper prenderà quello e il segnaposto sparirà da solo.
+        </p>
+
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <h3 className="font-sans text-sm">
+              Pedine <span className="text-ink/60">(pawns.riv · 6 artboard)</span>
+            </h3>
+            <div className="flex flex-wrap items-end gap-4">
+              {ANIMALS.map((animal) => (
+                <span key={animal} className="flex flex-col items-center gap-1 text-ink">
+                  <PawnView
+                    animal={animal}
+                    color={animal === "fox" ? "red" : "blue"}
+                    number={animal === "fox" ? 1 : 2}
+                    className="size-16"
+                  />
+                  <code className="text-xs text-ink/60">{animal}</code>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <h3 className="font-sans text-sm">
+              Dado e carta <span className="text-ink/60">(dice.riv · card.riv)</span>
+            </h3>
+            <div className="flex flex-wrap items-end gap-6">
+              {[1, 3, 6].map((value) => (
+                <span key={value} className="flex flex-col items-center gap-1 text-ink">
+                  <DieView value={value} className="size-16 text-3xl" />
+                  <code className="text-xs text-ink/60">dado {value}</code>
+                </span>
+              ))}
+              <CardView faceUp className="w-24 border-2 border-ink p-2">
+                <span className="block text-center font-serif text-2xl text-ink">Carta</span>
+              </CardView>
+              <CardView faceUp={false} className="w-24 border-2 border-ink p-2">
+                <span className="block text-center font-serif text-2xl text-ink">Carta</span>
+              </CardView>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <h3 className="font-sans text-sm">
+              Mascotte <span className="text-ink/60">(mascots.riv · 6 artboard · Mood)</span>
+            </h3>
+            <div className="flex flex-wrap items-end gap-4">
+              {FORMS.map((form) => (
+                <span key={form} className="flex flex-col items-center gap-1 text-ink">
+                  <MascotView form={form} mood={1} className="size-16" />
+                  <code className="text-xs text-ink/60">{form}</code>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <h3 className="font-sans text-sm">
+              Finale <span className="text-ink/60">(finale.riv · Reveal)</span>
+            </h3>
+            <div className="flex flex-wrap items-end gap-6">
+              <FinaleView
+                winner={1}
+                revealedStars={1}
+                names={{ 1: "Leo", 2: "Marta" }}
+                className="text-ink"
+              />
+              <FinaleView
+                winner={2}
+                revealedStars={3}
+                names={{ 1: "Leo", 2: "Marta" }}
+                className="text-ink"
+              />
+              <FinaleView
+                winner="draw"
+                revealedStars={3}
+                names={{ 1: "Leo", 2: "Marta" }}
+                className="text-ink"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

@@ -108,11 +108,16 @@ segnaposto, basandosi sulla tabella qui sotto.
 | `pawns.riv`   | una per animale (6) | `Pawn`        | trigger `hop`, `celebrate`; bool `active`                              | cerchio colorato + numero del posto |
 | `dice.riv`    | `Die`               | `Roll`        | trigger `roll`; number `value` 1-6                                     | numero in un quadrato               |
 | `card.riv`    | `Card`              | `Flip`        | trigger `flip`                                                         | transizione CSS                     |
-| `finale.riv`  | `Finale`            | `Reveal`      | trigger `revealStar`, `winner`                                         | testo                               |
+| `finale.riv`  | `Finale`            | `Reveal`      | trigger `revealStar`; number `winner` (0 pareggio, 1, 2)               | testo                               |
 
 - I nomi di artboard, state machine e input sono un **contratto**: cambiarli significa aggiornare questa tabella e il wrapper.
 - Ogni wrapper React (`src/art/rive/*.tsx`) carica il file con `@rive-app/react-canvas`, espone props tipizzate
   (es. `<Pawn animal="fox" color="red" hop={n} />`) e mostra il segnaposto finché il file non è caricato o se manca.
+  I wrapper ci sono: `PawnView`, `DieView`, `CardView`, `MascotView`, `FinaleView` (registro in `src/art/rive/index.ts`).
+- La presenza del file si controlla **una volta per sessione** con una richiesta `HEAD` su `public/rive/<file>`: senza
+  file resta il segnaposto e in console compare la riga di rete del 404 (una per file, non un errore dell'app). Sul
+  server la risposta è sempre «non c'è», così il primo disegno è il segnaposto e non si disallinea l'idratazione.
+  I segnaposto si guardano tutti insieme in fondo a `/dev/art`.
 - Solo bianco e nero dentro i `.riv`; il colore del giocatore lo aggiunge il wrapper (gettone sotto la testa).
 - Rispettare `prefers-reduced-motion`: nessuna animazione ciclica, transizioni ridotte.
 
