@@ -17,7 +17,8 @@ import type {
 } from "@/engine";
 import { Board } from "@/features/board/board";
 import { useMoveQueue } from "@/features/board/use-move-queue";
-import { CardPanel } from "@/features/cards/card-panel";
+import { CARD_TITLES, CardPanel } from "@/features/cards/card-panel";
+import { CardStage, StageScores } from "@/features/cards/card-stage";
 import { Dice } from "@/features/dice/dice";
 import { FinalScreen } from "@/features/game/final-screen";
 import { SidePanel } from "@/features/game/side-panel";
@@ -253,16 +254,7 @@ export function OnlineTable(props: OnlineTableProps) {
                 rollCount={rollCount}
               />
 
-              <CardPanel
-                state={state}
-                question={question}
-                challenge={challenge}
-                act={(action) => void act(action)}
-                now={now}
-                names={props.names}
-                /* Partita vera: ogni schermo vede i comandi del posto che guarda. */
-                viewerSeat={props.seat}
-              />
+              {/* La carta non sta più qui: quando c'è, va a tutto schermo (`CardStage`, D-76). */}
             </>
           )}
 
@@ -278,6 +270,41 @@ export function OnlineTable(props: OnlineTableProps) {
           />
         </div>
       </div>
+
+      {/* La carta aperta: schermata piena che blocca il tabellone (D-76). */}
+      {state.card !== null && !finished && (
+        <CardStage
+          label={CARD_TITLES[state.card.type]}
+          head={
+            <>
+              <span className="border border-ink px-2 py-0.5 tracking-[0.15em] uppercase">
+                {props.code} · posto {props.seat}
+              </span>
+              <span className="whitespace-nowrap">
+                Casella {state.players[state.turn].position} ·{" "}
+                {state.turn === props.seat ? "tocca a te" : `tocca a ${props.names[state.turn]}`}
+              </span>
+              {!otherConnected && (
+                <span className="whitespace-nowrap italic">L&apos;altro non è collegato</span>
+              )}
+              <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
+                <StageScores state={state} names={props.names} colors={props.colors} />
+              </span>
+            </>
+          }
+        >
+          <CardPanel
+            state={state}
+            question={question}
+            challenge={challenge}
+            act={(action) => void act(action)}
+            now={now}
+            names={props.names}
+            /* Partita vera: ogni schermo vede i comandi del posto che guarda. */
+            viewerSeat={props.seat}
+          />
+        </CardStage>
+      )}
     </div>
   );
 }

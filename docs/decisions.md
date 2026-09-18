@@ -889,3 +889,27 @@ ciò che sta sopra e a sinistra di circa (47, 41), colore o no.
 reference, 36 sono stati presi come erano; `deep-mirror` e `deep-roots` erano ridisegni delle versioni vecchie —
 quelle che a 48 px erano una «C» e un tavolo — e sono stati rifatti sulle forme nuove; `tastes-guitar` era l'ultimo
 illeggibile (un palloncino) e ha un corpo nuovo, con la vita invece di due cerchi sovrapposti.
+
+### D-76 · L'attività aperta prende tutto lo schermo e blocca il resto
+
+**Su indicazione del proprietario** (2026-09-18). La carta viveva nella colonna di destra, accanto al tabellone.
+Va bene per il dado e per i punteggi, non per un'attività: una domanda o un tris si guardano **in due**, e il
+tabellone di fianco è solo una distrazione. Da qui `src/features/cards/card-stage.tsx`: quando `state.card` non è
+nullo la carta occupa lo schermo (`fixed inset-0`), il tabellone non si vede, e la schermata si chiude da sé quando
+la carta è risolta. Vale nella partita vera e nella hot seat; **non** in `/dev/scenari`, che è un catalogo di 29
+riquadri e li mostra in fila.
+
+Tre cose che questa scelta ha portato con sé:
+
+- **Niente comandi persi.** La carta è autosufficiente: «Salta domanda» è un pulsante dentro la carta della
+  domanda, e gli oggetti attivi si usano solo **prima** del tiro (`ACTIVE_ITEMS`, `preRoll`), quindi mai mentre una
+  carta è aperta. Nascondere il pannello laterale non toglie niente.
+- **La fascia in alto è il contesto che dava il tabellone:** su che casella sei, di chi è il turno, i due punteggi,
+  e nella partita vera la stanza, il posto e se l'altro è collegato. Senza, a schermo pieno si perde il filo.
+- **Il contenitore non si anima.** Una schermata che deve _bloccare_ non può dipendere da un'animazione per essere
+  opaca: se i fotogrammi vengono strozzati (scheda in secondo piano) l'opacità resta a metà e il tabellone si vede
+  attraverso — è successo, misurato a `0.547`. L'ingresso ce l'ha già la carta dentro (D-57); questo strato compare
+  e basta. La regola generale: **l'opacità di uno strato che nasconde non si anima**.
+
+La carta sta al centro dello schermo quando è bassa e scorre dall'inizio quando è più alta (i minigiochi lo sono):
+verificato che a 600, 300 e 200 px di altezza disponibile la cima della carta resta visibile e non viene tagliata.

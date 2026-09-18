@@ -11,7 +11,8 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 3. **Geometria, non decorazione:** il tipo di casella si riconosce dalla forma (vedi tabella).
 4. **Tratto spesso e campiture piene** per le illustrazioni, con le tinte della tavolozza (D-75).
 5. **Una schermata sola** (≥ 1024 × 768, D-16): la partita non fa scorrere la pagina; il tabellone si adatta
-   all'altezza disponibile e, se serve, scorre solo il pannello di destra. Chi ha il turno si riconosce a colpo
+   all'altezza disponibile e, se serve, scorre solo il pannello di destra. Quando si apre una carta, però, la
+   schermata diventa **l'attività**: la carta prende tutto e il tabellone sparisce (D-76). Chi ha il turno si riconosce a colpo
    d'occhio — bordo pieno della riga, pallino pieno del colore del giocatore, etichetta "Tocca a te" — e non dal
    solo colore.
 
