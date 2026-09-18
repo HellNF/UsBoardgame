@@ -108,6 +108,16 @@ segnaposto, basandosi sulla tabella qui sotto.
 - Ogni wrapper React (`src/art/rive/*.tsx`) carica il file con `@rive-app/react-canvas`, espone props tipizzate
   (es. `<Pawn animal="fox" color="red" hop={n} />`) e mostra il segnaposto finché il file non è caricato o se manca.
   I wrapper ci sono: `PawnView`, `DieView`, `CardView`, `MascotView`, `FinaleView` (registro in `src/art/rive/index.ts`).
+- **Dove sono collegati** (D-68): la pedina del tabellone, il dado, la carta e la schermata finale. La pedina disegna
+  il canvas Rive dentro un `foreignObject`, perché dentro un SVG il canvas è HTML e non entra altrimenti. La
+  **mascotte** non è collegata: non ha un posto nell'interfaccia.
+- **In partita il segnaposto è il componente attuale della schermata**: ogni wrapper prende `placeholder`, e le
+  schermate ci passano quello che si vede oggi — il cerchio SVG della pedina, il dado a **pallini** (`DieFace`), la
+  carta con i suoi figli (`placeholder="children"`, perché l'ingresso è già Motion, D-57). I segnaposto disegnati per
+  `/dev/art` restano il **campione della pagina**: servono a guardare il wrapper, non a stare in partita.
+- Nella **schermata finale** il file è un **ornamento**, in uno spazio nuovo in testa alla sezione, e il segnaposto di
+  quello spazio è «niente» (`placeholder="none"`): le tre rivelazioni e le loro frasi restano come sono. Un'animazione
+  decorativa non può mangiare informazione di gioco (D-69).
 - La presenza del file si controlla **una volta per sessione** con una richiesta `HEAD` su `public/rive/<file>`: senza
   file resta il segnaposto e in console compare la riga di rete del 404 (una per file, non un errore dell'app). Sul
   server la risposta è sempre «non c'è», così il primo disegno è il segnaposto e non si disallinea l'idratazione.

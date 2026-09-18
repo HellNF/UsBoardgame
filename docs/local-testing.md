@@ -1000,3 +1000,118 @@ interpreta il markdown; ora è un `<code>`.
 La correzione del contratto di `docs/design.md` è giusta: `winner` non può essere un trigger, perché un ingresso che
 scatta non porta un valore. **Non verificabile da qui:** che il wrapper prenda il file, perché i `.riv` non esistono —
 è la prova tua, al primo export.
+
+---
+
+## Registro · Pacchetto H (i due disegni, i wrapper collegati, il generatore da seme) — branch `hermes/h-rifiniture`
+
+Prima di iniziare: **nessuna migrazione**, niente `pnpm db:reset` — questo pacchetto non tocca il database. Tutto
+quello che si guarda sta in `pnpm dev`.
+
+### H1 · I due disegni a 48 px (chiude F6-02)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/art>.
+2. Guarda `deep-roots` e `deep-mirror` **a 48 px** — la colonna di sinistra di ogni riga è la misura vera (una casella
+   del tabellone), quella a 200 px a destra serve solo a vedere i dettagli. Meglio ancora: ingrandisci i 48 px, che è
+   come li ho giudicati io.
+3. Atteso per **`deep-roots`**: un pezzo di terra **in sezione** — la terra è una campitura piena in alto, sotto
+   scendono **quattro radici** di lunghezze diverse, spesse dove nascono e sottili in punta, con molto spazio di
+   carta fra una e l'altra. Non deve più leggersi un omino: niente blocchetto sopra la terra (era il tronco, e con
+   due tratti simmetrici sotto diventava una persona con le gambe aperte), niente tratteggio (a 48 px un tratto da
+   2,5 unità è sotto il minimo di 3 di `design.md`).
+4. Atteso per **`deep-mirror`**: uno specchio **a mano** visto di fronte — ovale **più alto che largo**, cornice
+   spessa, **manico corto e largo** in basso (un manico lungo fa la racchetta) e, dentro, il **riflesso**: una fascia
+   diagonale di carta su fondo di inchiostro. Fra cornice e fondo c'è una fascia di carta di 4 unità: due inchiostri
+   a contatto si fondono in una macchia (D-65).
+5. Poi guardali **sul tabellone**, che è dove vivono: `/dev/hotseat`, casella 81 per le radici e 10 per lo specchio
+   (oppure usa il campo «Il giocatore di turno va alla casella» fra gli strumenti di prova).
+
+**Esito (Hermes):** sette giri di lavoro, ognuno rasterizzato **a 48 px veri** (Chrome via CDP, `deviceScaleFactor:
+1`, poi ingrandito ×8 a blocchi) e riguardato anche a 200 px. **Due giri buttati**, e questo è il punto: il primo
+tentativo delle radici era un ventaglio di quattro cunei appuntiti sotto una campitura — a 48 px si leggeva come una
+fila di denti o di artigli; il secondo aveva le basi delle radici quasi a contatto e diventava una **frangia sola**
+(si leggeva «tenda»); il terzo, con tre radici parallele di lunghezza simile, tornava a leggersi come **gambe**. La
+versione buona ha quattro radici con almeno 8 unità di carta fra le basi e l'assottigliamento a gradini da 11 a 3,5
+unità con la punta tonda (un cuneo appuntito sotto un pieno è un dente). Per lo specchio: il primo tentativo era un
+ovale quasi **circolare**, e un cerchio con un manico sotto è un lecca-lecca. Il mio verdetto a 48 px: le radici si
+leggono, lo specchio si legge. **Il tuo occhio vale più del mio:** se a 48 px vedi ancora un omino, dimmelo e lo
+rifaccio (ma dimmi anche cosa deve sembrare a chi guarda).
+
+### H2 · I wrapper collegati: non deve cambiare niente (F6-04, F6-05)
+
+Il wrapper di ogni asset Rive esisteva dal pacchetto G ma non era chiamato da nessuna schermata. Ora la pedina del
+tabellone, il dado, la carta e la schermata finale lo usano. **La regola da verificare è una sola: finché i `.riv`
+mancano, non deve cambiare niente di quello che si vedeva prima.**
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/hotseat>.
+2. **Pedina**: sul tabellone le due pedine sono ancora il **cerchio colorato con il numero del posto** (1 e 2), non
+   più e non meno di prima. Il nome resta nell'etichetta accessibile della pedina.
+3. **Dado**: accanto a «Tira i dadi» ci sono due dadi **a pallini** (la faccia 1 quando non si è ancora tirato), non
+   un numero dentro un quadrato. Tira: i pallini tornano con la faccia giusta. È la differenza fra il dado della
+   partita e il campione di `/dev/art`, e il dado a pallini è quello che resta.
+4. **Carta**: apri una carta qualsiasi (tira e vai su una casella domanda, o usa gli strumenti di prova in fondo al
+   pannello). L'ingresso è **quello di prima** (la cornice entra con Motion, D-57): non c'è nessun mezzo giro in CSS.
+5. **Finale**: `/dev/scenari`, in fondo (o arriva alla fine in hot seat). La schermata è **identica al pixel**: le tre
+   rivelazioni scrivono le loro frasi («Sapientone», «Campione», il nome di chi vince, e «nessuno: stesse risposte
+   giuste» quando è pari). Sopra il titolo c'è uno **spazio vuoto**: è l'ornamento di `finale.riv`, che oggi non c'è.
+6. **Console**: finché i `.riv` mancano c'è **una riga di rete per file** (`GET /rive/pawns.riv`, `dice.riv`,
+   `card.riv`, `finale.riv` → 404): è il browser che registra la sonda, non un errore dell'applicazione. Nessun
+   `canvas` in pagina.
+7. **Quando esporti il primo `.riv`**: mettilo in `public/rive/` col nome esatto (`pawns.riv`, `dice.riv`,
+   `card.riv`, `mascots.riv`, `finale.riv`) e ricarica. Il segnaposto deve **sparire da solo** e comparire il disegno
+   Rive, senza toccare il codice. Se un `.riv` c'è ma è sbagliato (artboard o state machine con un altro nome) il
+   wrapper _non_ ha niente da mostrare: è il caso da guardare per primo.
+
+**Esito (Hermes):** verificato il 2026-09-18 **per differenza**, che è il modo giusto di provare «non deve cambiare
+niente»: con il codice nuovo e poi con `git stash` (H2 tolto dal disco) ho scattato gli stessi ritagli di
+`/dev/hotseat` e `/dev/scenari` e li ho confrontati pixel per pixel. **Tabellone, riga dei dadi e schermata finale
+identici al byte**: 0 pixel diversi su 365.600, 25.664 e 233.940; il markup della carta identico all'md5 (1.813
+byte); **zero** elementi `canvas` in pagina e una sola sonda `HEAD` per file per sessione. **Non verificabile da
+qui:** il passo 7 (i `.riv` non esistono) e la pedina dentro il `foreignObject`, che è l'unico pezzo che cambia
+aspetto quando il file arriva.
+
+### H3 · Il generatore di disposizioni da seme (F7-02)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/disposizioni>.
+2. Sul campo in alto scrivi un seme (per esempio `7`) e premi «Guarda»: sotto il titolo compaiono **cinque**
+   tabelloni — quello chiesto e i quattro semi fissi (1, 2, 3, 4). Il link «torna ai quattro semi fissi» rimette
+   tutto come prima.
+3. **Stesso seme, stessa disposizione**: ricarica la pagina (Ctrl+R). Lettura, semi, scale, serpenti e decorazioni
+   restano **identici**, alla stessa casella. Prova a scrivere un seme diverso: il tabellone cambia.
+4. **I vincoli**, da controllare sui numeri stampati accanto a ogni tabellone: **7 scale** che salgono, **6 serpenti**
+   che scendono, nessuna casella che sia estremo di due cose, niente che parta o arrivi sulla 1 o sulla 100, nessuna
+   testa di serpente fra la 2 e la 12. Le 100 caselle hanno la stessa distribuzione di tipi della `classic` (35
+   domande, 12 sfide, 10 imprevisti, 10 monete, 3 stelle, 28 libere).
+5. **Le decorazioni** (D-65, il difetto che hai corretto a mano sulla 23 e sulla 26): devono stare **solo** su caselle
+   libere che nessuna scala e nessun serpente attraversa. È il punto in cui serve il tuo occhio: guarda il disco, la
+   falce, il colle, il rombo di ogni tabellone e cerca un incrocio.
+6. **Nessuna decorazione a contatto con il nero**: sulle caselle sfida (nere piene) i numeri sono bianchi e le scale
+   passano sopra; se vedi una decorazione che si tocca con un'altra forma nera piena, è un difetto da segnalare.
+7. **La partita non cambia**: la disposizione di una serata resta `classic`. Questa pagina non ha effetti sul gioco.
+
+**Esito (Hermes):** verificato il 2026-09-18 in due modi. **Con i test**: 17 prove nuove in
+`src/engine/board-generator.test.ts` (determinazione, distribuzione di tipi **contata dalla `classic`**, monete metà
+guadagni e metà perdite, scale che salgono, serpenti che scendono, estremi tutti diversi, niente sulla 1 e sulla 100,
+nessuna testa fra la 2 e la 12, `validateBoard` verde su dodici semi, decorazioni solo su caselle libere non
+attraversate, disco su due caselle attaccate, errore chiaro quando i disegni non bastano). `pnpm check` verde: 377
+prove su 35 file. **Con una misura a parte su 200 semi**: nessuna disposizione non valida, quattro decorazioni in 198
+casi, tre in uno e due in uno — e in un caso una sola casella libera decorabile, che è la regola (D-65) che vince sul
+numero di decorazioni. **Guardato a schermo**: `/dev/disposizioni` risponde 200, quattro tabelloni, zero `canvas`,
+riepiloghi coerenti coi numeri stampati. **Un difetto trovato e corretto proprio guardando questa pagina:** React
+segnalava un disallineamento di idratazione in console sui tabelloni generati (`Math.hypot` e `Math.sin` non danno a
+Node e al browser gli stessi ultimi bit, quindi un `cx` differiva nell'ultima cifra); ora i punti si arrotondano a due
+decimali e gli angoli a uno, e ricaricando la pagina **non resta nessun messaggio in console** (D-71). **Non
+verificato da me:** i tempi in millisecondi (non ce ne sono in questa pagina) e l'aspetto dei tabelloni generati **in
+partita**, che non è previsto.
+
+### Note su come sono state fatte queste prove
+
+- **Il confronto prima/dopo di H2** è la prova che vale: `git stash` del pacchetto, ricarica, scatti sugli stessi
+  ritagli, `git stash pop`, e poi differenza pixel per pixel (`ffmpeg`, `blend=all_mode=difference`). Se un giorno
+  rifai questa prova: **la carta va confrontata sul markup, non sui pixel**, perché i timer degli scenari ripartono a
+  ogni caricamento e sfasano il disegno.
+- **I 48 px di H1** non si guardano ingrandendo la schermata: vanno rasterizzati a 48 px veri (una casella del
+  tabellone) e poi ingranditi a blocchi. Ingrandire la pagina cambia la misura e fa sembrare leggibile quello che a 48
+  px non lo è.
+- Le pagine `/dev` (compresa `/dev/disposizioni`) esistono in sviluppo e rispondono **404 in produzione** (D-43): si
+  verifica con `pnpm build` e `pnpm start`.
