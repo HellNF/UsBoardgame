@@ -32,7 +32,7 @@ begin
     returning id into v_game;
 
   -- Primo pronto: la serata resta in lobby (manca il pronto dell'altro posto).
-  v_row := public.set_lobby_ready(v_game, 1, true, false, v_state);
+  v_row := public.set_lobby_ready(v_game, 1::smallint, true, false, v_state);
   if v_row.status <> 'lobby' or v_row.state is not null then
     raise exception 'il pronto del posto 1 ha fatto partire la serata: %', v_row.status;
   end if;
@@ -42,7 +42,7 @@ begin
   raise notice 'ok: il primo pronto lascia la serata in lobby (ready = %)', v_row.ready;
 
   -- Secondo pronto: parte adesso, nella stessa transazione, con lo stato iniziale.
-  v_row := public.set_lobby_ready(v_game, 2, true, false, v_state);
+  v_row := public.set_lobby_ready(v_game, 2::smallint, true, false, v_state);
   if v_row.status <> 'playing' then
     raise exception 'con entrambi pronti la serata è rimasta in %', v_row.status;
   end if;
@@ -54,15 +54,15 @@ begin
   -- Con la scheda incompleta si passa da `sheets` (D-28).
   update public.games set status = 'lobby', state = null, version = 0, ready = '{}'::jsonb
    where id = v_game;
-  v_row := public.set_lobby_ready(v_game, 1, true, true, v_state);
-  v_row := public.set_lobby_ready(v_game, 2, true, true, v_state);
+  v_row := public.set_lobby_ready(v_game, 1::smallint, true, true, v_state);
+  v_row := public.set_lobby_ready(v_game, 2::smallint, true, true, v_state);
   if v_row.status <> 'sheets' then
     raise exception 'con una scheda incompleta lo stato è % invece di sheets', v_row.status;
   end if;
   raise notice 'ok: con una scheda incompleta entrambi pronti portano a sheets (D-28)';
 
   -- Serata già partita: un altro pronto non cambia niente e non solleva errori.
-  v_row := public.set_lobby_ready(v_game, 1, false, false, v_state);
+  v_row := public.set_lobby_ready(v_game, 1::smallint, false, false, v_state);
   if v_row.id is not null then
     raise exception 'un pronto su una serata avviata ha aggiornato la riga: %', v_row.status;
   end if;

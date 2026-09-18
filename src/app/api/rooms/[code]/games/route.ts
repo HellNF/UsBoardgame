@@ -97,10 +97,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/rooms/[code
         await saveSettings(admin, game.id, action.settings as GameSettings);
       }
 
-      if (action.action === "ready") {
-        if (game.status !== "lobby") {
-          return Response.json({ error: "La serata è già cominciata." }, { status: 409 });
-        }
+      if (action.action === "ready" && game.status === "lobby") {
         // Il pronto e l'eventuale avvio stanno in una sola transazione (D-53): due clic
         // quasi simultanei non si perdono e il secondo arrivato riceve la fase giusta.
         const progress = await sheetsProgress(admin, roomRow.id);
@@ -113,6 +110,9 @@ export async function POST(request: Request, ctx: RouteContext<"/api/rooms/[code
           initialStateFor(settings),
         );
       }
+      // Se la serata è già partita il pronto non è un errore (D-53): la finestra che arriva
+      // seconda, o che ripreme il pulsante prima di accorgersi della fase nuova, riceve lo
+      // stato fresco e la schermata giusta invece di un 409 rosso.
 
       if (action.action === "start") {
         // "Gioca lo stesso": si parte anche con una scheda incompleta (D-28). Idempotente:
