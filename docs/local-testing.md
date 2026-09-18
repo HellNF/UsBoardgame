@@ -1176,7 +1176,11 @@ quello che si guarda sta in `pnpm dev`. **Nessuna disposizione è congelata**: i
 6. `npx vitest run src/engine/board-geometry.test.ts src/engine/board-generator.test.ts` → verdi. Fra le prove:
    «non si decora mai una casella di bordo» e il conto delle caselle decorabili.
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus). `isBorderCell` fa il suo lavoro: su **40 semi, zero** decorazioni su
+una casella di bordo. La correzione dichiarata sulla prova («al massimo quattro, almeno una») è giusta e va
+accettata: il bordo toglie 36 caselle dalle candidate, quindi «esattamente quattro» non era più una proprietà del
+generatore ma un caso fortunato. `classic` non è stata toccata perché le sue tre decorazioni erano già interne —
+le avevo spostate io con la stessa misura.
 
 ### I2 · Il budget di leggibilità (F7-02)
 
@@ -1196,7 +1200,19 @@ quello che si guarda sta in `pnpm dev`. **Nessuna disposizione è congelata**: i
    incroci è la manopola.
 5. `npx vitest run src/engine/board-readability.test.ts src/engine/board-generator.test.ts` → verdi.
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus), e il budget **si vede**. Guardati i semi 1, 2 e 3 a schermo: il
+groviglio del pacchetto H — quattro o cinque scale intrecciate intorno alle caselle 27-34-46-47 — non c'è più, e ogni
+scala si segue dall'inizio alla fine. I tetti 6 e 2 restano come sono: nessun seme si ferma sotto 7 scale e 6
+serpenti, quindi la severità non costa niente. Sul confronto con la `classic`: ha ragione la misura, non l'occhio —
+17 caselle sfiorate contro 6 — e va bene che i generati siano **più ordinati** dell'originale, perché dietro un
+tabellone generato non c'è nessuno che guarda.
+
+**Difetto nuovo, trovato guardando** (ed è la parte che tocca a me): molte scale generate salgono di **una sola
+fila** e si leggono come **sbarre orizzontali**, non come salite. Misurata l'inclinazione sull'orizzontale: nella
+`classic` la linea più piatta è **18°** (la scala 51→67), mentre il generatore arriva a **8°** e mette il **17%**
+delle scale sotto i 20° (48 su 280, su 40 semi). Vale anche per i serpenti: la `classic` non scende sotto 18°, i
+generati sì (11°, 14°). La soglia è scritta in `docs/design.md` § Tabellone; il vincolo manca al generatore ed è
+lavoro di Hermes.
 
 ### I3 · Congelare una disposizione (F7-03, la parte meccanica)
 
@@ -1216,7 +1232,10 @@ quello che si guarda sta in `pnpm dev`. **Nessuna disposizione è congelata**: i
 7. Per togliere una congelata: cancella il file e rilancia `pnpm board:freeze` su un altro seme (o rigenera l'elenco
    con `pnpm check` che te lo chiede).
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus). `/dev/disposizioni` risponde 200 e la sezione «Disposizioni
+congelate» dice «Nessuna per ora», che è giusto: i semi e i nomi li scelgo io, ed è il prossimo pezzo della mia
+coda. Il rifiuto di sovrascrivere è la decisione giusta ed è la stessa regola che vale per un tabellone
+pubblicato: una volta uscito, non cambia più (vedi l'esito di I4 per la conseguenza sui dati).
 
 ### I4 · La mascotte: niente da provare, solo da approvare
 
@@ -1226,7 +1245,17 @@ lo stesso della pedina) e che la **mappa evento → mood** (la tabella in D-74) 
 muovono gli stessi `GameEvent[]` delle animazioni e non è mai l'unico canale di un'informazione (D-69). Si applica
 il giorno in cui disegni `mascots.riv`.
 
-**Esito:** _
+**Esito:** approvata il 2026-09-18 (Opus), con il posto deciso — la domanda era giusta. Il pannello di destra
+ospita dadi, carta e pannello laterale, e a carta aperta non c'è spazio per un riquadro in più. La mascotte quindi
+non va in un riquadro suo ma **nella riga del giocatore** di `SidePanel` (`PlayerRow`), accanto al pallino del
+colore e al nome, piccola (28-32 px): è dove l'identità del giocatore sta già, si vede sempre — carta aperta o no —
+e non costa impaginazione. Una per posto, e il `mood` di ognuna segue gli eventi di quel posto.
+
+Sulla conseguenza nei dati di D-73, la risposta è: sulla riga della partita va **solo l'id**, e un tabellone
+pubblicato è **immutabile** — se deve cambiare, prende un id nuovo (`classic-2`). Copiare cento caselle di JSON su
+ogni serata duplica i dati per difendersi da una cosa che possiamo semplicemente vietare, ed è la regola 7 di
+AGENTS.md («id dei contenuti stabili») estesa ai tabelloni. Il rifiuto di sovrascrivere di `board:freeze` è già
+quella regola, scritta nello script.
 
 ### Note su come sono state fatte queste prove
 
