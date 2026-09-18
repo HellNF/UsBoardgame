@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { defaultBoardId } from "@/content/boards";
 import { createInitialState, RULES, type GameSettings, type GameState } from "@/engine";
+import { OPEN_GAME_STATUSES } from "@/server/game/game-status";
 
 /**
  * Lobby della serata (F2-02): impostazioni, pronto dei due posti, avvio della partita e
@@ -45,8 +46,8 @@ export const DEFAULT_SETTINGS: GameSettings = {
   colors: { 1: "red", 2: "blue" },
 };
 
-/** Stati della serata in cui la lobby ha senso. */
-const OPEN_STATUSES = ["lobby", "sheets", "playing"];
+/** Stati della serata in cui la lobby ha senso (F1: gli stessi di `game-status`). */
+const OPEN_STATUSES = OPEN_GAME_STATUSES;
 
 /** Il pronto di un posto, senza toccare quello dell'altro. */
 export function toggleReady(

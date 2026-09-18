@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { GameSettings } from "@/engine";
+import { phaseOf, statusOnNewGame, type GameStatus } from "@/server/game/game-status";
 import {
   DEFAULT_SETTINGS,
   applyReady,
@@ -76,8 +77,20 @@ export async function POST(request: Request, ctx: RouteContext<"/api/rooms/[code
     const action = parsed.data;
 
     if (action.action === "new") {
-      // La serata precedente resta in archivio: non si cancella nulla.
-      if (game) await admin.from("games").update({ status: "abandoned" }).eq("id", game.id);
+      // La serata precedente resta in archivio: non si cancella nulla. Solo una partita
+      // **non conclusa** diventa `abandoned`; una conclusa resta `finished` e quindi in
+      // «Partite passate» (F1, `statusOnNewGame`). La condizione sullo stato viaggia
+      // nell'update: se la partita finisce fra la lettura e questa riga, non la tocchiamo.
+      if (game) {
+        const next = statusOnNewGame(game.status as GameStatus, phaseOf(game.state));
+        if (next !== game.status) {
+          // Una serata che si archivia adesso (riga scritta prima di D-61) ha bisogno anche della
+          // data: è quella che l'archivio del diario mostra. L'orologio è quello del server.
+          const patch =
+            next === "finished" ? { status: next, finished_at: new Date().toISOString() } : { status: next };
+          await admin.from("games").update(patch).eq("id", game.id).eq("status", game.status);
+        }
+      }
       game = await createLobbyGame(admin, roomRow.id, DEFAULT_SETTINGS);
     } else {
       if (!game) {

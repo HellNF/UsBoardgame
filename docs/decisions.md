@@ -324,12 +324,13 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
       doppia conferma, che è già dove si dichiara), ma va deciso se la pausa deve fermare anche il conto.
 - [ ] Tentativi di accesso: il contatore del ritardo è in memoria del processo (D-50); se il sito diventasse
       pubblico va spostato su Postgres (una tabella di tentativi per stanza).
-- [ ] **L'archivio delle partite non si riempie mai.** Nessuno scrive `status = 'finished'`: quando il motore
-      arriva alla fine la riga resta `playing` (e va bene per la schermata finale, che si riapre anche
-      rientrando), ma `findFinishedGames` cerca `status = 'finished'`, quindi «Partite passate» nel diario resta
-      vuoto; e con «Nuova partita» la serata conclusa diventa `abandoned`, cioè non torna più. Si chiude
-      portando la partita a `finished` (con `finished_at`) nella stessa transazione dell'azione che la conclude,
-      dentro `apply_game_action`. Trovato in locale il 2026-09-18 (F5-06).
+- [x] **L'archivio delle partite non si riempie mai.** Nessuno scriveva `status = 'finished'`: quando il motore
+      arrivava alla fine la riga restava `playing` (e andava bene per la schermata finale, che si riapre anche
+      rientrando), ma `findFinishedGames` cerca `status = 'finished'`, quindi «Partite passate» nel diario restava
+      vuoto; e con «Nuova partita» la serata conclusa diventava `abandoned`, cioè non tornava più. Trovato in
+      locale il 2026-09-18 (F5-06). **Chiuso dal pacchetto F (D-61):** `apply_game_action` porta la partita a
+      `finished` con `finished_at` nella stessa transazione dell'azione che la conclude, e «Nuova partita»
+      abbandona solo una serata non conclusa. La verifica in locale è la voce F1 del Registro.
 
 ---
 
@@ -558,3 +559,24 @@ riflessi compaiono dopo l'idratazione (`useHydrated` in `src/features/cards/use-
 _Perché:_ `Date.now()` nel primo disegno vale un secondo sul server e un altro nel browser, quindi React buttava
 via l'albero appena idratato con «Hydration failed because the server rendered text didn't match the client» —
 un errore in console a ogni caricamento con una carta a tempo aperta.
+
+---
+
+## L'archivio e l'estetica (pacchetto F)
+
+### D-61 · La serata conclusa entra nell'archivio, nella transazione dell'azione
+
+**Derivata, trovata in locale (F5-06).** Quando lo stato applicato ha `phase = "finished"`, `apply_game_action`
+scrive anche `status = 'finished'` e `finished_at = now()` (migrazione `20260918130000_finish_game.sql`): una sola
+transazione, come vuole D-52. Nessun secondo `update` dal lato TypeScript, che potrebbe lasciare la riga con lo
+stato salvato e l'archivio no. Solo una partita **non conclusa** diventa `abandoned` con «Nuova partita»
+(`statusOnNewGame` in `src/server/game/game-status.ts`, con la condizione dello stato anche nell'`update`, così
+una partita che finisce fra la lettura e la scrittura non viene toccata).
+La decisione è scritta anche in TypeScript, pura e provata (`statusAfterAction`, `isConcludedGame`,
+`statusOnNewGame`): è la stessa regola, come `readyOutcome` per la lobby (D-53).
+_Perché:_ con la riga ferma a `playing` l'archivio del diario restava vuoto per sempre e una serata giocata fino
+in fondo spariva; portare a `finished` la riga **senza** data avrebbe lasciato «Partite passate» senza la sua
+data, e farlo da fuori avrebbe aperto la finestra in cui lo stato è salvato ma l'archivio no.
+_Effetto collaterale accettato:_ dopo la fine, rientrando nella pagina della partita non si riapre più la
+schermata finale (la riga non è più aperta): si arriva al diario, dove la serata è nell'archivio. È la voce F1
+del Registro, da guardare in locale.

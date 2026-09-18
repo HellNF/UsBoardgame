@@ -217,7 +217,7 @@ Dopo la fase 3: **prima serata giocabile**.
   plurale giusto («1 stella · 17 monete · 3 risposte giuste») e il pulsante che scopre le stelle una alla volta.
   L'assegnazione delle stelle bonus è già stata guardata nella hot seat; online non era giudicabile perché lo
   stato finale l'ho forzato a mano (voce F5-05 del Registro).
-- [~] **F5-06** Diario della serata e archivio delle partite.
+- [L] **F5-06** Diario della serata e archivio delle partite.
   Nota: la vista è in `src/features/diary` (momenti della serata + archivio) e si vede in `/dev/ui` su dati
   finti; la lettura del diario dal database è del pacchetto D.
   Dal pacchetto D: la pagina `/r/[code]/diary` legge i momenti da `game_events` con `src/server/diary/read-diary.ts`
@@ -228,9 +228,11 @@ Dopo la fase 3: **prima serata giocabile**.
   Verificato in locale il 2026-09-18 sulla partita vera: testo della domanda, nome della sfida, monete col segno e
   la provenienza, nessuna riga a zero. Corretto qui un difetto: una prova non riuscita era scritta «Vinta: +0
   monete» e attribuita al giudice (D-59).
-  **Resta aperto l'archivio:** nessuno scrive mai `status = 'finished'`, quindi «Partite passate» non si riempie
-  mai, e una serata conclusa diventa `abandoned` quando se ne comincia un'altra — così non torna più. La
-  rilettura dei testi a voce resta del proprietario (voce F5-06 del Registro).
+  L'**archivio** è del pacchetto F: `apply_game_action` porta la partita a `finished` con `finished_at` nella
+  stessa transazione dell'azione che la conclude, e «Nuova serata» abbandona solo una partita non conclusa
+  (D-61, migrazione `20260918130000_finish_game.sql`, regole pure in `src/server/game/game-status.ts`,
+  controlli SQL in `supabase/tests/finish_game.sql`).
+  Da verificare in locale con la voce F1 del Registro; la rilettura dei testi a voce resta del proprietario.
 
 ## Fase 6 · Illustrazioni — _estetica finale_ (in parallelo)
 

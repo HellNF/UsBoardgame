@@ -702,3 +702,54 @@ prove qui sopra).
   riuscita, attribuendola al giudice (D-59); la riga di attesa del quiz diceva «muovere» ed era scritta a mano
   nella carta invece di venire da `waitingLine`; il timer della carta faceva un errore di idratazione a ogni
   caricamento (D-60).
+
+---
+
+## Registro · Pacchetto F (l'archivio, le pedine dei minigiochi, le illustrazioni) — branch `hermes/f-archivio-e-arte`
+
+Prima di iniziare, due cose che valgono per tutte le voci:
+
+- **c'è una migrazione nuova**: `supabase/migrations/20260918130000_finish_game.sql`. `pnpm db:reset` la applica;
+  dopo il reset lancia `pnpm db:types` e committa il file se `git diff --stat` non è vuoto (la funzione di prima
+  resta la stessa, quindi i tipi **non** dovrebbero cambiare: è un controllo).
+- i ponti senza database sono `/dev/scenari` (le carte rare) e la nuova `/dev/art` (illustrazioni e segnaposto
+  Rive): tutte e due **404 in produzione** (D-43).
+
+### F1 · La serata conclusa entra nell'archivio (D-61)
+
+**Il controllo veloce (un minuto, senza giocare):** incolla `supabase/tests/finish_game.sql` nel SQL editor di
+Studio ed eseguilo → tutti i NOTICE `ok:` e nessun ERROR (chiude con `ROLLBACK`, non lascia righe). Sette
+controlli: l'azione normale non tocca la riga, il conflitto di versione non conclude niente, l'azione finale
+scrive `finished` e `finished_at` insieme, dopo la conclusione la stanza può cominciarne una nuova, «Nuova
+partita» non abbandona una serata conclusa, la riparazione archivia le righe vecchie.
+
+Poi la prova a occhio, che è quella che conta:
+
+1. `pnpm db:reset && pnpm dev`, stanza di prova, due finestre (normale + incognito), posto 1 e posto 2, partita
+   avviata.
+2. **Arriva in fondo senza giocare due ore.** In Studio:
+   `update public.games set state = jsonb_set(jsonb_set(state, '{players,1,position}', '98'), '{players,2,position}', '97') where status = 'playing';`
+   Poi in partita tira i dadi con il posto 1 (la 98 più il dado supera la 100: conta come arrivo) e lasciate
+   finire il round.
+3. Atteso: la schermata finale si apre in entrambe le finestre e la serata si chiude.
+4. In Studio: `select id, status, finished_at from public.games order by created_at;` → la serata appena finita ha
+   `status = finished` e `finished_at` valorizzato (prima restava `playing` con la data vuota).
+   **Nota sulle serate già giocate:** la migrazione archivia da sé le righe rimaste `playing` con lo stato
+   `phase = "finished"` (partite finite prima di questo pacchetto). Dopo `pnpm db:reset` controlla
+   `select created_at, status, finished_at from public.games;`: quelle righe sono `finished` e la data è
+   l'istante della migrazione (quella vera non esiste da nessuna parte).
+5. Apri `/r/COPPIA42/diary`: «Partite passate» mostra la serata conclusa con data, vincitore, stelle e monete
+   dei due posti.
+6. **La parte che conta:** premi «Nuova serata» in lobby (crea la partita nuova), poi ricarica il diario e in
+   Studio `select created_at, status from public.games order by created_at;` → la serata conclusa è **ancora**
+   `finished` e sta ancora in «Partite passate»; solo la partita nuova è `lobby`. Prima la vecchia diventava
+   `abandoned` e spariva per sempre.
+7. Prova anche la pagina della partita sulla serata conclusa (`/r/COPPIA42/game`): la riga non è più aperta,
+   quindi si finisce in lobby (o nel diario) e **non** si riapre la schermata finale. È il prezzo dichiarato in
+   D-61: se la schermata finale deve restare raggiungibile, va aggiunto un collegamento dal diario.
+8. Due turni in una serata **non** conclusa e poi «Nuova serata»: quella partita diventa `abandoned` (è il
+   comportamento di prima, che resta giusto: non era finita).
+9. `npx vitest run src/server/game/game-status.test.ts` → verde (le regole pure: fase → stato della riga, e
+   «Nuova partita» che abbandona solo una serata non conclusa).
+
+**Esito:** _
