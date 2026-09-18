@@ -4,10 +4,12 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 
 ## Principi
 
-1. **Bianco e nero puro.** Carta `#F2F2F0`, inchiostro `#1A1A1A`. Nessun grigio, nessuna ombra, nessun gradiente.
-2. **Il colore è solo dei giocatori:** gettone della pedina, evidenziazione del turno e punteggi. Mai sul tabellone.
+1. **Bianco e nero per il gioco.** Carta `#F2F2F0`, inchiostro `#1A1A1A`. Nessun grigio, nessuna ombra, nessun gradiente.
+2. **Il colore dei giocatori è solo dei giocatori:** gettone della pedina, evidenziazione del turno e punteggi. Le
+   **illustrazioni** hanno una tavolozza propria, fissa e piatta (D-68): il tabellone è colorato dai disegni, non
+   dalle pedine.
 3. **Geometria, non decorazione:** il tipo di casella si riconosce dalla forma (vedi tabella).
-4. **Tratto spesso e campiture nere** per le illustrazioni, come le stampe della reference.
+4. **Tratto spesso e campiture piene** per le illustrazioni, con le tinte della tavolozza (D-68).
 5. **Una schermata sola** (≥ 1024 × 768, D-16): la partita non fa scorrere la pagina; il tabellone si adatta
    all'altezza disponibile e, se serve, scorre solo il pannello di destra. Chi ha il turno si riconosce a colpo
    d'occhio — bordo pieno della riga, pallino pieno del colore del giocatore, etichetta "Tocca a te" — e non dal
@@ -69,6 +71,9 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   1000 × 1000, una casella 100).
 - Tratto `strokeWidth` 5,5, `strokeLinecap="round"`, `strokeLinejoin="round"`; almeno una campitura piena per
   illustrazione. Nessun testo dentro gli SVG.
+- **Tinte piatte dalla tavolozza delle illustrazioni** (D-68): i token `--color-art-*` in `src/app/globals.css`
+  (crema, ambra, rosso, blu, cielo, verde, bosco, marrone, terracotta, verde acqua, sabbia, navy). Il contorno resta
+  `currentColor` (inchiostro): il disegno si legge anche senza colore. Niente sfumature, nessun grigio.
 - Leggibili a 48 px: niente dettagli sotto le 3 unità.
 - Prodotto (F6-02): **38 disegni**, 35 per le domande (7 per categoria) e 3 stelle. Le decorazioni multi-cella
   non sono file: sono le forme di `decorations` disegnate nel tabellone.

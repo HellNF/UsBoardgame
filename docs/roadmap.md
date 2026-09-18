@@ -261,8 +261,11 @@ Dopo la fase 3: **prima serata giocabile**.
   e la pagina `/dev/art` (48 px e 200 px, 404 in produzione); il tabellone li usa al posto delle iniziali e le 35
   caselle domanda hanno 35 disegni diversi. Dal pacchetto G le **decorazioni** multi-cella sono forme piene
   (`disc`, `crescent`, `hill`, `diamond` in `board.tsx`, scelte in `src/content/boards/classic.ts`, D-65) e i tre
-  disegni che a 48 px non si leggevano (`deep-mirror`, `deep-roots`, `memories-phone`) sono rifatti. Verificato in
-  locale il 2026-09-18, decorazioni e tre disegni compresi; resta l'occhio del proprietario (voci G1 e G2 del Registro).
+  disegni che a 48 px non si leggevano (`deep-mirror`, `deep-roots`, `memories-phone`) sono rifatti. Dal pacchetto G
+  le illustrazioni sono anche **a colori**, sulla tavolozza `--color-art-*` di `globals.css` e sulle forme del
+  riferimento del proprietario (D-68: `docs/design.md` § Principi cambia — il bianco e nero resta per il gioco, le
+  illustrazioni hanno la loro tavolozza). Verificato in locale il 2026-09-18, decorazioni, disegni e colori compresi;
+  resta l'occhio del proprietario (voci G1, G2 e G5 del Registro).
 - [L] **F6-03** Scale e serpenti definitivi (montanti e pioli, corpo a macchie, testa con occhio).
   Nota: fatti nel pacchetto F (macchie, occhio, lingua, coda che si assottiglia; scale con montanti e pioli
   bianchi bordati di nero), con `geometry.test.ts`. Verificato in locale il 2026-09-18: si leggono anche sopra le

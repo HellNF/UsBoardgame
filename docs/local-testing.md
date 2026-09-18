@@ -959,3 +959,24 @@ timer nella scheda guidata da qui, come nel pacchetto E): l'ordine è verificato
 `canvas` in pagina (nessun `.riv` caricato) e la sonda fa una richiesta per file (`pawns`, `dice`, `card`, `mascots`,
 `finale` → tutte 404). Il comportamento dei wrapper **con** il file non è verificabile senza i file: la prova è tua,
 appena esporti il primo `.riv`.
+
+### G5 · Le illustrazioni a colori (D-68)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/art>: tutti e 38 i disegni sono **a colori**, tinte piatte e contorno
+   in inchiostro. Sono ridisegnati sulle forme del riferimento mandato dal proprietario.
+2. Guardali **a 48 px** (la colonna di sinistra): è la misura vera in casella. I tre che secondo me restano i più
+   deboli sono `funny-sock`, `tastes-guitar` e `deep-mirror` — gli altri trentacinque si leggono.
+3. Poi il tabellone, che è il punto che conta: `/dev/hotseat`. Atteso: le caselle domanda portano i disegni colorati
+   dentro il tondo di carta; il resto (sfide, imprevisti, monete, stelle, decorazioni, scale, serpenti) resta bianco
+   e nero; le pedine dei giocatori restano i gettoni col numero e si riconoscono ancora a colpo d'occhio.
+4. Se una tinta non ti convince, si cambia **un token** in `src/app/globals.css` (`--color-art-*`) e cambiano tutti i
+   disegni che la usano: la più diffusa è `--color-art-amber`.
+5. In produzione `/dev/art` resta **404**, come le altre pagine `/dev` (D-43).
+
+**Esito:** i 38 disegni ridisegnati, guardati tutti insieme in un foglio di contatto (7 colonne a 132 px) e i più
+deboli ingranditi a 48 px; tre rifatti dopo il primo giro (`memories-phone` leggeva come una fotocamera,
+`funny-toothbrush` come un gancio, `tastes-guitar` come un banjo). `pnpm check` verde (360 prove) e `pnpm build`
+verde.
+**Non guardato da me:** il tabellone (il punto 3), cioè il pezzo che si vede di più: la resa in casella, con scale e
+serpenti che passano sopra, la giudichi tu. **Non verificato:** nessun test nuovo (le illustrazioni sono disegno puro:
+`npx vitest run src/art` tiene il registro d'accordo con la disposizione).

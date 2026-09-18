@@ -403,3 +403,27 @@ documentazione. Nessuna migrazione: il pacchetto non tocca il database, quindi n
     effetto sul segnaposto**: è voluto (il segnaposto è fermo per contratto, `docs/design.md`);
   - la lista dei `.riv` è un contratto scritto in due posti (`src/art/rive/files.ts` e la tabella di
     `docs/design.md`): se cambi un nome, vanno cambiati tutti e due (e la voce del Registro).
+
+## Pacchetto G · le illustrazioni a colori — 2026-09-18
+
+Stesso branch `hermes/g-estetica`, richiesta del proprietario dopo aver visto il primo foglio di contatto: il
+riferimento mandato sono i 38 disegni **a colori** ("voglio che tu le faccia identiche se non ancora migliori").
+Chiude il pezzo che nel pacchetto G si era fermato al bianco e nero.
+
+- **Fatto:** tutte e 38 le illustrazioni ridisegnate sulle forme del riferimento, con **tinte piatte** e contorno
+  in inchiostro. La tavolozza è nuova e sta in un posto solo: i token `--color-art-*` in `src/app/globals.css`
+  (crema `#F7F1E3`, ambra `#F2B23C`, rosso `#E8483A`, navy `#1E2A38`, blu `#3E7CB1`, cielo `#A8CFE0`, verde
+  `#3E8E4E`, bosco `#1F6B3A`, marrone `#A9662F`, terracotta `#C4683C`, verde acqua `#2E7D74`, sabbia `#E6DCC2`),
+  presa a campione dal riferimento. `docs/design.md` § Principi cambia di conseguenza (D-68): il bianco e nero
+  resta per il gioco, le illustrazioni hanno la loro tavolozza, la pedina del giocatore resta l'unico colore che
+  si muove.
+- **Verificato da me:** `pnpm check` verde (360 prove, `tsc` e `eslint` puliti), `pnpm build` verde, `/dev/art`
+  con tutti e 38 i disegni alle due misure, foglio di contatto a 7 colonne guardato a 132 px e i più deboli
+  ingranditi a 48 px (tre rifatti dopo il primo giro: `memories-phone`, `funny-toothbrush`, `tastes-guitar`).
+- **Non verificato da me:** la resa **sulla casella** del tabellone (48 px dentro il tondo di carta, con scale e
+  serpenti che passano sopra): è la voce del Registro, si guarda in `/dev/hotseat`.
+- **Da decidere al proprietario:** i tre disegni che secondo me restano i più deboli (`funny-sock`,
+  `tastes-guitar`, `deep-mirror`) e la tavolozza (se una tinta disturba si cambia il token e cambiano tutte).
+- **Limiti noti:** i disegni sono ricostruiti **a occhio** dal riferimento (JPEG a ~165 px per icona): i dettagli
+  sotto le 3 unità sono leggibili nel riferimento e invisibili a 48 px, quindi dove servivano li ho semplificati.
+  Nessun test nuovo: le illustrazioni sono disegno puro (`npx vitest run src/art` tiene il registro d'accordo).

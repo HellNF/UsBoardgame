@@ -661,3 +661,28 @@ Una correzione al contratto di `docs/design.md`: l'ingresso `winner` di `finale.
 I segnaposto si guardano tutti insieme in fondo a `/dev/art`. Non hanno test: il progetto non ha un
 ambiente DOM per i componenti (`vitest` gira in `node` e include solo `*.test.ts`), quindi la prova è
 la pagina.
+
+### D-68 · Le illustrazioni hanno una tavolozza propria (il tabellone si colora)
+
+**Derivata, su indicazione del proprietario.** Il riferimento mandato dal proprietario sono i 38 disegni **a
+colori**, tinte piatte e contorno nero: «voglio che tu le faccia identiche se non ancora migliori». Le regole di
+`docs/design.md` § Principi dicevano «bianco e nero puro» e «il colore è solo dei giocatori, mai sul tabellone»:
+cambiano qui, perché è il proprietario a decidere l'estetica e la richiesta è esplicita.
+
+Cosa cambia e cosa no:
+
+- le **illustrazioni** hanno una tavolozza fissa di tinte piatte, i token `--color-art-*` in `src/app/globals.css`
+  (crema, ambra, rosso, blu, cielo, verde, bosco, marrone, terracotta, verde acqua, sabbia, navy). Niente
+  sfumature, niente grigi;
+- il **contorno** resta `currentColor` (inchiostro) e spesso: il disegno si legge anche senza colore;
+- il resto del tabellone non cambia: caselle, sfide, imprevisti, monete, stelle, decorazioni, scale e serpenti
+  restano bianchi e neri, e la **pedina del giocatore** resta l'unico colore che si muove — quattro tinte forti,
+  più i gettoni e i punteggi;
+- le illustrazioni sono disegnate **sulla reference del proprietario**, forma per forma: dove la reference è
+  ambigua a 48 px il disegno è semplificato dichiarandolo nel rapporto.
+
+`specs.md` (le specifiche originali) non si modifica: la sua regola sul bianco e nero è superata da questa voce,
+come dice `docs/README.md`.
+
+**Conseguenza da tenere d'occhio:** con 38 disegni colorati il tabellone è più vivo, quindi la pedina deve restare
+riconoscibile a colpo d'occhio. Se non lo fosse, la leva è la tavolozza (tinte più basse), non il disegno.
