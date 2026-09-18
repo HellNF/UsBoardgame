@@ -156,7 +156,9 @@ risposta **data** dal giocatore, che serve all'altro per giudicare.
   prima bastava conoscere l'id della stanza per iscriversi e vedere la presenza (i dati di gioco no, li filtrava già
   la RLS delle tabelle). Sul canale passano **anche** le mosse e gli eventi, quindi la policy va provata con due
   sessioni vere: se è troppo stretta non si perde la presenza, si ferma la partita a distanza (Registro J3 di
-  [local-testing.md](local-testing.md)).
+  [local-testing.md](local-testing.md)). **Dal pacchetto K la prova è uno script**, `pnpm check:realtime`: crea una
+  stanza usa e getta, fa giocare una mossa vera e guarda se arriva all'altro posto, poi pulisce — è la prova da
+  rilanciare ogni volta che si tocca la RLS o il canale.
 - **Riconnessione:** al caricamento di qualsiasi pagina della stanza il client legge la partita aperta
   (`status in lobby | sheets | playing`) e va alla schermata della fase. Nessuno stato importante vive solo nel browser.
 - **Stato della serata** (`games.status`): `lobby` → `sheets` (se una scheda è incompleta) → `playing` → `finished`.

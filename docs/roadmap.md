@@ -64,6 +64,9 @@ Dopo la fase 3: **prima serata giocabile**.
   **Da riallineare (pacchetto J, D-78):** il tabellone sul remoto è quello pubblicato **prima** che le decorazioni
   della `classic` fossero spostate, quindi non è più uguale al file locale. Il primo `pnpm content:push` con la
   regola nuova si fermerà su `classic` e dirà cosa fare; la sequenza proposta è nel log del pacchetto J.
+  **Prima di una serata vera:** `pnpm check:ready` (pacchetto K) risponde in un comando alle sei domande che finora
+  erano sei verifiche a mano di questo Registro — migrazioni, accesso anonimo, contenuti, stanza, RLS, canale —
+  con il rimedio sotto ogni riga rossa e `pnpm check:realtime` per l'ultima.
 
 ## Fase 1 · Tabellone — _partita completa su un solo schermo_
 
@@ -129,7 +132,7 @@ Dopo la fase 3: **prima serata giocabile**.
       `players.last_seen_at` si aggiorna a ogni caricamento di pagina della stanza (lato server).
       **Dal pacchetto J (D-79)** il canale è **privato**: si iscrive solo chi ha una sessione in quella stanza (due
       policy su `realtime.messages`), e sul canale passano anche mosse ed eventi — per questo la verifica in locale
-      con due sessioni vere guarda tutte e due le cose (voce J3 del Registro).
+      guarda tutte e due le cose. **Dal pacchetto K la verifica è uno script**: `pnpm check:realtime` (D-80).
 - [~] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
   Nota: dal pacchetto E il percorso della pedina è **cella per cella** (`src/features/board/route.ts`: un saltello
   per ogni casella, gradino per gradino sulle scale, lungo il corpo sui serpenti) e gli eventi di spostamento si
@@ -340,12 +343,17 @@ Dopo la fase 3: **prima serata giocabile**.
   Nota: la **metà meccanica** è fatta (pacchetto I). `pnpm board:freeze <seme> <nome>` scrive
   `src/content/boards/<nome>.ts` con la disposizione **intera come dato** — caselle, scale, serpenti, decorazioni —
   e riscrive `src/content/boards/frozen.ts`, l'elenco; una disposizione congelata **non si rigenera più**, nemmeno
-  se il generatore cambia (D-73), e lo script rifiuta di sovrascrivere un file che esiste. Le congelate le validano
-  gli stessi test della `classic` (`boards.test.ts` gira su `boards` e su `frozenBoards`) e si guardano in
-  `/dev/disposizioni`, sezione «Disposizioni congelate»; **non entrano in gioco da sole**: `boards` resta la
-  `classic`. Manca la **decisione** — quali disposizioni entrano e come si chiamano; i semi e i nomi sono del
-  proprietario e nel repository non ne è congelata nessuna — e con essa la conseguenza sui dati: il tabellone usato
-  va salvato **sulla riga della partita** (oggi la riga ha l'id in `games.settings.boardId`, ma il contenuto si
-  legge da `public.boards`, D-73), altrimenti il diario di una serata passata non si può più ridisegnare. La
-  migrazione non è di questo pacchetto. 17 prove in `scripts/lib/board-freeze.test.ts`.
+  se il generatore cambia (D-73), e lo script rifiuta di sovrascrivere un file che esiste (e dal pacchetto K rifiuta
+  anche un nome che comincia con `-`, che è quasi sempre un flag scritto male). Le congelate le validano gli stessi
+  test della `classic` (`boards.test.ts` gira su `boards` e su `frozenBoards`) e si guardano in `/dev/disposizioni`,
+  sezione «Disposizioni congelate».
+  **Dal pacchetto K (D-77) entrano in lobby**: `boards` è `[classic, ...frozenBoards]`, quindi congelare una
+  disposizione è quello che la fa offrire — in fila dopo la `classica`, che resta quella preselezionata — e la riga
+  «Disposizione» compare solo quando c'è più di una scelta. La lobby offre **solo le disposizioni pubblicate**
+  (`pnpm content:seed` + `db:reset` in locale, `pnpm content:push` sul remoto): una congelata che non è nel
+  database non si può giocare, e `pnpm check:ready` dice quante ne mancano. Il tabellone usato resta scritto
+  **sulla riga della partita** (`games.settings.boardId`) e si legge per id da `public.boards`, quindi una serata
+  vecchia continua a ridisegnare il suo anche se la disposizione esce dall'elenco offerto (D-77, D-78).
+  Manca la **decisione** — quali disposizioni entrano e come si chiamano: i semi e i nomi sono del proprietario e
+  nel repository non ne è congelata nessuna. 17 prove in `scripts/lib/board-freeze.test.ts`.
 - [ ] **F7-04** Bilanciamento dopo le prime partite (solo `RULES` e contenuti).
