@@ -17,10 +17,12 @@ import {
   type PlayerColor,
   type QuestionCategory,
   type QuestionLevel,
+  type QuizItem,
   type Seat,
 } from "@/engine";
 import {
   asDrawnQuestion,
+  drawAttempts,
   fallbackCategories,
   selectChallenge,
   selectQuestion,
@@ -170,6 +172,8 @@ export async function loadChallenges(admin: SupabaseClient, categories: string[]
     },
     snakeFlash: row.data.snakeFlash === true,
     minigame: (row.data.minigame as MinigameId | undefined) ?? null,
+    // Le domande del quiz-lampo vivono nel `data` della carta (contenuto pubblico, non la scheda).
+    quiz: Array.isArray(row.data.quiz) ? (row.data.quiz as QuizItem[]) : null,
   }));
 }
 
@@ -263,33 +267,53 @@ export async function buildEngineContext({ admin, game, seat }: BuildContextInpu
 
   const randomInt = (max: number): number => cryptoRandomInt(max);
 
+  /** Le `short` di una categoria si possono giudicare senza scheda: le giudica l'interrogato. */
+  const shortIds = questions.filter((question) => question.kind === "short").map((question) => question.id);
+
   const drawQuestion = (req: {
     category: QuestionCategory;
     maxLevel: QuestionLevel;
     knowMeOnly: boolean;
   }): DrawnQuestion => {
-    const register = req.knowMeOnly ? usedBySeat : usedOpen;
-    // La categoria della casella può essere esaurita: si prova con le altre (D-30).
-    for (const category of [req.category, ...fallbackCategories(req.category)]) {
-      const result = selectQuestion({
-        candidates: questions,
-        category,
-        maxLevel: req.maxLevel,
-        knowMeOnly: req.knowMeOnly,
-        used: [...register],
-        answerable,
-        randomInt,
-      });
-      if (!result.ok) continue;
+    /**
+     * Un tentativo su tutte le categorie: quella della casella e poi le altre, perché la
+     * categoria della casella può essere esaurita (D-30). Il registro delle domande già
+     * uscite è quello del sottoinsieme provato: per posto le "quanto mi conosci", per coppia
+     * le aperte.
+     */
+    const tryAll = (knowMeOnly: boolean, answerableIds: readonly string[]): DrawnQuestion | null => {
+      const register = knowMeOnly ? usedBySeat : usedOpen;
+      for (const category of [req.category, ...fallbackCategories(req.category)]) {
+        const result = selectQuestion({
+          candidates: questions,
+          category,
+          maxLevel: req.maxLevel,
+          knowMeOnly,
+          used: [...register],
+          answerable: answerableIds,
+          randomInt,
+        });
+        if (!result.ok) continue;
 
-      if (result.exhausted) {
-        resets.push({ roomId: game.room_id, seat: req.knowMeOnly ? seat : null });
-        register.clear();
+        if (result.exhausted) {
+          resets.push({ roomId: game.room_id, seat: knowMeOnly ? seat : null });
+          register.clear();
+        }
+        register.add(result.question.id);
+        drawn.push({ questionId: result.question.id, seat: knowMeOnly ? seat : null });
+        return asDrawnQuestion(result.question);
       }
-      register.add(result.question.id);
-      drawn.push({ questionId: result.question.id, seat: req.knowMeOnly ? seat : null });
-      return asDrawnQuestion(result.question);
+      return null;
+    };
+
+    // L'ordine dei tentativi è una regola pura (D-58): la richiesta del motore e, se non c'è
+    // niente di pescabile, i due ripieghi. Serve davvero con «Gioca lo stesso» e le schede
+    // vuote (D-28), dove prima una casella "quanto mi conosci" fermava il turno con un errore.
+    for (const attempt of drawAttempts({ knowMeOnly: req.knowMeOnly, answerable, shortIds })) {
+      const question = tryAll(attempt.knowMeOnly, attempt.answerable);
+      if (question) return question;
     }
+
     throw new Error(
       "Nessuna domanda pescabile: controlla che i contenuti siano nel database (`pnpm db:reset`).",
     );

@@ -306,17 +306,30 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
       serpenti con l'alone del colore della carta, quindi la stella della casella 15 resta visibile e la scala
       8→26 non è stata spostata.
 - [ ] Revisione delle ~150 domande (task F3-04).
-- [ ] Carte di gioco per due schermi: `CardPanel` è ancora quella della hot seat e mostra a entrambi i comandi di
-      tutti e due i posti (chi guarda vede il campo di risposta dell'altro). Il server rifiuta comunque le azioni
-      non proprie, quindi è un problema di chiarezza, non di sicurezza: va passato il posto di chi guarda.
+- [x] Carte di gioco per due schermi: **chiusa dal pacchetto E** (D-56). `CardPanel` riceve il posto di chi guarda:
+      l'altro non vede più il campo di risposta, ma una riga di attesa che dice cosa sta facendo. Il server
+      rifiutava già le azioni non proprie (403), quindi era un problema di chiarezza, non di sicurezza.
 - [ ] Presenza non protetta: chi conosce l'id di una stanza può iscriversi al suo canale e vedere la presenza
       (i dati di gioco no, li filtra RLS). Si chiude con i canali privati e RLS su `realtime.messages`.
-- [ ] `pnpm db:start` non arriva in fondo: il container dei log (`vector`) non diventa "healthy". Per ora si parte
-      con `pnpm exec supabase start -x vector,logflare`; da decidere se spegnere `[analytics]` in `config.toml`.
-- [ ] Il diario mostra l'id della domanda invece del testo, e registra anche le monete a zero.
+- [x] `pnpm db:start` non arrivava in fondo (il container dei log `vector` non diventa "healthy"):
+      **chiusa il 2026-09-17** con `[analytics] enabled = false` in `supabase/config.toml` (commit `d7658fe`).
+- [x] Il diario mostrava l'id della domanda invece del testo e registrava le monete a zero: **chiusa dal pacchetto
+      E** (D-54 e F5-06).
 - [ ] Valori esatti di verde bosco e ocra (proposta in `globals.css`, da validare accanto alla reference).
+- [ ] Le risposte giuste del quiz-lampo viaggiano nello stato (D-55): chi guarda gli strumenti per sviluppatori del
+      browser le vede. Per una partita fra due persone che si fidano va bene; se dovesse dare fastidio, il
+      confronto va spostato sul server come per le domande a scelta multipla.
+- [ ] La pausa della sfida esterna (F4-05) non ferma il timer della carta: se si va a giocare fuori il tempo
+      scorre e la sfida può scadere mentre non si guarda. Per i duelli non è un guaio (alla scadenza si passa alla
+      doppia conferma, che è già dove si dichiara), ma va deciso se la pausa deve fermare anche il conto.
 - [ ] Tentativi di accesso: il contatore del ritardo è in memoria del processo (D-50); se il sito diventasse
       pubblico va spostato su Postgres (una tabella di tentativi per stanza).
+- [ ] **L'archivio delle partite non si riempie mai.** Nessuno scrive `status = 'finished'`: quando il motore
+      arriva alla fine la riga resta `playing` (e va bene per la schermata finale, che si riapre anche
+      rientrando), ma `findFinishedGames` cerca `status = 'finished'`, quindi «Partite passate» nel diario resta
+      vuoto; e con «Nuova partita» la serata conclusa diventa `abandoned`, cioè non torna più. Si chiude
+      portando la partita a `finished` (con `finished_at`) nella stessa transazione dell'azione che la conclude,
+      dentro `apply_game_action`. Trovato in locale il 2026-09-18 (F5-06).
 
 ---
 
@@ -330,6 +343,9 @@ conosce ancora, quindi una carta `automatic` con un minigioco inesistente romper
 dichiarano entrambi il punteggio, come per le sfide esterne.
 _Perché:_ meglio una carta giocabile subito che una carta che si rompe; quando F4-04 registra i due moduli basta
 cambiare verdetto e `minigame` in `src/content/challenges.ts`.
+
+**Superata da D-55 (pacchetto E):** i due moduli esistono, le carte sono `automatic` con `minigame` `quiz` e
+`reflex`, e nessuno dichiara più il risultato.
 
 _Nota di numerazione:_ questa voce è stata scritta sul branch `hermes/b-content`, partito da `main`; le decisioni
 D-31…D-40 arrivano dal branch `hermes/a-engine` (pacchetto A). Al merge dei due branch l'ordine dei numeri resta
@@ -434,3 +450,111 @@ cattura inoltre le eccezioni e risponde 500 **con un messaggio**: un 500 dal cor
 mostrare.
 _Perché:_ con il controllo sbagliato il secondo di due clic simultanei riceveva un 500 vuoto invece del `409` con
 lo stato fresco, e la UI non si riallineava — cioè proprio il caso per cui esiste la concorrenza ottimistica (D-23).
+
+---
+
+## La partita su due schermi (pacchetto E)
+
+### D-53 · La lobby passa da una transazione: il pronto è una sola istruzione
+
+**Derivata, dalla verifica in locale del pacchetto D.** Il passaggio "pronto → si parte" leggeva `games.ready`, lo
+modificava in memoria e lo riscriveva, e l'avvio chiudeva con `.single()`. Con due clic quasi simultanei (uno per
+posto) il secondo poteva riscrivere un `ready` vecchio — serata ferma in lobby con entrambi pronti — oppure
+ricevere un 500 perché non c'era più la riga da aggiornare.
+
+Ora il pronto è una funzione SQL (`public.set_lobby_ready`, migrazione `20260918120000_lobby_atomic.sql`): scrive
+`ready` sulla riga letta in quella stessa istruzione e, se con questo pronto sono pronti tutti e due, porta la
+serata a `sheets` o `playing` con lo stato iniziale **nella stessa transazione**. `public.start_lobby_game`
+("Gioca lo stesso") è idempotente: se la serata è già partita ritorna la riga com'è, quindi la seconda chiamata non
+è più un errore. La regola è scritta anche in TypeScript (`readyOutcome` in `src/server/room/lobby.ts`) e provata
+con la doppia chiamata; `supabase/tests/lobby.sql` la prova sul database.
+_Perché:_ due clic quasi simultanei sono il caso normale di due persone che premono "Sono pronto" insieme, e la
+regola deve stare in un posto solo (il database) invece che fra due letture e una scrittura.
+
+### D-54 · Nel diario il testo della domanda viene dal catalogo nel bundle
+
+**Derivata.** Il diario scriveva l'id (`Domanda deep-004`) e il nome della sfida solo per id. Ora `read-diary.ts`
+prende i testi da `src/content/questions` e i nomi da `src/content/challenges`: è la stessa scelta già fatta dalle
+carte (`online-table`), e non serve nessuna query in più. Una domanda fuori catalogo resta leggibile
+(`Domanda tastes-999`) invece di sparire.
+_Perché:_ alternativa era una join su `questions` a ogni lettura del diario (una query in più per una tabella che
+il server già conosce), con il rischio di mostrare il testo aggiornato in produzione e quello vecchio in partita;
+dal bundle il testo è **esattamente** quello che si è letto in partita.
+
+### D-55 · Quiz-lampo e riflessi sono minigiochi a tempo del motore
+
+**Derivata, su indicazione del proprietario (F4-04).** `quiz-lampo` e `riflessi` non sono più duelli a doppia
+conferma (D-41 è superata): sono `automatic` con i minigiochi `quiz` e `reflex`.
+
+- **Quiz-lampo:** le domande stanno **nella carta** (`quiz` in `src/content/challenges.ts`), sono contenuto
+  pubblico e non la scheda, quindi la risposta giusta può vivere nello stato senza svelare niente a nessuno. Una
+  risposta ciascuno per domanda, a turno; un punto per risposta giusta; chi ne ha di più vince, il pareggio
+  riapre la sfida.
+- **Riflessi:** il momento del segnale lo decide il modulo con l'orologio del server e vive nello stato
+  (`goAt`), quindi è lo stesso per le due schermate; il primo che tocca prende il punto e chi tocca **prima** del
+  segnale regala il punto all'altro; si gioca al meglio di cinque (`RULES.minigames.reflex`).
+
+Per questo i moduli ricevono l'orologio (`MinigameClock`) e `turn` può valere `"both"` (nei riflessi possono muovere
+entrambi): il reducer e le carte seguono quel valore invece di dare per scontato un turno.
+_Perché:_ "a tempo" con due schermi richiede che il tempo sia uno solo e deciso dal server, come i timer delle
+sfide (D-25); un modulo che legge l'orologio da sé darebbe due gare diverse.
+
+### D-56 · La carta sa chi la guarda: `viewerSeat`
+
+**Derivata, su indicazione del proprietario (F3-03, F4-02, F4-06, F5-05).** `CardPanel` riceve il posto di chi
+guarda: chi guarda vede i comandi suoi, l'altro legge una riga di attesa che dice cosa sta facendo l'altro
+(«Marta sta scrivendo la risposta…», «Leo sta giudicando…», «Tocca a Marta muovere»). Nella hot seat e nella pagina
+degli scenari il valore è `"all"` e i comandi si vedono tutti, come prima; `/dev/scenari` ha un interruttore per
+guardare la stessa carta dal posto 1, dal posto 2 o da tutti e due, così le due viste si controllano senza
+database. Le regole stanno in `src/features/cards/viewer.ts`, pure e provate; i componenti delle carte non le
+ripetono.
+Non è una regola di sicurezza (il server risponde comunque 403 alle azioni dell'altro posto e 422 a chi gioca fuori
+turno): è chiarezza — nessuno deve vedere il campo di risposta dell'altro.
+_Perché:_ due schermi con i comandi di tutti e due i posti sono illeggibili; la visibilità è una regola di UI e va
+scritta una volta sola, in una funzione che si può provare.
+
+### D-57 · Animazioni: cella per cella, e un movimento per volta in coda
+
+**Derivata, su indicazione del proprietario (F2-05).** Il percorso della pedina è una funzione pura
+(`src/features/board/route.ts`): un saltello per **ogni casella attraversata**, gradino per gradino sulle scale,
+lungo il corpo sui serpenti. Gli eventi di spostamento si accodano (`src/features/board/use-move-queue.ts`) e si
+animano **in ordine**, uno per volta, per la durata del proprio percorso: una sola azione può portarne due (il
+tiro e poi la scala) e dal tempo reale possono arrivare due righe insieme, e in nessuno dei due casi si perde
+un'animazione o si torna indietro. Anche l'ingresso delle carte è un'animazione (la cornice entra quando cambia la
+carta, non a ogni ritocco).
+_Perché:_ il tabellone non deve tenere stato proprio — la strada della pedina la sa chi possiede gli eventi — e con
+una coda l'ordine non dipende dai tempi della rete.
+
+### D-58 · Se una "quanto mi conosci" non è pescabile si ripiega, non si rompe il turno
+
+**Derivata, trovata in locale (F3-01, pacchetto E).** `drawQuestion` prova nell'ordine
+(`drawAttempts` in `src/server/game/question-draw.ts`, puro e provato):
+
+1. la richiesta del motore, con il vincolo della scheda (D-28: una "quanto mi conosci" si pesca solo se
+   l'interrogato ha risposto);
+2. una "quanto mi conosci" **breve** anche senza risposta in scheda — il verdetto lo dà l'interrogato a voce, la
+   scheda non serve, e così la domanda può ancora far salire una scala (D-07);
+3. una domanda **aperta**, come dice `rules.md` § Domande ("se il sottoinsieme scelto è vuoto si usa l'altro").
+
+_Perché:_ con «Gioca lo stesso» e le schede vuote (D-28) la prima strada non trova niente in **nessuna** categoria,
+e prima il turno finiva con un 500 («Nessuna domanda pescabile»): la partita si fermava lì. Il ripiego sulle brevi
+viene prima di quello sulle aperte perché una scala persa cambia la partita, e una breve si gioca comunque.
+
+### D-59 · L'esito della sfida sta nell'evento: `won`
+
+**Derivata, trovata in locale (F5-06, pacchetto E).** `CHALLENGE_RESOLVED` porta anche `won`: `seat` è il posto **a
+favore del quale** si è deciso, `won` dice se quel posto ha davvero vinto. In una prova giudicata "non riuscita" il
+verdetto va all'altro posto ma nessuno ha vinto. Il diario usa i due campi insieme: il momento è di chi ha provato
+(non del giudice) e il testo è «Prova non riuscita: nessun premio (giudizio)». Una vittoria senza monete (la sfida
+lampo del serpente) dice «nessun premio in monete», non «+0 monete» (D-54).
+_Perché:_ dal solo `seat` il diario raccontava una vittoria che non c'era stata, attribuita anche alla persona
+sbagliata. Le righe già in `game_events` non hanno il campo: lì il diario resta come prima, senza errori.
+
+### D-60 · Quello che dipende dall'orologio si disegna solo nel browser
+
+**Derivata, trovata in locale (F2-05, F4-04, pacchetto E).** Il tempo che manca di una sfida e il segnale dei
+riflessi compaiono dopo l'idratazione (`useHydrated` in `src/features/cards/use-hydrated.ts`, che è
+`useSyncExternalStore` e non un `setState` in un effetto: quella strada la vieta `react-hooks/set-state-in-effect`).
+_Perché:_ `Date.now()` nel primo disegno vale un secondo sul server e un altro nel browser, quindi React buttava
+via l'albero appena idratato con «Hydration failed because the server rendered text didn't match the client» —
+un errore in console a ogni caricamento con una carta a tempo aperta.

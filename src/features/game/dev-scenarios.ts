@@ -28,6 +28,8 @@ export type Scenario = {
   state: GameState;
   /** Secondi che mancano alla scadenza: il timer parte quando si apre la pagina. */
   deadlineSeconds?: number;
+  /** Solo per i riflessi: fra quanti secondi arriva il segnale (il resto lo fa il motore). */
+  signalSeconds?: number;
   /** Solo per la schermata finale: stelle bonus già calcolate (null in pareggio). */
   bonus?: { knowItAll: Seat | null; champion: Seat | null };
 };
@@ -116,6 +118,7 @@ function challengeCard(
   const found = challenges.find((challenge) => challenge.id === challengeId);
   if (!found) throw new Error(`Scenario: sfida sconosciuta \`${challengeId}\`.`);
   const minigameId = (found.minigame as MinigameId | undefined) ?? null;
+  const quiz = found.quiz ?? null;
   return {
     type: "challenge",
     challengeId: found.id,
@@ -129,11 +132,20 @@ function challengeCard(
     disputed: false,
     minigameId,
     minigame: minigameId
-      ? MINIGAMES[minigameId].init({ randomInt: scriptedRandomInt(), firstSeat: 1 })
+      ? MINIGAMES[minigameId].init({
+          ...SCENARIO_CLOCK,
+          randomInt: scriptedRandomInt(),
+          firstSeat: 1,
+          content: quiz,
+        })
       : null,
+    quiz,
     ...overrides,
   };
 }
+
+/** Orologio fisso degli scenari: i minigiochi a tempo partono sempre dallo stesso istante. */
+const SCENARIO_CLOCK = { now: new Date("2026-09-17T21:00:00.000Z") };
 
 /** Carta imprevisto: l'id è fissato, la pesca a caso non serve. */
 const eventCard = (eventId: EventCardId): Extract<ActiveCard, { type: "event" }> => ({
@@ -332,6 +344,29 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "sfida-quiz-lampo",
+    title: "Sfida a tempo · quiz-lampo",
+    description:
+      "Cinque domande a turno: chi risponde giusto prende un punto, alla fine la sfida si chiude da sola e paga il premio (F4-04). Prova anche «Guarda come posto 2»: risponde l'altro.",
+    deadlineSeconds: 120,
+    state: scenarioState({
+      card: challengeCard("quiz-lampo"),
+      players: { 1: player(1, 14), 2: player(2, 9) },
+    }),
+  },
+  {
+    id: "sfida-riflessi",
+    title: "Sfida a tempo · riflessi",
+    description:
+      "Il segnale arriva dopo pochi secondi: chi tocca dopo prende il punto, chi tocca prima lo regala all'altro. Al meglio di cinque (F4-04).",
+    deadlineSeconds: 120,
+    signalSeconds: 4,
+    state: scenarioState({
+      card: challengeCard("riflessi"),
+      players: { 1: player(1, 14), 2: player(2, 9) },
+    }),
+  },
+  {
     id: "sfida-prova-giudizio",
     title: "Sfida prova a giudizio",
     description:
@@ -450,6 +485,14 @@ export function startState(scenario: Scenario): GameState {
   const copy = structuredClone(scenario.state);
   if (scenario.deadlineSeconds !== undefined && copy.card?.type === "challenge") {
     copy.card.deadlineAt = new Date(Date.now() + scenario.deadlineSeconds * 1000).toISOString();
+  }
+  // I riflessi: il segnale parte poco dopo l'apertura, così si vede anche l'attesa.
+  if (
+    scenario.signalSeconds !== undefined &&
+    copy.card?.type === "challenge" &&
+    copy.card.minigame?.kind === "reflex"
+  ) {
+    copy.card.minigame.goAt = new Date(Date.now() + scenario.signalSeconds * 1000).toISOString();
   }
   return copy;
 }

@@ -1,7 +1,7 @@
 "use client";
 
+import { motion } from "motion/react";
 import type * as React from "react";
-import { otherSeat } from "@/engine";
 import type { Action, ActiveCard, GameState, Seat } from "@/engine";
 import type { ChallengeContent, QuestionContent } from "@/content/schema";
 import { ChallengeCard } from "./challenge-card";
@@ -9,6 +9,7 @@ import { EventCard } from "./event-card";
 import { ItemOverflowCard } from "./item-overflow-card";
 import { QuestionCard } from "./question-card";
 import { StarOfferCard } from "./star-offer-card";
+import { cardActor, type Actor, type Viewer } from "./viewer";
 
 /** Manda un'azione al motore: la cabla il contenitore della partita. */
 export type CardAct = (action: Action) => void;
@@ -23,7 +24,28 @@ export type CardPanelProps = {
   /** Adesso in millisecondi epoch, aggiornato ogni secondo dal chiamante. */
   now: number;
   names: Record<Seat, string>;
+  /**
+   * Il posto di chi guarda questa carta: in una partita vera ognuno vede i comandi suoi,
+   * nella hot seat e negli scenari `"all"` (li vedono tutti e due, comportamento di prima).
+   */
+  viewerSeat: Viewer;
 };
+
+/** Identità della carta: l'ingresso si ripete quando cambia la carta, non a ogni ritocco. */
+function cardKey(card: ActiveCard): string {
+  switch (card.type) {
+    case "question":
+      return `question:${card.questionId}`;
+    case "challenge":
+      return `challenge:${card.challengeId}`;
+    case "event":
+      return `event:${card.eventId}`;
+    case "star_offer":
+      return "star_offer";
+    case "item_overflow":
+      return `item_overflow:${card.incoming}`;
+  }
+}
 
 /** Titolo della cornice: il tipo di carta si legge subito. */
 const CARD_TITLES: Record<ActiveCard["type"], string> = {
@@ -46,17 +68,29 @@ export function CardPanel(props: CardPanelProps): React.ReactElement | null {
   const card = state.card;
   if (card === null) return null;
 
-  // In una prova a decidere è l'altro posto: l'intestazione dice chi deve agire.
-  const actor: Seat =
-    card.type === "challenge" && card.verdict === "judge" ? otherSeat(state.turn) : state.turn;
+  // Chi deve agire adesso (in una prova a decidere è l'altro posto): l'intestazione lo dice.
+  const actor: Actor = cardActor(state, card);
   const actorLabel = card.type === "challenge" ? (card.verdict === "judge" ? "Giudica" : "Gioca") : "Tocca a";
 
   return (
-    <section className="border-4 border-ink bg-paper font-sans text-ink" aria-label={CARD_TITLES[card.type]}>
+    <motion.section
+      key={cardKey(card)}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="border-4 border-ink bg-paper font-sans text-ink"
+      aria-label={CARD_TITLES[card.type]}
+    >
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-4 border-ink px-5 py-3">
         <h2 className="font-display text-2xl italic">{CARD_TITLES[card.type]}</h2>
         <p className="text-sm">
-          {actorLabel} <span className={`font-semibold ${SEAT_TEXT[actor]}`}>{names[actor]}</span>
+          {actor === "both" ? (
+            <>Pronti tutti e due: chi tocca per primo</>
+          ) : (
+            <>
+              {actorLabel} <span className={`font-semibold ${SEAT_TEXT[actor]}`}>{names[actor]}</span>
+            </>
+          )}
         </p>
       </header>
       <div className="px-5 py-5">
@@ -72,6 +106,6 @@ export function CardPanel(props: CardPanelProps): React.ReactElement | null {
           <ItemOverflowCard {...props} card={card} />
         )}
       </div>
-    </section>
+    </motion.section>
   );
 }

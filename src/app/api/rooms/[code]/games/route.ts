@@ -3,16 +3,15 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { GameSettings } from "@/engine";
 import {
   DEFAULT_SETTINGS,
+  applyReady,
   createLobbyGame,
   findOpenGame,
+  initialStateFor,
   lobbyActionSchema,
   needsSheets,
-  nextStatus,
-  saveReady,
   saveSettings,
   sheetsProgress,
-  startGame,
-  toggleReady,
+  startLobbyGame,
 } from "@/server/room/lobby";
 import { screenFor } from "@/server/room/join";
 
@@ -98,21 +97,28 @@ export async function POST(request: Request, ctx: RouteContext<"/api/rooms/[code
         await saveSettings(admin, game.id, action.settings as GameSettings);
       }
 
-      if (action.action === "ready") {
-        if (game.status !== "lobby") {
-          return Response.json({ error: "La serata è già cominciata." }, { status: 409 });
-        }
-        const ready = toggleReady((game.ready ?? {}) as Record<string, boolean>, seat, action.ready);
+      if (action.action === "ready" && game.status === "lobby") {
+        // Il pronto e l'eventuale avvio stanno in una sola transazione (D-53): due clic
+        // quasi simultanei non si perdono e il secondo arrivato riceve la fase giusta.
         const progress = await sheetsProgress(admin, roomRow.id);
-        const status = nextStatus(ready, needsSheets(progress));
-        await saveReady(admin, game.id, ready);
-        if (status !== "lobby") await startGame(admin, game.id, settings, status);
+        await applyReady(
+          admin,
+          game.id,
+          seat,
+          action.ready,
+          needsSheets(progress),
+          initialStateFor(settings),
+        );
       }
+      // Se la serata è già partita il pronto non è un errore (D-53): la finestra che arriva
+      // seconda, o che ripreme il pulsante prima di accorgersi della fase nuova, riceve lo
+      // stato fresco e la schermata giusta invece di un 409 rosso.
 
       if (action.action === "start") {
-        // "Gioca lo stesso": si parte anche con una scheda incompleta (D-28).
+        // "Gioca lo stesso": si parte anche con una scheda incompleta (D-28). Idempotente:
+        // se è già partita non è un errore.
         if (game.status === "lobby" || game.status === "sheets") {
-          await startGame(admin, game.id, settings, "playing");
+          await startLobbyGame(admin, game.id, initialStateFor(settings));
         }
       }
     }

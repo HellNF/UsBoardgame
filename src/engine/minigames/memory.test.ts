@@ -6,10 +6,14 @@ import type { MemoryState, MinigameState } from "./types";
  * Memory (docs/rules.md § Sfide, D-26): 12 carte, 6 coppie, chi sbaglia passa la mano.
  */
 
-const init = (randomInt: (max: number) => number = () => 0) =>
-  memory.init({ randomInt, firstSeat: 1 }) as MemoryState;
+/** Orologio finto: i moduli non leggono mai il tempo da soli. */
+const CLOCK = { now: new Date("2026-09-17T21:00:00.000Z"), randomInt: () => 0 };
 
-const move = (state: MinigameState, seat: 1 | 2, index: unknown) => memory.applyMove(state, seat, { index });
+const init = (randomInt: (max: number) => number = () => 0) =>
+  memory.init({ ...CLOCK, randomInt, firstSeat: 1 }) as MemoryState;
+
+const move = (state: MinigameState, seat: 1 | 2, index: unknown) =>
+  memory.applyMove(state, seat, { index }, CLOCK);
 
 const apply = (state: MinigameState, seat: 1 | 2, index: number) => {
   const result = move(state, seat, index);

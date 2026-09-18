@@ -37,6 +37,14 @@ tipizzato da `GameState` in `src/engine/types.ts`.
   ruoli client, eseguibile solo da `service_role`) che in **una sola transazione** aggiorna `games` con
   `where version = <attesa>`, incrementa `version` e inserisce la riga di `game_events` di ogni evento. Se la
   versione non combacia ritorna `null`: la route risponde `409` e il client si riallinea (D-23).
+- **`set_lobby_ready(game_id, seat, ready, sheets_incomplete, new_state)`:** il pronto di un posto, in una sola
+  istruzione: scrive `ready` sulla riga letta in quel momento (quindi il pronto dei due posti non si perde) e, se con
+  questo pronto sono pronti tutti e due, porta la serata a `sheets` o `playing` con lo stato iniziale
+  (`version = 1`) nella stessa transazione (D-53). Su una serata già partita ritorna `null`.
+- **`start_lobby_game(game_id, new_state)`:** porta la serata a `playing` da `lobby` o `sheets`. Idempotente: se è
+  già partita ritorna la riga com'è, quindi la seconda chiamata di «Gioca lo stesso» non è un errore.
+- **`supabase/tests/lobby.sql`:** i controlli della lobby atomica (i due pronti, la scheda incompleta, le due
+  chiamate di avvio). Si esegue nel SQL editor come `supabase/tests/rls.sql` e chiude con `ROLLBACK`.
 - **Domande usate:** quando il sottoinsieme pescabile è esaurito il registro si azzera (D-29). L'azzeramento è
   una cancellazione delle righe di quel sottoinsieme (stanza + posto per le "quanto mi conosci", stanza + righe con
   `seat` nullo per le aperte): il diario non legge `used_questions`, quindi non si perde storia.

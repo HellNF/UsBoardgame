@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Board } from "@/features/board/board";
+import { useMoveQueue } from "@/features/board/use-move-queue";
 import { CardPanel } from "@/features/cards/card-panel";
 import { Dice } from "@/features/dice/dice";
 import { challenges } from "@/content/challenges";
@@ -127,14 +128,8 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
     return null;
   })();
 
-  // Ultimo spostamento per posto, preso dagli eventi: lo usa l'animazione della pedina.
-  const moves = useMemo(() => {
-    const result: Partial<Record<Seat, { from: number; to: number }>> = {};
-    for (const event of events) {
-      if (event.type === "MOVED") result[event.seat] = { from: event.from, to: event.to };
-    }
-    return result;
-  }, [events]);
+  // Un movimento per volta, in ordine: gli eventi possono arrivarne due insieme (F2-05).
+  const moves = useMoveQueue(ctx.board, events);
 
   const finished = state.phase === "finished";
   const canRoll = state.phase === "pre_roll";
@@ -179,6 +174,8 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
               act={act}
               now={now}
               names={names}
+              /* Hot seat: i due giocatori sono davanti allo stesso schermo e vedono tutti i comandi. */
+              viewerSeat="all"
             />
           </>
         )}

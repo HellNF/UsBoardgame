@@ -6,10 +6,13 @@ import type { ConnectFourState, MinigameState } from "./types";
  * Forza 4 (docs/rules.md § Sfide, D-26): la pedina cade sul fondo della colonna.
  */
 
-const init = () => connectFour.init({ randomInt: () => 0, firstSeat: 1 }) as ConnectFourState;
+/** Orologio finto: i moduli non leggono mai il tempo da soli. */
+const CLOCK = { now: new Date("2026-09-17T21:00:00.000Z"), randomInt: () => 0 };
+
+const init = () => connectFour.init({ ...CLOCK, firstSeat: 1 }) as ConnectFourState;
 
 const move = (state: MinigameState, seat: 1 | 2, column: unknown) =>
-  connectFour.applyMove(state, seat, { column });
+  connectFour.applyMove(state, seat, { column }, CLOCK);
 
 const play = (state: ConnectFourState, moves: [1 | 2, number][]): ConnectFourState =>
   moves.reduce((current, [seat, column]) => {

@@ -1,4 +1,4 @@
-import type { MinigameId, MinigameState } from "./minigames/types";
+import type { MinigameId, MinigameState, QuizItem } from "./minigames/types";
 
 /**
  * Contratto del motore di gioco.
@@ -137,6 +137,8 @@ export type ChallengeCard = {
   snakeFlash: boolean;
   /** Minigioco integrato, obbligatorio quando il verdetto è `automatic`. */
   minigame: MinigameId | null;
+  /** Domande del quiz-lampo (solo per il minigioco `quiz`), contenuto pubblico della carta. */
+  quiz?: QuizItem[] | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -221,6 +223,8 @@ export type ActiveCard =
       minigameId: MinigameId | null;
       /** Stato del minigioco integrato (`MinigameState`), quando il verdetto è automatico. */
       minigame: MinigameState | null;
+      /** Domande del quiz-lampo, quando il minigioco è il quiz (contenuto pubblico della carta). */
+      quiz: QuizItem[] | null;
     }
   | { type: "event"; eventId: EventCardId }
   | { type: "star_offer" }
@@ -356,10 +360,17 @@ export type GameEvent =
   | { type: "CHALLENGE_DISPUTED"; seat: null; challengeId: string }
   | {
       type: "CHALLENGE_RESOLVED";
+      /** Chi è dichiarato vincitore (in una prova: il posto a favore del quale si è deciso). */
       seat: Seat | "draw";
       challengeId: string;
       prize: number;
       method: ChallengeResultMethod;
+      /**
+       * Vero se la sfida è stata **vinta** da `seat`. In una prova giudicata "non riuscita" il
+       * verdetto va all'altro posto ma nessuno ha vinto: senza questo campo il diario
+       * raccontava una vittoria che non c'è stata (D-59).
+       */
+      won: boolean;
     }
   | { type: "CHALLENGE_REMATCH"; seat: null; challengeId: string; deadlineAt: string | null }
   | { type: "TIMER_EXPIRED"; seat: null; challengeId: string; outcome: TimeoutOutcome }

@@ -456,14 +456,17 @@ ricordo da rileggere non va); e compare una voce «+0 monete», che non è un mo
 
 ### Prima di chiudere un pacchetto · `/dev/scenari` e `/dev/hotseat` restano vivi
 
-1. `pnpm dev`: <http://localhost:3000/dev/scenari> → 25 riquadri, carte vive, nessun errore in console;
-   <http://localhost:3000/dev/hotseat> → la partita in hot seat si apre e si gioca.
+1. `pnpm dev`: <http://localhost:3000/dev/scenari> → **27 riquadri** dal pacchetto E (i due nuovi sono
+   «Sfida a tempo · quiz-lampo» e «Sfida a tempo · riflessi»), carte vive, interruttore «chi guarda» su ognuno,
+   nessun errore in console; <http://localhost:3000/dev/hotseat> → la partita in hot seat si apre e si gioca.
 2. `pnpm build && pnpm start`: entrambe le pagine rispondono **404** e `/` risponde **200**.
 3. Questo controllo va rifatto **prima di chiudere ogni pacchetto**: le pagine di sviluppo devono continuare a
    funzionare anche dopo il collegamento a Supabase (F0-05, F2-01, F3-01 non le toccano, ma i componenti sì).
 
 **Esito:** verificato il 2026-09-17 (Opus, con Docker): entrambe le pagine funzionano ancora con il
 pacchetto D dentro, e `pnpm check` (26 file, 269 prove) e `pnpm build` restano verdi.
+Dal pacchetto E: `pnpm check` verde (30 file, **318 prove**), `pnpm build` verde, le due pagine di sviluppo
+compilate e `/dev/scenari` con i 27 riquadri (verificato a occhio, senza errori in console).
 
 ### Nota · come si prova in due senza due browser (2026-09-17)
 
@@ -474,3 +477,226 @@ simultanee per provare il `409`. Per il tempo reale è stato usato un secondo cl
 token del posto. Gli script stanno fuori dal repository (cartella di lavoro della sessione), non sono codice del
 progetto: se servono di nuovo si riscrivono in mezz'ora, o si aprono semplicemente due finestre del browser, una in
 incognito.
+
+---
+
+## Registro · Pacchetto E (la partita su due schermi) — branch `hermes/e-two-screens`
+
+Prima di iniziare, due cose che valgono per tutte le voci:
+
+- **c'è una migrazione nuova**: `supabase/migrations/20260918120000_lobby_atomic.sql`. `pnpm db:reset` la applica;
+  dopo il reset lancia `pnpm db:types` e **committa** il file rigenerato (i tipi guadagnano `set_lobby_ready` e
+  `start_lobby_game`: è l'unica differenza attesa).
+- il ponte senza database è `/dev/scenari`, che ora ha per ogni riquadro l'interruttore «Guarda come posto 1 /
+  posto 2 / Tutti e due (hot seat)»: è così che si controllano le due viste (D-56).
+
+### F2-02 · Lobby atomica: due «Sono pronto» quasi insieme (D-53)
+
+1. `pnpm db:reset && pnpm dev`, stanza di prova con `pnpm room:create --code COPPIA42 --name1 Leo --name2 Marta`.
+2. Due finestre (normale + incognito), stesso codice, posto 1 e posto 2, entrambe in lobby.
+3. **La prova che conta:** premete «Sono pronto» **nello stesso istante**, uno per finestra (contate «tre, due,
+   uno» a voce: va bene anche mezzo secondo di scarto).
+   Atteso: la serata parte (o si passa a `sheets` se una scheda è incompleta) e **nessuna delle due finestre
+   riceve un errore rosso**; la finestra che arriva seconda vede la fase nuova, non un 500 vuoto.
+4. In Studio: `select status, ready, version from public.games order by created_at desc limit 1;` → `ready` con
+   entrambi i posti a `true` e `status` non più `lobby`.
+5. Subito dopo, dalla stessa finestra premete di nuovo «Sono pronto» (o «Gioca lo stesso»): atteso **nessun
+   errore**, la serata resta avviata.
+6. In DevTools → Network, la seconda chiamata a `/api/rooms/COPPIA42/games`: stato **200** (prima poteva essere 500).
+7. Senza finestre aperte: incolla `supabase/tests/lobby.sql` nel SQL editor e eseguilo → tutti i NOTICE `ok:` e
+   nessun ERROR (i due pronti, la scheda incompleta, la doppia chiamata di avvio). Chiude con `ROLLBACK`.
+   Si può anche lanciare da fuori, senza Studio:
+   `docker cp supabase/tests/lobby.sql supabase_db_usboardgame:/tmp/lobby.sql && docker exec supabase_db_usboardgame psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f /tmp/lobby.sql`
+
+**Esito:** verificato il 2026-09-18 (Opus, con Docker). `pnpm db:reset` applica
+`20260918120000_lobby_atomic.sql`; `pnpm db:types` aggiunge **solo** `set_lobby_ready` e `start_lobby_game`
+(46 righe), committato in `4711905`.
+
+- `supabase/tests/lobby.sql`: **non partiva** — `set_lobby_ready(uuid, integer, …) does not exist`, perché il
+  posto passava come `integer` e la funzione vuole `smallint`. Corretto con `1::smallint` (commit `b66e797`); poi
+  tutti e cinque i NOTICE `ok:` e `ROLLBACK`.
+- I due «Sono pronto» **nello stesso istante** (due sessioni anonime vere, `Promise.all` sulle due chiamate a
+  `/api/rooms/COPPIA42/games`): **200 e 200**, `ready = {"1": true, "2": true}`, `status` non più `lobby`,
+  `version 1`. Ripetuta **dieci volte di fila**: dieci su dieci, nessun pronto perso, nessun 500.
+- Punto 5 (ripremere «Sono pronto» appena partita la serata): dava **409 «La serata è già cominciata.»**, cioè un
+  errore rosso dove il Registro promette nessun errore. Corretto: ora la chiamata risponde 200 con lo stato
+  fresco e la schermata giusta (commit `b66e797`).
+- «Gioca lo stesso» due volte di fila: 200 e 200, `playing`, nessun errore (l'idempotenza di `start_lobby_game`
+  regge).
+
+### F3-03 · F4-02 · F4-06 · F5-05 · Ogni schermo vede solo i suoi comandi (D-56)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/scenari> (senza database).
+2. In ogni riquadro, con l'interruttore in alto: «Guarda come posto 1», poi «posto 2», poi «Tutti e due».
+   Atteso, riquadro per riquadro:
+   - «Domanda a scelta multipla»: le opzioni le vede solo chi risponde; l'altro legge «… sta scegliendo la
+     risposta…».
+   - «Domanda breve · giudizio»: il campo di risposta lo vede solo chi risponde; l'altro legge «… sta giudicando
+     la tua risposta…» e **non** vede il campo; dal posto che giudica si vedono i tre pulsanti.
+   - «Domanda aperta»: «Ne abbiamo parlato» solo al posto di turno.
+   - «Imprevisto», «stella», «zaino pieno»: i comandi solo al posto che agisce.
+   - «Sfida prova a giudizio»: i pulsanti «Riuscita / Non riuscita» solo al posto che giudica.
+   - «Doppia conferma» e «Doppia conferma · in disaccordo»: **ognuno vede il suo pezzo** (pulsanti se non ha
+     ancora dichiarato/scelto, altrimenti «hai dichiarato: …») e **una riga** che dice se l'altro ha già
+     dichiarato. «Tutti e due» continua a mostrarli entrambi, come la hot seat.
+   - «Sfida duello automatica · tris»: le caselle cliccabili solo al posto che deve muovere; l'altro vede il
+     tabellone e «Tocca a … muovere.».
+   - «Schermata finale»: il posto non cambia (la schermata è di tutti e due).
+3. Poi la prova vera, con la partita: due finestre sulla partita e portatevi su una domanda breve. In A compare il
+   campo di risposta, in B no; quando A conferma, in B compaiono i tre verdetti e in A la riga di attesa. Con una
+   prova: in B i pulsanti, in A «Marta sta giudicando…».
+4. In produzione `/dev/scenari` resta **404** (vedi l'ultima voce).
+
+**Esito:** verificato il 2026-09-17 (Opus, senza Docker) in Chrome sul branch `hermes/e-two-screens`: l'interruttore
+funziona su tutti i riquadri, le due viste mostrano quello che devono (11 riquadri provati a mano, nessun errore in
+console). Restano da vedere in partita vera (due finestre) le voci dei punti 3.
+
+**Esito del punto 3 (partita vera):** verificato il 2026-09-18 (Opus, con Docker) in Chrome. Due sessioni anonime
+vere sulla stanza COPPIA42, guardate una per volta dallo stesso browser scambiando il cookie di sessione (lo stato
+è del server, quindi è la stessa scena vista da due posti):
+
+- domanda **breve** «Qual è il mio primo ricordo di noi due?»: il posto 2 (di turno) vede «La tua risposta» e il
+  campo; il posto 1 vede la domanda e **«Marta sta scrivendo la risposta…»**, senza campo;
+- risposta scritta e confermata dal posto 2 → il posto 2 legge la sua risposta e **«Leo sta giudicando la tua
+  risposta…»**; il posto 1 vede «Decide Leo.» e i tre pulsanti **Giusta / Quasi / Sbagliata**;
+- «Giusta» → +3 monete al posto 2, turno all'altro, round avanzato: il tutto senza ricaricare la pagina dell'altro;
+- **sfida lampo del serpente** (prova, giudica l'altro): comparsa da sola sullo schermo del posto 1 con la mossa
+  dell'altra già disegnata (tempo reale), pulsanti «Riuscita / Non riuscita» solo al posto che giudica;
+  «Non riuscita» → la pedina scende dalla 17 alla 7 e −2 monete;
+- **sfida esterna** (Lichess blitz): link, «Andiamo a giocare», e la **doppia conferma per posto** — ognuno vede i
+  suoi tre pulsanti e la riga «L'altro non ha ancora dichiarato»;
+- **quiz-lampo**: al posto che risponde le opzioni sono cliccabili, all'altro sono spente con la riga di attesa.
+  Lì la riga diceva **«Tocca a Leo muovere.»**: in un quiz si risponde, non si muove — e la riga era riscritta a
+  mano nella carta invece di venire da `waitingLine`. Corretto (commit `1f78e18`): ora «Tocca a Leo rispondere.».
+- Console del browser: un **errore di idratazione** a ogni caricamento con una carta a tempo aperta (il server
+  scriveva `4:25` e il browser `4:24`). Corretto (D-60, commit `21708ce`); dopo la correzione la console ha solo
+  `[HMR] connected`, sia sulla partita sia su `/dev/scenari`.
+
+### F4-03 · F4-04 · Minigiochi anche online: a turni e a tempo (D-55)
+
+1. Senza database, `/dev/scenari`: «Sfida duello automatica · tris» (turni), «Sfida a tempo · quiz-lampo»,
+   «Sfida a tempo · riflessi».
+   - **tris:** con l'interruttore su «posto 1» le caselle sono cliccabili solo quando tocca a lui; dopo ogni
+     mossa il clic passa all'altro posto.
+   - **quiz:** cinque domande a turno, una risposta ciascuno; la risposta giusta dà un punto (i punti si vedono
+     sotto: «Leo: 1 Marta: 0»); alla quinta domanda la sfida si chiude **da sola** e paga il premio. Con una
+     risposta sbagliata non si prende il punto. Pareggio (es. 1 a 1) → la sfida riparte.
+   - **riflessi:** il pulsante dice «Aspetta il segnale…» e diventa «Tocca!» dopo pochi secondi; toccando dopo il
+     segnale il punto è vostro («Punto a Leo.»), toccando **prima** il punto va all'altro («Partenza falsa»); al
+     meglio di cinque vince chi arriva a tre punti. «Ricomincia lo scenario» rimette il segnale in attesa.
+2. Con la partita vera (due finestre): una casella sfida che pesca il quiz o i riflessi. Atteso: ogni mossa è
+   un'azione al server, ognuno vede i propri comandi e la schermata dell'altro si aggiorna da sola; nei riflessi
+   i due schermi mostrano il segnale **nello stesso momento** (nessuno dei due lo vede prima).
+3. `npx vitest run src/engine/minigames src/engine/challenges.test.ts` → verdi (i moduli e le sfide che si
+   chiudono da sole).
+
+**Esito:** verificato il 2026-09-17 (Opus, senza Docker) su `/dev/scenari`: quiz giocato fino al terzo turno (punti
+assegnati al posto giusto, turno che passa, riga di attesa per l'altro posto), riflessi con «Tocca!» dopo il
+segnale («Punto a Leo.»), partenza falsa («Partenza falsa: il punto va a Marta.»), nessun errore in console.
+
+**Esito del punto 2 (partita vera):** verificato il 2026-09-18 (Opus, con Docker). Ogni mossa passa dalla route
+`/api/games/<id>/actions` come le altre azioni:
+
+- **quiz-lampo** giocato dal browser: risposta giusta → «Leo: 1 Marta: 0», si passa alla domanda 2 di 5 e il
+  turno va all'altro posto, che dall'altra vista vede le opzioni spente e la riga di attesa;
+- **riflessi** giocati via HTTP: tre `MINIGAME_MOVE` con `press` dopo l'istante di `goAt` → tre punti e
+  `MINIGAME_FINISHED` con il premio; il segnale sta nello stato (`goAt`), quindi è lo stesso per i due schermi;
+- **tris** online: sette mosse alternate fra i due posti, `MINIGAME_FINISHED`, `COINS_GAINED`,
+  `CHALLENGE_RESOLVED`, turno passato;
+- partita intera online, dall'inizio alla fine, pilotata dai due posti: **52 azioni, nessun 500**.
+- Il timer della carta del quiz è quello della sfida: se scade prima delle cinque domande la sfida passa alla
+  doppia conferma (D-55). Succede: la carta `quiz-lampo` dura 2 minuti e cinque domande a turno possono non
+  starci. Da decidere se allungare `durationSeconds`.
+
+### F4-05 · Pausa della sfida esterna e «Chi ha vinto?»
+
+1. In partita, una casella sfida che pesca `lichess-blitz` o `skribblio` (o dal catalogo di `/dev/scenari`, se
+   aggiungete il riquadro).
+2. Atteso: la carta mostra il link («apri Lichess blitz 3 minuti») e il pulsante «Andiamo a giocare»; premendolo
+   le dichiarazioni spariscono e la carta dice che la partita è in pausa, con il pulsante «Siamo tornati: chi ha
+   vinto?» che riporta le dichiarazioni di entrambi.
+3. Con le due finestre: le dichiarazioni si vedono in entrambe (lo stato è del server); la pausa è della
+   schermata, quindi ognuno può metterla e toglierla per conto suo.
+
+**Esito:** verificato il 2026-09-18 (Opus, con Docker) in Chrome, sulla sfida `lichess-blitz` pescata in partita
+vera. La carta mostra il link «apri Lichess blitz 3 minuti» e il pulsante «Andiamo a giocare»; premendolo le
+dichiarazioni spariscono e resta «In pausa: la partita aspetta il risultato di Lichess blitz 3 minuti.» con
+«Siamo tornati: chi ha vinto?». Guardando **l'altro posto** la pausa non c'è: vede ancora i suoi tre pulsanti e
+«Leo non ha ancora dichiarato» — la pausa è davvero della schermata. Una cosa da decidere: il **timer continua a
+scorrere** durante la pausa (voce nuova in «Ancora aperte»).
+
+### F5-06 · Diario: testo della domanda, e una sola volta per momento (D-54)
+
+1. Gioca qualche turno (una domanda breve, una a scelta multipla, una sfida, una scala) e apri `/r/COPPIA42/diary`.
+2. Atteso: ogni momento ha come titolo **il testo della domanda** letto in partita («Per una vacanza preferisco…»)
+   o il **nome** della sfida («Quiz a tempo»), mai `deep-004` o `tic-tac-toe`. Le monete hanno il segno e da dove
+   arrivano («+3 monete / Dalla domanda.»), la scala dice «La scala / Su, dalla 8 alla 26.».
+3. **Nessuna riga con «+0 monete»** o «−0 monete»: le monete a zero non sono momenti della serata.
+4. Rileggi i testi ad alta voce: devono suonare come il racconto della serata, non come un registro di sistema
+   (è la parte che resta da giudicare a voi).
+
+**Esito:** verificato il 2026-09-18 (Opus, con Docker) su `/r/COPPIA42/diary`, dopo aver giocato i turni dal
+browser. Ogni momento ha il **testo della domanda** («Qual è il mio primo ricordo di noi due?», «Dove ci siamo dati
+il primo bacio?») o il **nome della sfida** («Storia in tre parole», «Il serpente»), mai un id; le monete hanno
+segno e provenienza («+3 monete / Dalla domanda.», «−2 monete / Alla casella.»); il serpente dice «Giù, dalla 17
+alla 7.»; **nessuna riga con «+0 monete»**.
+Un difetto trovato qui: una **prova non riuscita** era scritta come «Accento straniero — Vinta: +0 monete
+(giudizio)» e attribuita al **giudice**. Corretto (D-59, commit `3d1d559`): ora è il momento di chi ha provato e
+dice «Prova non riuscita: nessun premio (giudizio)», riletto dal vivo dopo la correzione. I diari già scritti
+prima della correzione restano come erano (l'evento vecchio non ha il campo `won`).
+La rilettura dei testi a voce resta al proprietario.
+
+### F2-05 · Animazioni: la pedina salta cella per cella, in ordine
+
+1. `pnpm dev`, <http://localhost:3000/dev/hotseat>: «Strumenti di prova» → il giocatore di turno va alla casella
+   **4**, poi «Tira i dadi».
+   Atteso: la pedina **salta di casella in casella** (un saltello per ogni casella attraversata), non in un arco
+   solo. Se il tiro la porta su una scala, sale gradino per gradino; su un serpente, scende lungo il corpo.
+2. Poi la carta: quando esce una carta, la cornice **entra** (scivola dall'alto con una comparsa morbida); non
+   deve rianimarsi a ogni clic dentro la stessa carta.
+3. In partita vera (due finestre): un'azione che fa due spostamenti di fila (un tiro che finisce su una scala, o
+   due tiri uno dopo l'altro senza aspettare): atteso **due animazioni in ordine**, la seconda dopo la prima,
+   senza scatti e senza tornare indietro. Se l'altro tira mentre voi state ancora animando, le due pedine si
+   animano una dopo l'altra e non si perdono movimenti.
+
+**Esito:** verificato il 2026-09-17 (Opus, senza Docker) in Chrome sulla hot seat: campionando la posizione della
+pedina ogni 40 ms durante un tiro da 4 caselle si vedono **4 saltelli** (la pedina scende a ogni casella, ~160 ms
+l'uno) e non un arco solo; nessun errore in console.
+
+**Esito del punto 3 (partita vera):** verificato in parte il 2026-09-18 (Opus, con Docker). Con la partita online
+e due posti veri: la mossa dell'altro giocatore (7 → 17) è **comparsa da sola** sullo schermo, e la discesa del
+serpente (17 → 7) subito dopo, con le pedine sempre nella casella giusta e **nessun movimento perso** né tornato
+indietro; la coda ha retto anche con la carta che si apriva nello stesso momento. Quello che **non** ho potuto
+misurare è il saltello cella per cella _online_: il campionamento della posizione ha bisogno di una scheda in
+primo piano (Chrome ferma i timer e `requestAnimationFrame` in una scheda di sfondo, e la scheda guidata da qui lo
+è). Il cella-per-cella è provato sulla hot seat (sopra) e dai test di `route.ts`/`use-move-queue.ts`, che sono gli
+stessi in partita online: resta da guardare a occhio quando giocherete in due davvero.
+
+**Ancora aperto (dal rapporto di Hermes, confermato qui):** le pedine dei minigiochi (tris, forza 4, memory) non si
+animano: ridisegnano lo stato.
+
+### Pagine `/dev`: ci sono in sviluppo, non esistono in produzione (D-43)
+
+1. `pnpm dev`: `/dev/hotseat`, `/dev/scenari` e `/dev/ui` si aprono.
+2. `pnpm build && npx next start -p 3101`, poi `curl` sulle tre: attese **404**, e `/` **200**.
+
+**Esito:** verificato il 2026-09-18 (Opus): `pnpm build` verde con tutte le rotte; in produzione `/` → **200** e
+`/dev/scenari`, `/dev/hotseat`, `/dev/ui` → **404**. In sviluppo le tre pagine funzionano (usate per tutte le
+prove qui sopra).
+
+### Note su come sono state fatte queste prove
+
+- **Due giocatori senza due browser.** Le prove in due posti sono fatte con due sessioni anonime vere create con
+  `@supabase/ssr` in Node, ognuna col suo barattolo di cookie, che chiamano le **route dell'applicazione**
+  (`/api/rooms/join`, `/api/rooms/<code>/games`, `/api/games/<id>/actions`). Così i due «Sono pronto» partono
+  davvero nello stesso istante, cosa che a mano non si ottiene. Per guardare le due **viste** basta un browser:
+  si scambia il cookie di sessione e si ricarica, perché lo stato è del server.
+- **Quello che il browser guidato da qui non può misurare.** Chrome rallenta timer e
+  `requestAnimationFrame` nelle schede che non sono in primo piano: le animazioni si possono guardare a occhio
+  (screenshot) ma non campionare. È il motivo per cui il cella-per-cella online resta da vedere a occhio.
+- **Difetti trovati in queste prove** (tutti corretti e ricontrollati dal vivo): `supabase/tests/lobby.sql` non
+  partiva (cast a `smallint`); il secondo «Sono pronto» dava un 409 rosso; con le schede vuote una casella
+  "quanto mi conosci" fermava il turno con un 500 (D-58); il diario chiamava «Vinta: +0 monete» una prova non
+  riuscita, attribuendola al giudice (D-59); la riga di attesa del quiz diceva «muovere» ed era scritta a mano
+  nella carta invece di venire da `waitingLine`; il timer della carta faceva un errore di idratazione a ogni
+  caricamento (D-60).

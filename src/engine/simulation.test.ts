@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { classic } from "@/content/boards/classic";
 import { RULES } from "./config";
 import type { MinigameState } from "./minigames/types";
+import { minigameTurn } from "./minigames";
 import { createInitialState, reduce } from "./reducer";
 import { createTestContext, DEFAULT_SETTINGS } from "./testing";
 import { otherSeat, type Action, type GameState, type ItemId, type Seat } from "./types";
@@ -105,7 +106,8 @@ function candidates(state: GameState, next: () => number): Action[] {
       case "challenge": {
         if (card.minigame) {
           const move = randomMove(card.minigame, next);
-          if (move !== null) actions.push({ type: "MINIGAME_MOVE", seat: card.minigame.turn, move });
+          const who = minigameTurn(card.minigame);
+          if (move !== null && who !== "both") actions.push({ type: "MINIGAME_MOVE", seat: who, move });
         } else if (card.disputed) {
           for (const seat of SEATS) {
             if (card.disputeChoices[seat] === undefined) {

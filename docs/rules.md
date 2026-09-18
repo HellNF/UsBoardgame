@@ -137,15 +137,32 @@ Ogni carta: nome, categoria, modalità, verdetto, durata, istruzioni, premio (`s
 
 ## Minigiochi integrati
 
-Sono moduli puri in `src/engine/minigames` (`init`, `applyMove`, `result`), mossi dall'azione `MINIGAME_MOVE`.
-Muove per primo chi ha pescato la carta; il pareggio fa ripartire il minigioco
+Sono moduli puri in `src/engine/minigames` (`init`, `applyMove`, `result`, `turn`), mossi dall'azione
+`MINIGAME_MOVE`. Muove per primo chi ha pescato la carta; il pareggio fa ripartire il minigioco
 ([D-39](decisions.md#d-39--dettagli-dei-minigiochi-integrati)).
+I moduli ricevono l'orologio del server (`now`) e il caso (`randomInt`): i minigiochi a tempo non leggono mai il
+tempo da soli ([D-55](decisions.md#d-55--quiz-lampo-e-riflessi-sono-minigiochi-a-tempo-del-motore)). `turn` dice di
+chi è il turno, oppure `"both"` quando possono muovere entrambi (i riflessi).
 
-| Minigioco | Come si vince                    | Pareggio             |
-| --------- | -------------------------------- | -------------------- |
-| Tris      | tre pedine in fila (3 × 3)       | rivincita automatica |
-| Forza 4   | quattro pedine allineate (7 × 6) | rivincita automatica |
-| Memory    | più coppie trovate con 12 carte  | rivincita automatica |
+| Minigioco  | Come si vince                                                          | Pareggio             |
+| ---------- | ---------------------------------------------------------------------- | -------------------- |
+| Tris       | tre pedine in fila (3 × 3)                                             | rivincita automatica |
+| Forza 4    | quattro pedine allineate (7 × 6)                                       | rivincita automatica |
+| Memory     | più coppie trovate con 12 carte                                        | rivincita automatica |
+| Quiz-lampo | più risposte giuste su [`quiz.items` = 5] domande, una a testa a turno | rivincita automatica |
+| Riflessi   | primo a toccare il segnale, al meglio di [`reflex.bestOf` = 5]         | rivincita automatica |
+
+- **Quiz-lampo:** le domande stanno **nella carta** (`quiz` in `src/content/challenges.ts`): è contenuto pubblico
+  (non la scheda), quindi la risposta giusta può stare nello stato senza svelare niente. Una risposta ciascuno per
+  domanda; chi ne ha di più alla fine vince.
+- **Riflessi:** il momento del segnale è deciso dal server e vale per tutti e due (`goAt` nello stato). Chi tocca
+  **prima** del segnale regala il punto all'altro, e il round ricomincia; il segnale del round dopo arriva dopo
+  [`reflex.minDelayMs` … `reflex.maxDelayMs`] millisecondi.
+- **Sfide esterne:** si giocano fuori (link nella carta); la carta si può mettere in pausa e al ritorno chiede
+  «Chi ha vinto?», cioè la doppia conferma. La pausa è della schermata, non della partita.
+- **Chi vede cosa:** in una partita a due schermi ognuno vede solo i comandi del posto che guarda; l'altro legge
+  cosa sta facendo l'altro ([D-56](decisions.md#d-56--la-carta-sa-chi-la-guarda-viewerseat)). Nella hot seat i
+  comandi si vedono tutti.
 
 ## Economia
 

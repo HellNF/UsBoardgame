@@ -51,6 +51,18 @@ export const challengeSchema = z
     snakeFlash: z.boolean().default(false),
     /** Per i minigiochi integrati: id del componente in src/features/minigames. */
     minigame: z.string().optional(),
+    /** Per il quiz-lampo: le domande della carta (contenuto pubblico, non la scheda). */
+    quiz: z
+      .array(
+        z.object({
+          question: z.string().min(5),
+          options: z.array(z.string().min(1)).min(2).max(4),
+          /** Indice dell'opzione giusta dentro `options`. */
+          correct: z.number().int().nonnegative(),
+        }),
+      )
+      .min(1)
+      .optional(),
     /** Per le sfide esterne: link da aprire. */
     url: z.url().optional(),
   })
@@ -67,6 +79,31 @@ export const challengeSchema = z
     }
     if (c.snakeFlash && c.durationSeconds.max > 30) {
       ctx.addIssue({ code: "custom", message: `${c.id}: una sfida lampo dura al massimo 30 secondi` });
+    }
+    // Il quiz-lampo senza domande non si può giocare: il motore non ha da dove pescarle.
+    if (c.minigame === "quiz" && (!c.quiz || c.quiz.length === 0)) {
+      ctx.addIssue({
+        code: "custom",
+        message: `${c.id}: il minigioco "quiz" richiede le domande nel campo quiz`,
+      });
+    }
+    if (c.minigame !== "quiz" && c.quiz) {
+      ctx.addIssue({
+        code: "custom",
+        message: `${c.id}: il campo quiz è ammesso solo con il minigioco "quiz"`,
+      });
+    }
+    for (const item of c.quiz ?? []) {
+      if (item.correct >= item.options.length) {
+        ctx.addIssue({
+          code: "custom",
+          message: `${c.id}: una risposta del quiz punta a un'opzione che non c'è`,
+        });
+      }
+    }
+    // Le sfide esterne si giocano fuori: serve il link.
+    if (c.category === "external" && !c.url) {
+      ctx.addIssue({ code: "custom", message: `${c.id}: una sfida esterna richiede url` });
     }
   });
 

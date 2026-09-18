@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ChallengeCard } from "@/engine";
 import {
   asDrawnQuestion,
+  drawAttempts,
   fallbackCategories,
   matchesKind,
   selectChallenge,
@@ -254,5 +255,69 @@ describe("pesca delle sfide (F3-01)", () => {
       randomInt: () => 0,
     });
     expect(result.ok).toBe(false);
+  });
+
+  describe("ripieghi quando la scheda è vuota (D-58)", () => {
+    const shortIds = ["tastes-001"];
+
+    it("per una aperta non c'è nessun ripiego: un tentativo solo", () => {
+      const attempts = drawAttempts({ knowMeOnly: false, answerable: [], shortIds });
+      expect(attempts).toEqual([{ knowMeOnly: false, answerable: [] }]);
+    });
+
+    it("per una «quanto mi conosci» prima la scheda, poi le brevi, poi le aperte", () => {
+      const attempts = drawAttempts({
+        knowMeOnly: true,
+        answerable: ["tastes-002"],
+        shortIds,
+      });
+      expect(attempts).toEqual([
+        { knowMeOnly: true, answerable: ["tastes-002"] },
+        { knowMeOnly: true, answerable: shortIds },
+        { knowMeOnly: false, answerable: ["tastes-002"] },
+      ]);
+    });
+
+    it("con la scheda vuota il primo tentativo non pesca e il secondo dà una breve", () => {
+      const withSheet = selectQuestion({
+        candidates: questions,
+        category: "tastes",
+        maxLevel: 3,
+        knowMeOnly: true,
+        used: [],
+        answerable: [],
+        randomInt: first,
+      });
+      expect(withSheet.ok).toBe(false);
+
+      const [, fallback] = drawAttempts({ knowMeOnly: true, answerable: [], shortIds });
+      const short = selectQuestion({
+        candidates: questions,
+        category: "tastes",
+        maxLevel: 3,
+        knowMeOnly: fallback.knowMeOnly,
+        used: [],
+        answerable: fallback.answerable,
+        randomInt: first,
+      });
+      // Una breve: la giudica l'interrogato, quindi la scheda non serve e la scala resta possibile.
+      expect(short.ok && short.question.id).toBe("tastes-001");
+      expect(short.ok && short.question.kind).toBe("short");
+    });
+
+    it("senza nemmeno una breve si finisce sulla domanda aperta", () => {
+      const onlyOpenAndMultiple = questions.filter((question) => question.kind !== "short");
+      const [, , last] = drawAttempts({ knowMeOnly: true, answerable: [], shortIds: [] });
+      const open = selectQuestion({
+        candidates: onlyOpenAndMultiple,
+        category: "tastes",
+        maxLevel: 3,
+        knowMeOnly: last.knowMeOnly,
+        used: [],
+        answerable: last.answerable,
+        randomInt: first,
+      });
+      expect(open.ok && open.question.kind).toBe("open");
+    });
   });
 });
