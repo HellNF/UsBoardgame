@@ -316,8 +316,20 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 - [x] Il diario mostrava l'id della domanda invece del testo e registrava le monete a zero: **chiusa dal pacchetto
       E** (D-54 e F5-06).
 - [ ] Valori esatti di verde bosco e ocra (proposta in `globals.css`, da validare accanto alla reference).
+- [ ] Le risposte giuste del quiz-lampo viaggiano nello stato (D-55): chi guarda gli strumenti per sviluppatori del
+      browser le vede. Per una partita fra due persone che si fidano va bene; se dovesse dare fastidio, il
+      confronto va spostato sul server come per le domande a scelta multipla.
+- [ ] La pausa della sfida esterna (F4-05) non ferma il timer della carta: se si va a giocare fuori il tempo
+      scorre e la sfida può scadere mentre non si guarda. Per i duelli non è un guaio (alla scadenza si passa alla
+      doppia conferma, che è già dove si dichiara), ma va deciso se la pausa deve fermare anche il conto.
 - [ ] Tentativi di accesso: il contatore del ritardo è in memoria del processo (D-50); se il sito diventasse
       pubblico va spostato su Postgres (una tabella di tentativi per stanza).
+- [ ] **L'archivio delle partite non si riempie mai.** Nessuno scrive `status = 'finished'`: quando il motore
+      arriva alla fine la riga resta `playing` (e va bene per la schermata finale, che si riapre anche
+      rientrando), ma `findFinishedGames` cerca `status = 'finished'`, quindi «Partite passate» nel diario resta
+      vuoto; e con «Nuova partita» la serata conclusa diventa `abandoned`, cioè non torna più. Si chiude
+      portando la partita a `finished` (con `finished_at`) nella stessa transazione dell'azione che la conclude,
+      dentro `apply_game_action`. Trovato in locale il 2026-09-18 (F5-06).
 
 ---
 
@@ -473,6 +485,7 @@ dal bundle il testo è **esattamente** quello che si è letto in partita.
 
 **Derivata, su indicazione del proprietario (F4-04).** `quiz-lampo` e `riflessi` non sono più duelli a doppia
 conferma (D-41 è superata): sono `automatic` con i minigiochi `quiz` e `reflex`.
+
 - **Quiz-lampo:** le domande stanno **nella carta** (`quiz` in `src/content/challenges.ts`), sono contenuto
   pubblico e non la scheda, quindi la risposta giusta può vivere nello stato senza svelare niente a nessuno. Una
   risposta ciascuno per domanda, a turno; un punto per risposta giusta; chi ne ha di più vince, il pareggio
@@ -511,3 +524,37 @@ un'animazione o si torna indietro. Anche l'ingresso delle carte è un'animazione
 carta, non a ogni ritocco).
 _Perché:_ il tabellone non deve tenere stato proprio — la strada della pedina la sa chi possiede gli eventi — e con
 una coda l'ordine non dipende dai tempi della rete.
+
+### D-58 · Se una "quanto mi conosci" non è pescabile si ripiega, non si rompe il turno
+
+**Derivata, trovata in locale (F3-01, pacchetto E).** `drawQuestion` prova nell'ordine
+(`drawAttempts` in `src/server/game/question-draw.ts`, puro e provato):
+
+1. la richiesta del motore, con il vincolo della scheda (D-28: una "quanto mi conosci" si pesca solo se
+   l'interrogato ha risposto);
+2. una "quanto mi conosci" **breve** anche senza risposta in scheda — il verdetto lo dà l'interrogato a voce, la
+   scheda non serve, e così la domanda può ancora far salire una scala (D-07);
+3. una domanda **aperta**, come dice `rules.md` § Domande ("se il sottoinsieme scelto è vuoto si usa l'altro").
+
+_Perché:_ con «Gioca lo stesso» e le schede vuote (D-28) la prima strada non trova niente in **nessuna** categoria,
+e prima il turno finiva con un 500 («Nessuna domanda pescabile»): la partita si fermava lì. Il ripiego sulle brevi
+viene prima di quello sulle aperte perché una scala persa cambia la partita, e una breve si gioca comunque.
+
+### D-59 · L'esito della sfida sta nell'evento: `won`
+
+**Derivata, trovata in locale (F5-06, pacchetto E).** `CHALLENGE_RESOLVED` porta anche `won`: `seat` è il posto **a
+favore del quale** si è deciso, `won` dice se quel posto ha davvero vinto. In una prova giudicata "non riuscita" il
+verdetto va all'altro posto ma nessuno ha vinto. Il diario usa i due campi insieme: il momento è di chi ha provato
+(non del giudice) e il testo è «Prova non riuscita: nessun premio (giudizio)». Una vittoria senza monete (la sfida
+lampo del serpente) dice «nessun premio in monete», non «+0 monete» (D-54).
+_Perché:_ dal solo `seat` il diario raccontava una vittoria che non c'era stata, attribuita anche alla persona
+sbagliata. Le righe già in `game_events` non hanno il campo: lì il diario resta come prima, senza errori.
+
+### D-60 · Quello che dipende dall'orologio si disegna solo nel browser
+
+**Derivata, trovata in locale (F2-05, F4-04, pacchetto E).** Il tempo che manca di una sfida e il segnale dei
+riflessi compaiono dopo l'idratazione (`useHydrated` in `src/features/cards/use-hydrated.ts`, che è
+`useSyncExternalStore` e non un `setState` in un effetto: quella strada la vieta `react-hooks/set-state-in-effect`).
+_Perché:_ `Date.now()` nel primo disegno vale un secondo sul server e un altro nel browser, quindi React buttava
+via l'albero appena idratato con «Hydration failed because the server rendered text didn't match the client» —
+un errore in console a ogni caricamento con una carta a tempo aperta.
