@@ -2,12 +2,20 @@
 
 import { motion } from "motion/react";
 import { useState } from "react";
+import { FinaleView } from "@/art/rive";
 import { RULES, type GameState, type PlayerColor, type Seat } from "@/engine";
 import { plural } from "@/lib/plural";
 
 /**
  * Schermata finale (task F1-05, rules.md § Fine partita): le stelle bonus si rivelano
  * una alla volta, poi si scoprono vincitore e posta in palio.
+ *
+ * Dal pacchetto H c'è anche `finale.riv` (H2), in uno spazio **nuovo** in testa alla sezione:
+ * è un ornamento che si aggiunge, non lo scambio di niente. Le tre rivelazioni continuano a
+ * scrivere le loro frasi — «Sapientone», «Campione», il nome del vincitore — perché quelle
+ * frasi portano informazione che un'immagine non può portare (`winner` e `revealStar` sono
+ * tutto ciò che riceve il file). Finché il `.riv` manca lo spazio è vuoto: la schermata resta
+ * identica al pixel.
  */
 
 export type FinalScreenProps = {
@@ -28,6 +36,17 @@ export function FinalScreen({ state, names, colors, bonus, stake, onRestart }: F
 
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-5 rounded-xl border-4 border-ink bg-paper p-6">
+      {/* L'ornamento Rive: `"none"` finché il file non c'è, quindi nessuno spazio occupato. */}
+      <FinaleView
+        winner={state.winner ?? undefined}
+        revealedStars={revealed}
+        /* Solo una pressione vera fa scattare `revealStar`: a zero non c'è nessuna stella. */
+        revealStar={revealed > 0 ? revealed : undefined}
+        names={names}
+        placeholder="none"
+        className="pointer-events-none w-full"
+      />
+
       <header>
         <h1 className="font-display text-3xl italic">Serata finita</h1>
         <p className="font-sans text-sm text-ink/70">

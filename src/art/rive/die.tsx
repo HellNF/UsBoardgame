@@ -1,24 +1,28 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { RIVE_FILES } from "./files";
 import { RiveCanvas, useRiveFile } from "./rive";
 
 /**
  * Dado: artboard `Die`, macchina a stati `Roll`. `roll` è un contatore (cambia a ogni lancio e
  * fa scattare l'ingresso omonimo), `value` è la faccia da mostrare alla fine del rotolamento.
- * Senza il file, il segnaposto è il numero dentro un quadrato.
+ * Senza il file, il segnaposto è il numero dentro un quadrato; la partita passa il **dado a
+ * pallini** che si vede oggi, che è un'altra cosa e non va perso (H2).
  */
 export type DieViewProps = {
   /** Faccia, da 1 a 6. */
   value: number;
   /** Contatore dei lanci: cambia a ogni lancio e fa scattare `roll`. */
   roll?: number;
+  /** Cosa mostrare finché il file non c'è (senza, il numero nel quadrato di `/dev/art`). */
+  placeholder?: ReactNode;
   className?: string;
 };
 
-export function DieView({ value, roll, className }: DieViewProps) {
+export function DieView({ value, roll, placeholder, className }: DieViewProps) {
   const available = useRiveFile(RIVE_FILES.dice);
-  if (!available) return <DiePlaceholder value={value} className={className} />;
+  if (!available) return <>{placeholder ?? <DiePlaceholder value={value} className={className} />}</>;
 
   return (
     <RiveCanvas

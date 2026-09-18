@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import type * as React from "react";
+import { CardView } from "@/art/rive";
 import type { Action, ActiveCard, GameState, Seat } from "@/engine";
 import type { ChallengeContent, QuestionContent } from "@/content/schema";
 import { ChallengeCard } from "./challenge-card";
@@ -94,17 +95,24 @@ export function CardPanel(props: CardPanelProps): React.ReactElement | null {
         </p>
       </header>
       <div className="px-5 py-5">
-        {card.type === "question" ? (
-          <QuestionCard {...props} card={card} />
-        ) : card.type === "challenge" ? (
-          <ChallengeCard {...props} card={card} />
-        ) : card.type === "event" ? (
-          <EventCard {...props} card={card} />
-        ) : card.type === "star_offer" ? (
-          <StarOfferCard {...props} card={card} />
-        ) : (
-          <ItemOverflowCard {...props} card={card} />
-        )}
+        {/*
+          Il `.riv` della carta si **aggiunge** all'ingresso che c'è già (Motion, D-57) e non lo
+          sostituisce: per questo il segnaposto è «i figli così come sono», e non il mezzo giro
+          in CSS di `CardPlaceholder` (H2).
+        */}
+        <CardView faceUp placeholder="children" className="block">
+          {card.type === "question" ? (
+            <QuestionCard {...props} card={card} />
+          ) : card.type === "challenge" ? (
+            <ChallengeCard {...props} card={card} />
+          ) : card.type === "event" ? (
+            <EventCard {...props} card={card} />
+          ) : card.type === "star_offer" ? (
+            <StarOfferCard {...props} card={card} />
+          ) : (
+            <ItemOverflowCard {...props} card={card} />
+          )}
+        </CardView>
       </div>
     </motion.section>
   );

@@ -182,6 +182,8 @@ export function OnlineTable(props: OnlineTableProps) {
 
   // Un movimento per volta, in ordine: dal tempo reale possono arrivare due righe insieme (F2-05).
   const moves = useMoveQueue(props.board, events);
+  // I tiri fatti finora: è il contatore che fa scattare `roll` in `dice.riv` (H2).
+  const rollCount = events.filter((event) => event.type === "ROLLED").length;
 
   const finished = state.phase === "finished";
   const myTurn = state.turn === props.seat && !finished;
@@ -222,6 +224,7 @@ export function OnlineTable(props: OnlineTableProps) {
               state={state}
               names={props.names}
               colors={props.colors}
+              pawns={props.settings.pawns}
               moves={moves}
             />
           </div>
@@ -247,6 +250,7 @@ export function OnlineTable(props: OnlineTableProps) {
                   myTurn ? "Prima si risolve la carta aperta." : `Tocca a ${props.names[state.turn]}.`
                 }
                 singleDie={state.singleDie}
+                rollCount={rollCount}
               />
 
               <CardPanel

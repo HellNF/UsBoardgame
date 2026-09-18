@@ -130,6 +130,8 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
 
   // Un movimento per volta, in ordine: gli eventi possono arrivarne due insieme (F2-05).
   const moves = useMoveQueue(ctx.board, events);
+  // I tiri fatti finora: è il contatore che fa scattare `roll` in `dice.riv` (H2).
+  const rollCount = events.filter((event) => event.type === "ROLLED").length;
 
   const finished = state.phase === "finished";
   const canRoll = state.phase === "pre_roll";
@@ -143,7 +145,14 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
     <div className="grid w-full gap-6 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_26rem] lg:grid-rows-[minmax(0,1fr)] lg:gap-4">
       <div className="flex flex-col gap-4 lg:min-h-0">
         <div className="mx-auto w-full max-w-[38rem] lg:flex lg:min-h-0 lg:max-w-none lg:flex-1">
-          <Board board={ctx.board} state={state} names={names} colors={allSettings.colors} moves={moves} />
+          <Board
+            board={ctx.board}
+            state={state}
+            names={names}
+            colors={allSettings.colors}
+            pawns={allSettings.pawns}
+            moves={moves}
+          />
         </div>
       </div>
 
@@ -165,6 +174,7 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
               onRoll={() => act({ type: "ROLL", seat: state.turn })}
               blockedReason={blockedReason}
               singleDie={state.singleDie}
+              rollCount={rollCount}
             />
 
             <CardPanel

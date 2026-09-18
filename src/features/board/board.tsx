@@ -9,6 +9,7 @@ import {
   type CellNumber,
   type DecorationShape as DecorationShapeKind,
   type GameState,
+  type PawnId,
   type PlayerColor,
   type Seat,
 } from "@/engine";
@@ -37,6 +38,8 @@ export type BoardProps = {
   state: GameState;
   names: Record<Seat, string>;
   colors: Record<Seat, PlayerColor>;
+  /** L'animale di ogni posto (scelto in lobby): è l'artboard di `pawns.riv`, quando c'è. */
+  pawns?: Record<Seat, PawnId>;
   /**
    * Ultimo spostamento di ogni posto (dagli eventi `MOVED`): serve solo all'animazione
    * della pedina. Senza, la pedina salta subito sulla casella nuova.
@@ -206,7 +209,7 @@ function DecorationShape({ shape, cells }: { shape: DecorationShapeKind; cells: 
 
 /** Punti che la pedina segue quando si sposta da una casella all'altra. */
 
-export function Board({ board, state, names, colors, moves }: BoardProps) {
+export function Board({ board, state, names, colors, pawns, moves }: BoardProps) {
   const ladders = useMemo(
     () => board.ladders.map((ladder) => ladderGeometry(ladder.from, ladder.to)),
     [board.ladders],
@@ -381,7 +384,14 @@ export function Board({ board, state, names, colors, moves }: BoardProps) {
               animate={{ x: route.points.map((point) => point.x), y: route.points.map((point) => point.y) }}
               transition={{ duration: route.duration, ease: "easeInOut" }}
             >
-              <Pawn seat={seat} name={names[seat]} color={colors[seat]} x={0} y={0} />
+              <Pawn
+                seat={seat}
+                name={names[seat]}
+                color={colors[seat]}
+                animal={pawns?.[seat]}
+                x={0}
+                y={0}
+              />
             </motion.g>
           </g>
         );
