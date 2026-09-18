@@ -243,7 +243,15 @@ function placeElements(
     budget,
     next,
   );
-  const snakes = pickWithinBudget("snake", snakeCandidates(), RULES.board.snakes, used, readability, budget, next);
+  const snakes = pickWithinBudget(
+    "snake",
+    snakeCandidates(),
+    RULES.board.snakes,
+    used,
+    readability,
+    budget,
+    next,
+  );
   return { ladders, snakes, readability };
 }
 

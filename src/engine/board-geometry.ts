@@ -225,7 +225,10 @@ export type CrossedOptions = {
  */
 export function crossedCells(board: BoardLayout, options: CrossedOptions = {}): Set<CellNumber> {
   const crossed = new Set<CellNumber>();
-  for (const { cells } of elementFootprints(board, { ...options, inset: options.inset ?? DECORATION_INSET })) {
+  for (const { cells } of elementFootprints(board, {
+    ...options,
+    inset: options.inset ?? DECORATION_INSET,
+  })) {
     for (const cell of cells) crossed.add(cell);
   }
   return crossed;
@@ -263,10 +266,20 @@ export function elementFootprints(
   const footprints: ElementFootprint[] = [];
   for (const { from, to } of board.ladders) {
     const { start, end } = ladderAxis(from, to);
-    footprints.push({ kind: "ladder", from, to, cells: cellsAlongPath([start, end], ladderClearance, inset) });
+    footprints.push({
+      kind: "ladder",
+      from,
+      to,
+      cells: cellsAlongPath([start, end], ladderClearance, inset),
+    });
   }
   for (const { from, to } of board.snakes) {
-    footprints.push({ kind: "snake", from, to, cells: cellsAlongPath(snakeBodyPoints(from, to), snakeClearance, inset) });
+    footprints.push({
+      kind: "snake",
+      from,
+      to,
+      cells: cellsAlongPath(snakeBodyPoints(from, to), snakeClearance, inset),
+    });
   }
   return footprints;
 }

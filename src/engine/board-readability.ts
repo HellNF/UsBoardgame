@@ -96,7 +96,10 @@ export function measureReadability(
 }
 
 /** Vero se il conto sta dentro il budget. */
-export function fitsBudget(measure: Pick<ReadabilityMeasure, "crossings" | "linesPerCell">, budget: ReadabilityBudget): boolean {
+export function fitsBudget(
+  measure: Pick<ReadabilityMeasure, "crossings" | "linesPerCell">,
+  budget: ReadabilityBudget,
+): boolean {
   return measure.crossings <= budget.crossings && measure.linesPerCell <= budget.linesPerCell;
 }
 

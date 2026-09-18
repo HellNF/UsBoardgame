@@ -2,7 +2,13 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { illustrationsByCategory } from "../../src/art/illustrations";
-import { assertValidBoard, generateBoard, type BoardLayout, type Cell, type IllustrationPool } from "../../src/engine";
+import {
+  assertValidBoard,
+  generateBoard,
+  type BoardLayout,
+  type Cell,
+  type IllustrationPool,
+} from "../../src/engine";
 
 /**
  * Congelare una disposizione: dal seme al file di contenuto (F7-03, pacchetto I).
@@ -82,7 +88,10 @@ export function frozenSource(
   const ladders = layout.ladders.map(({ from, to }) => `    { from: ${from}, to: ${to} },`).join("\n");
   const snakes = layout.snakes.map(({ from, to }) => `    { from: ${from}, to: ${to} },`).join("\n");
   const decorations = layout.decorations
-    .map(({ shape, cells: covered }) => `    { shape: ${JSON.stringify(shape)}, cells: [${covered.join(", ")}] },`)
+    .map(
+      ({ shape, cells: covered }) =>
+        `    { shape: ${JSON.stringify(shape)}, cells: [${covered.join(", ")}] },`,
+    )
     .join("\n");
 
   return `/**
@@ -119,9 +128,7 @@ ${decorations}
 /** Il contenuto del file che raccoglie le disposizioni congelate. */
 export function barrelSource(slugs: readonly string[]): string {
   const sorted = [...slugs].sort();
-  const imports = sorted
-    .map((slug) => `import { ${boardIdentifier(slug)} } from "./${slug}";`)
-    .join("\n");
+  const imports = sorted.map((slug) => `import { ${boardIdentifier(slug)} } from "./${slug}";`).join("\n");
   const list = sorted.map((slug) => boardIdentifier(slug));
   const empty = sorted.length === 0;
   // Prettier tiene l'elenco su una riga sola finché ci sta (printWidth 110): il file generato è già
@@ -148,7 +155,7 @@ export function barrelSource(slugs: readonly string[]): string {
 import type { BoardLayout } from "@/engine/types";
 ${imports === "" ? "" : `\n${imports}\n`}
 /** Le disposizioni congelate finora${
-    empty ? ": nessuna. `pnpm board:freeze 42 \"Serata d'estate\"` ne scrive una." : ", in ordine di nome."
+    empty ? ': nessuna. `pnpm board:freeze 42 "Serata d\'estate"` ne scrive una.' : ", in ordine di nome."
   } */
 export const frozenBoards: BoardLayout[] = ${body};
 `;
@@ -170,7 +177,9 @@ export function freezeBoard(options: {
 }): FrozenBoard {
   const slug = boardSlug(options.name);
   if (isReservedSlug(slug)) {
-    throw new Error(`«${options.name}» diventa \`${slug}\`, che è un file già esistente: scegli un altro nome.`);
+    throw new Error(
+      `«${options.name}» diventa \`${slug}\`, che è un file già esistente: scegli un altro nome.`,
+    );
   }
 
   const layout = generateBoard({

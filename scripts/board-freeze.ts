@@ -54,7 +54,8 @@ try {
   fail(`Non ho congelato niente: ${(error as Error).message}`);
 }
 
-if (isReservedSlug(frozen.slug)) fail(`«${name}» diventerebbe \`${frozen.slug}\`, che è un file già esistente.`);
+if (isReservedSlug(frozen.slug))
+  fail(`«${name}» diventerebbe \`${frozen.slug}\`, che è un file già esistente.`);
 
 const target = resolve(BOARDS_DIRECTORY, frozen.fileName);
 if (existsSync(target)) {

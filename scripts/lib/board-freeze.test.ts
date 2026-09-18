@@ -56,7 +56,12 @@ describe("boardSlug e boardIdentifier", () => {
 describe("freezeBoard: la disposizione diventa dati", () => {
   it("il seme è lo stesso del generatore, ma il file non lo chiama", () => {
     const board = freezeBoard({ seed: 12, name });
-    const generated = generateBoard({ seed: 12, id: "serata-d-estate", name, illustrations: illustrationsByCategory() });
+    const generated = generateBoard({
+      seed: 12,
+      id: "serata-d-estate",
+      name,
+      illustrations: illustrationsByCategory(),
+    });
     expect(board.layout).toEqual(generated);
   });
 

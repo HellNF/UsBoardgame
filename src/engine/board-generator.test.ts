@@ -271,7 +271,16 @@ describe("generateBoard: che i tipi restino quelli dichiarati", () => {
   it("la `classic` e una generata hanno le stesse chiavi di tipo", () => {
     const kinds = (board: BoardLayout) => [...new Set(board.cells.map((cell) => cell.kind))].sort();
     expect(kinds(generate(5))).toEqual(kinds(classic));
-    const declared: CellKind[] = ["challenge", "coins", "event", "finish", "free", "question", "star", "start"];
+    const declared: CellKind[] = [
+      "challenge",
+      "coins",
+      "event",
+      "finish",
+      "free",
+      "question",
+      "star",
+      "start",
+    ];
     expect(kinds(classic)).toEqual([...declared].sort());
   });
 });

@@ -296,28 +296,44 @@ Dopo la fase 3: **prima serata giocabile**.
   insieme in fondo a `/dev/art`.
   **Dal pacchetto H** `FinaleView` è collegato alla schermata finale come **ornamento** in uno spazio nuovo in testa
   alla sezione, con segnaposto «niente»: le tre rivelazioni e le loro frasi restano come sono, perché il file riceve
-  solo `winner` e `revealStar` (D-69). La **mascotte** non è collegata: non ha un posto nell'interfaccia e dove
-  metterla è una decisione del proprietario (vedi la domanda nel log del pacchetto H).
+  solo `winner` e `revealStar` (D-69).
+  **Dal pacchetto I** il posto della **mascotte** è deciso — pannello di destra, un animale per posto come la
+  pedina, movimento dagli stessi `GameEvent[]` delle animazioni, mai unico canale di un'informazione (D-74, mappa
+  evento → mood compresa) — ma non è collegata: senza `mascots.riv` il segnaposto occuperebbe spazio senza fare
+  niente.
 - [ ] **F6-06** Suoni opzionali.
 
 ## Fase 7 · Extra — _versione rifinita_
 
 - [ ] **F7-01** Emulatore DS nel browser per sfide a punteggio (file caricato solo in locale); elenco giochi da decidere.
 - [L] **F7-02** Generatore casuale di disposizioni da seme.
-  Nota: `generateBoard(seed)` in `src/engine/board-generator.ts` (pacchetto H). Funzione **pura**: il caso viene solo
-  dal seme (generatore congruenziale a interi, niente `Math.random`), quindi stesso seme = stessa disposizione anche
-  su macchine diverse. Rispetta i vincoli di [rules.md § Tabellone](rules.md#tabellone) — la distribuzione di tipi
-  della `classic`, 7 scale e 6 serpenti, nessun estremo condiviso, niente sulla 1 e sulla 100, al massimo 5 file,
-  nessuna testa di serpente fra la 2 e la 12 — e la regola delle decorazioni di D-65, misurata con
-  `src/engine/board-geometry.ts`, lo stesso modulo da cui il tabellone disegna scale e serpenti (D-70). Gli id delle
-  illustrazioni arrivano da fuori (`illustrationsByCategory()` del registro); se non bastano, il generatore lancia
-  dicendo quanti ne mancano. Le decorazioni sono quattro forme, ma la regola viene prima del numero: se le caselle
-  libere che nulla attraversa sono meno di quattro, se ne mettono meno (su 200 semi: quattro in 198 casi, tre e due
-  negli altri due).
+  Nota: `generateBoard(seed)` in `src/engine/board-generator.ts` (pacchetto H, rifinito nel pacchetto I). Funzione
+  **pura**: il caso viene solo dal seme (generatore congruenziale a interi, niente `Math.random`), quindi stesso seme
+  = stessa disposizione anche su macchine diverse. Rispetta i vincoli di [rules.md § Tabellone](rules.md#tabellone)
+  — la distribuzione di tipi della `classic`, 7 scale e 6 serpenti, nessun estremo condiviso, niente sulla 1 e sulla
+  100, al massimo 5 file, nessuna testa di serpente fra la 2 e la 12 — la regola delle decorazioni di D-65 con
+  **tutti e tre** i vincoli (casella libera, che nulla attraversa, **non di bordo**: `crossedCells` più
+  `isBorderCell`) e il **budget di leggibilità** di D-72 (`RULES.board.maxCrossings`, `maxLinesPerCell`), applicato
+  **mentre piazza**: si aggiunge una scala o un serpente alla volta e si rifiuta il candidato che porterebbe il
+  tabellone oltre il tetto. Con un tetto impossibile il generatore lancia dicendo a quanto si è fermato e con che
+  tetto, invece di restituire un tabellone che il validatore rifiuterebbe. Gli id delle illustrazioni arrivano da
+  fuori (`illustrationsByCategory()` del registro); se non bastano, lancia dicendo quanti ne mancano. Le decorazioni
+  sono quattro forme, ma la regola viene prima del numero: su 200 semi sono quattro in 130 casi, tre in 43, due in
+  21, una in 5, nessuna in uno. Le leggibilità misurata non supera mai il tetto: incroci 6, linee per casella 2.
   Si guarda in **`/dev/disposizioni`** (pagina di sviluppo, 404 in produzione): quattro semi fissi più quello che si
-  scrive nel campo, disegnati dal componente vero della partita. **Non cambia la partita**: la disposizione di ogni
-  stanza resta `classic`; quale tabellone usi una serata nuova è una decisione di prodotto. 17 prove in
-  `board-generator.test.ts`. Prossimo passo naturale (F7-03): salvare un seme come disposizione con un nome, per
-  sceglierlo in lobby.
-- [ ] **F7-03** Altre disposizioni predefinite.
+  scrive nel campo, disegnati dal componente vero della partita, con i numeri di incroci e linee per tabellone e il
+  conto della `classic` per confronto. 36 prove fra `board-generator.test.ts`, `board-readability.test.ts` e
+  `board-geometry.test.ts`. La metà meccanica di F7-03 (congelare un seme) è fatta.
+- [~] **F7-03** Altre disposizioni predefinite.
+  Nota: la **metà meccanica** è fatta (pacchetto I). `pnpm board:freeze <seme> <nome>` scrive
+  `src/content/boards/<nome>.ts` con la disposizione **intera come dato** — caselle, scale, serpenti, decorazioni —
+  e riscrive `src/content/boards/frozen.ts`, l'elenco; una disposizione congelata **non si rigenera più**, nemmeno
+  se il generatore cambia (D-73), e lo script rifiuta di sovrascrivere un file che esiste. Le congelate le validano
+  gli stessi test della `classic` (`boards.test.ts` gira su `boards` e su `frozenBoards`) e si guardano in
+  `/dev/disposizioni`, sezione «Disposizioni congelate»; **non entrano in gioco da sole**: `boards` resta la
+  `classic`. Manca la **decisione** — quali disposizioni entrano e come si chiamano; i semi e i nomi sono del
+  proprietario e nel repository non ne è congelata nessuna — e con essa la conseguenza sui dati: il tabellone usato
+  va salvato **sulla riga della partita** (oggi la riga ha l'id in `games.settings.boardId`, ma il contenuto si
+  legge da `public.boards`, D-73), altrimenti il diario di una serata passata non si può più ridisegnare. La
+  migrazione non è di questo pacchetto. 17 prove in `scripts/lib/board-freeze.test.ts`.
 - [ ] **F7-04** Bilanciamento dopo le prime partite (solo `RULES` e contenuti).

@@ -41,9 +41,7 @@ const seedFrom = (value: string | string[] | undefined): number | null => {
 function Summary({ board }: { board: BoardLayout }) {
   const ladders = board.ladders.map(({ from, to }) => `${from}→${to}`).join(" ");
   const snakes = board.snakes.map(({ from, to }) => `${from}→${to}`).join(" ");
-  const decorations = board.decorations
-    .map(({ shape, cells }) => `${shape} ${cells.join("+")}`)
-    .join(" · ");
+  const decorations = board.decorations.map(({ shape, cells }) => `${shape} ${cells.join("+")}`).join(" · ");
   const readability = measureReadability(board);
   const within = fitsBudget(readability, READABILITY_BUDGET);
 
@@ -104,7 +102,7 @@ function SeedBoard({ seed, board }: { seed: number; board: BoardLayout }) {
         board={board}
         heading={
           <>
-            Seme {seed} <span className="font-sans text-sm not-italic text-ink/60">{board.name}</span>
+            Seme {seed} <span className="font-sans text-sm text-ink/60 not-italic">{board.name}</span>
           </>
         }
       />
@@ -124,9 +122,9 @@ function FrozenBoards() {
       {frozenBoards.length === 0 ? (
         <p className="text-sm text-ink/70">
           Nessuna per ora. Un seme si congela con{" "}
-          <code className="bg-ink/5 px-1">pnpm board:freeze &lt;seme&gt; &lt;nome&gt;</code>: il file compare in{" "}
-          <code className="bg-ink/5 px-1">src/content/boards/</code> e questa sezione lo disegna qui, con i suoi
-          numeri. Da lì non si muove più, nemmeno se il generatore cambia.
+          <code className="bg-ink/5 px-1">pnpm board:freeze &lt;seme&gt; &lt;nome&gt;</code>: il file compare
+          in <code className="bg-ink/5 px-1">src/content/boards/</code> e questa sezione lo disegna qui, con i
+          suoi numeri. Da lì non si muove più, nemmeno se il generatore cambia.
         </p>
       ) : (
         frozenBoards.map((board) => (
@@ -135,7 +133,7 @@ function FrozenBoards() {
             board={board}
             heading={
               <>
-                {board.name} <span className="font-sans text-sm not-italic text-ink/60">{board.id}</span>
+                {board.name} <span className="font-sans text-sm text-ink/60 not-italic">{board.id}</span>
               </>
             }
           />
@@ -166,8 +164,8 @@ export default async function BoardSeedsPage({ searchParams }: PageProps<"/dev/d
           Le regole che il generatore rispetta sono in <code>docs/rules.md</code> § Tabellone, più D-65 per le
           decorazioni (si decora solo una casella libera, interna e che nulla attraversa) e il budget di
           leggibilità del piazzamento (<code>RULES.board.maxCrossings</code>,{" "}
-          <code>RULES.board.maxLinesPerCell</code>). Per confronto, la <code>classic</code> — che è disegnata a
-          mano — ha {classicMeasure.crossings} caselle con più di una linea e al massimo{" "}
+          <code>RULES.board.maxLinesPerCell</code>). Per confronto, la <code>classic</code> — che è disegnata
+          a mano — ha {classicMeasure.crossings} caselle con più di una linea e al massimo{" "}
           {classicMeasure.linesPerCell} linee su una casella. Pagina di sviluppo: in produzione risponde 404.
         </p>
         <form method="get" className="flex flex-wrap items-center gap-2 text-sm">

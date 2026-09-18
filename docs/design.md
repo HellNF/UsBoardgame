@@ -119,8 +119,10 @@ segnaposto, basandosi sulla tabella qui sotto.
   (es. `<Pawn animal="fox" color="red" hop={n} />`) e mostra il segnaposto finché il file non è caricato o se manca.
   I wrapper ci sono: `PawnView`, `DieView`, `CardView`, `MascotView`, `FinaleView` (registro in `src/art/rive/index.ts`).
 - **Dove sono collegati** (D-68): la pedina del tabellone, il dado, la carta e la schermata finale. La pedina disegna
-  il canvas Rive dentro un `foreignObject`, perché dentro un SVG il canvas è HTML e non entra altrimenti. La
-  **mascotte** non è collegata: non ha un posto nell'interfaccia.
+  il canvas Rive dentro un `foreignObject`, perché dentro un SVG il canvas è HTML e non entra altrimenti. Il posto
+  della **mascotte** è deciso (D-74): pannello di destra della partita, un animale per posto — lo stesso della
+  pedina — con il `mood` mosso dagli stessi `GameEvent[]` che guidano le animazioni. **Non è collegata**: finché
+  `mascots.riv` manca il segnaposto occuperebbe spazio senza fare niente, cioè contro la regola qui sotto.
 - **In partita il segnaposto è il componente attuale della schermata**: ogni wrapper prende `placeholder`, e le
   schermate ci passano quello che si vede oggi — il cerchio SVG della pedina, il dado a **pallini** (`DieFace`), la
   carta con i suoi figli (`placeholder="children"`, perché l'ingresso è già Motion, D-57). I segnaposto disegnati per
