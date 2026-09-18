@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { Seat } from "@/engine";
 import { starPath } from "@/art/illustrations/star";
 import { RIVE_FILES } from "./files";
@@ -24,15 +25,36 @@ export type FinaleViewProps = {
   revealStar?: number;
   /** I nomi dei due posti, per il segnaposto. */
   names?: Record<Seat, string>;
+  /**
+   * Cosa mostrare finché il file non c'è. Senza, il segnaposto è il campione di `/dev/art`
+   * (tre stelle e il nome del vincitore): serve a **guardare** il wrapper, non a stare in
+   * partita. In partita passa sempre il componente attuale della schermata, e `"none"` dove il
+   * `.riv` è un ornamento in più e non lo scambio di niente — un'animazione decorativa non
+   * può mangiare informazione di gioco (Registro, H2).
+   */
+  placeholder?: ReactNode | "none";
   className?: string;
 };
 
-export function FinaleView({ winner, revealedStars = 0, revealStar, names, className }: FinaleViewProps) {
+export function FinaleView({
+  winner,
+  revealedStars = 0,
+  revealStar,
+  names,
+  placeholder,
+  className,
+}: FinaleViewProps) {
   const available = useRiveFile(RIVE_FILES.finale);
-  if (!available)
+  if (!available) {
+    if (placeholder === "none") return null;
     return (
-      <FinalePlaceholder winner={winner} revealedStars={revealedStars} names={names} className={className} />
+      <>
+        {placeholder ?? (
+          <FinalePlaceholder winner={winner} revealedStars={revealedStars} names={names} className={className} />
+        )}
+      </>
     );
+  }
 
   return (
     <RiveCanvas

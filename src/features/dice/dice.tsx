@@ -1,11 +1,14 @@
 "use client";
 
+import { DieView } from "@/art/rive";
 import type { DiceRoll } from "@/engine";
 
 /**
- * Dadi e pulsante del tiro (task F1-05, docs/design.md § Tabellone e Rive).
- * Segnaposto geometrico: quadrato bianco bordato con i punti neri; quando esistono i
- * file Rive si sostituisce il disegno, non il pulsante.
+ * Dadi e pulsante del tiro (task F1-05, H2).
+ *
+ * Il disegno del dado lo fa `DieView` (il wrapper Rive): finché `dice.riv` non c'è mostra il
+ * **dado a pallini** di qui — `DieFace` — che è quello che si vede oggi in partita. Il dado a
+ * cifra di `/dev/art` non entra in partita: sarebbe un peggioramento silenzioso (H2).
  */
 
 const PIPS: Record<number, [number, number][]> = {
@@ -42,7 +45,8 @@ const PIPS: Record<number, [number, number][]> = {
   ],
 };
 
-function Die({ value, highlight }: { value: number; highlight: boolean }) {
+/** La faccia del dado: quadrato bianco con i pallini. È il segnaposto della partita e di `/dev/art`. */
+export function DieFace({ value, highlight }: { value: number; highlight: boolean }) {
   const pips = PIPS[value] ?? [];
   return (
     <svg viewBox="0 0 100 100" className="h-16 w-16" role="img" aria-label={`Dado: ${value}`}>
@@ -71,9 +75,14 @@ export type DiceProps = {
   blockedReason?: string;
   /** Vero se il prossimo tiro usa un solo dado (oggetto Dado singolo). */
   singleDie?: boolean;
+  /**
+   * Quanti tiri ha fatto la partita finora: è il contatore che fa scattare `roll` in
+   * `dice.riv`. Lo conta chi possiede gli eventi (il tavolo), non questo componente.
+   */
+  rollCount?: number;
 };
 
-export function Dice({ roll, canRoll, onRoll, blockedReason, singleDie }: DiceProps) {
+export function Dice({ roll, canRoll, onRoll, blockedReason, singleDie, rollCount }: DiceProps) {
   return (
     <div className="flex items-center gap-4">
       <button
@@ -87,11 +96,18 @@ export function Dice({ roll, canRoll, onRoll, blockedReason, singleDie }: DicePr
 
       <div className="flex items-center gap-2">
         {roll ? (
-          roll.dice.map((value, index) => <Die key={`${value}-${index}`} value={value} highlight />)
+          roll.dice.map((value, index) => (
+            <DieView
+              key={`${value}-${index}`}
+              value={value}
+              roll={rollCount}
+              placeholder={<DieFace value={value} highlight />}
+            />
+          ))
         ) : (
           <>
-            <Die value={1} highlight={false} />
-            {!singleDie && <Die value={1} highlight={false} />}
+            <DieView value={1} placeholder={<DieFace value={1} highlight={false} />} />
+            {!singleDie && <DieView value={1} placeholder={<DieFace value={1} highlight={false} />} />}
           </>
         )}
       </div>

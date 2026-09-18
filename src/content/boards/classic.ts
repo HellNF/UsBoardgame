@@ -132,11 +132,17 @@ export const classic: BoardLayout = {
     { from: 98, to: 79 },
   ],
   decorations: [
-    { shape: "disc", cells: [4, 5] },
-    { shape: "crescent", cells: [9] },
-    // Non sulle caselle 23 e 26: là passa il serpente 62→18 e ci arriva la scala 8→26, e due
-    // neri pieni uno sull'altro si fondono in una macchia (D-65).
+    // Solo caselle **interne** e che nulla attraversa (D-65): la cornice del tabellone è spessa
+    // 16 unità e si disegna dopo le decorazioni, quindi sulle caselle di bordo si mangia il
+    // margine (il disco sulle 4-5 si fondeva con la cornice di sotto); e dove passano una scala
+    // o un serpente i due neri diventano una macchia (era il caso delle 23 e 26).
+    //
+    // In questa disposizione `crossedCells(classic)` lascia **quattro** caselle legali — 35, 46,
+    // 64, 84 — e le uniche due adiacenti sono la 35 e la 46, quindi qui non c'è posto per una
+    // forma su due caselle (la usa il generatore, F7-02). Tre decorazioni su righe diverse, senza
+    // due caselle decorate vicine: la falce resta fuori perché somiglia a `deep-moon`.
     { shape: "hill", cells: [46] },
-    { shape: "diamond", cells: [90] },
+    { shape: "disc", cells: [64] },
+    { shape: "diamond", cells: [84] },
   ],
 };

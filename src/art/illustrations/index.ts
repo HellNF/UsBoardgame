@@ -1,5 +1,6 @@
 import { createElement, type ReactElement } from "react";
 
+import { QUESTION_CATEGORIES, type IllustrationPool } from "@/engine";
 import type { IllustrationProps } from "./types";
 
 import { DeepCandle } from "./deep-candle";
@@ -121,4 +122,18 @@ export function illustrationGroups(): { prefix: string; ids: string[] }[] {
     else groups.push({ prefix, ids: [id] });
   }
   return groups;
+}
+
+/**
+ * Gli id per categoria (più le stelle, che non sono una categoria), nell'ordine del registro.
+ * Li usa il generatore di disposizioni (F7-02): il motore non può importare il registro, quindi
+ * l'elenco glielo passa chi chiama — e questa è la funzione che lo prepara una volta sola.
+ */
+export function illustrationsByCategory(): IllustrationPool {
+  const ids = Object.keys(ILLUSTRATIONS);
+  const pool = { stars: ids.filter((id) => id.startsWith("stars-")) } as IllustrationPool;
+  for (const category of QUESTION_CATEGORIES) {
+    pool[category] = ids.filter((id) => id.startsWith(`${category}-`));
+  }
+  return pool;
 }

@@ -10,6 +10,10 @@ import { RiveCanvas, useRiveFile } from "./rive";
  *
  * Senza il file, il segnaposto fa il mezzo giro in CSS: il dorso nero si tira via mentre la
  * faccia entra. La transizione si spegne con `prefers-reduced-motion`.
+ *
+ * `placeholder="children"` è per le schermate che hanno **già** un'animazione d'ingresso loro
+ * (la carta della partita, D-57): i figli si disegnano così come sono, senza un secondo giro
+ * in CSS che litigherebbe con Motion. Il file, quando c'è, si aggiunge sopra.
  */
 export type CardViewProps = {
   /** Contatore dei giri: cambia a ogni giro e fa scattare `flip`. */
@@ -18,19 +22,24 @@ export type CardViewProps = {
   faceUp: boolean;
   /** La faccia della carta. */
   children?: ReactNode;
+  /** Cosa mostrare finché il file non c'è: i figli così come sono, o un altro segnaposto. */
+  placeholder?: ReactNode | "children";
   className?: string;
 };
 
 const FLIP_STYLE = "transition-transform duration-[420ms] ease-out motion-reduce:transition-none";
 
-export function CardView({ flip, faceUp, children, className }: CardViewProps) {
+export function CardView({ flip, faceUp, children, placeholder, className }: CardViewProps) {
   const available = useRiveFile(RIVE_FILES.card);
-  if (!available)
+  if (!available) {
+    if (placeholder === "children") return <>{children}</>;
+    if (placeholder !== undefined) return <>{placeholder}</>;
     return (
       <CardPlaceholder faceUp={faceUp} className={className}>
         {children}
       </CardPlaceholder>
     );
+  }
 
   return (
     <span className={`relative block ${className ?? ""}`} style={{ perspective: "800px" }}>

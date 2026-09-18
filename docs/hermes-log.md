@@ -403,3 +403,102 @@ documentazione. Nessuna migrazione: il pacchetto non tocca il database, quindi n
     effetto sul segnaposto**: è voluto (il segnaposto è fermo per contratto, `docs/design.md`);
   - la lista dei `.riv` è un contratto scritto in due posti (`src/art/rive/files.ts` e la tabella di
     `docs/design.md`): se cambi un nome, vanno cambiati tutti e due (e la voce del Registro).
+
+## Pacchetto H · Le rifiniture — 2026-09-18
+
+Branch: `hermes/h-rifiniture` (da `main` a `56e02b8`) · Un commit per punto, ognuno con `pnpm check` verde prima del
+commit e `pnpm build` verde prima del push, pushato subito: `25b5dc2` (H1, i due disegni rifatti), `d0b6d7e` (H2, i
+wrapper collegati), `e907485` (H3, il generatore da seme), più il commit di questa documentazione. Nessuna
+migrazione: il pacchetto non tocca il database, quindi niente `db:reset` e niente `db:types`.
+
+- **Fatto:**
+  - **H1 (F6-02)** `[L]`: rifatti i due disegni che il proprietario aveva respinto, guardandoli **a 48 px** a ogni
+    giro di lavoro. `deep-roots` è ora terra vista in sezione: campitura piena in alto (non più tratteggio — a 48 px
+    un tratto da 2,5 unità è sotto il minimo di 3 di `design.md`), nessun tronco sopra, quattro radici asimmetriche
+    con basi distanti almeno 8 unità di carta, che si assottigliano **a gradini** da 11 a 3,5 unità con la punta
+    tonda. `deep-mirror` è uno specchio a mano visto di fronte: ovale **più alto che largo** (un cerchio con un
+    manico sotto è un lecca-lecca), cornice spessa in inchiostro, manico corto e largo, e dentro una fascia
+    diagonale di carta su fondo di inchiostro — il riflesso è il segno che dice «superficie che riflette». Fra
+    cornice e fondo restano 4 unità di carta, perché due inchiostri a contatto si fondono in una macchia (D-65).
+    Due tentativi buttati e dichiarati: radici parallele di lunghezza simile tornavano a leggersi come zampe
+    (quattro radici larghe quasi a contatto = le zampe di una cosa sola), e un cuneo appuntito sotto una campitura
+    piena si legge come un dente.
+  - **H2 (F6-04, F6-05)** `[L]`: i wrapper Rive di `src/art/rive/` sono **collegati alle schermate** — pedina del
+    tabellone, dado, carta, schermata finale — con la regola che finché i `.riv` mancano non cambia niente di quello
+    che si vede (D-68). Ogni wrapper prende un `placeholder` e le schermate ci passano il componente attuale: la
+    pedina il cerchio SVG di prima (dentro l'SVG il canvas Rive entra solo con un `foreignObject`), il dado
+    `DieFace` (il dado a **pallini**, non la cifra di `/dev/art`), la carta i suoi figli (`placeholder="children"`,
+    perché l'ingresso è già Motion, D-57). La **finale** è un **ornamento** in uno spazio nuovo in testa alla
+    sezione, con segnaposto «niente»: le tre rivelazioni e le loro frasi restano identiche (D-69). La **mascotte**
+    non è collegata: non ha un posto nell'interfaccia (vedi le domande). Il numero di posto dell'animale lo porta
+    `Board` con la nuova prop `pawns`, e il dado riceve `rollCount` — il contatore dei `ROLLED` che conta il tavolo,
+    perché il trigger di `Roll` è un contatore e nessun componente deve tenere stato per costruirlo.
+  - **H3 (F7-02)** `[L]`: `generateBoard(seed)` in `src/engine/board-generator.ts`. Funzione pura e deterministica
+    (generatore congruenziale a interi: niente `Math.random`, niente orologio), con i vincoli del validatore e la
+    regola delle decorazioni di D-65. Per misurarla è nato `src/engine/board-geometry.ts`, il modulo puro condiviso
+    con il disegno del tabellone (D-70). 17 prove nuove in `board-generator.test.ts`; la pagina
+    **`/dev/disposizioni`** mostra quattro semi fissi più quello che si scrive nel campo.
+- **Verificato da me:** comandi eseguiti davvero, con l'esito reale:
+  - `pnpm check` verde a ogni commit: **377 prove su 35 file** (erano 360 su 34), `tsc` ed `eslint` puliti. `pnpm
+build` verde prima di ogni push.
+  - **H1, guardato a occhio** in `pnpm dev` (`/dev/art`, Chrome via CDP): i due disegni rasterizzati **a 48 px veri**
+    (`deviceScaleFactor: 1`, poi ingranditi ×8 a blocchi) e riguardati a 200 px a ogni giro — **sette giri** in
+    tutto, di cui due buttati. Il verdetto mio: a 48 px lo specchio si legge come specchio a mano (l'ovale in piedi,
+    la cornice, il manico corto e la fascia chiara dentro) e le radici come radici sotto la terra, senza più la
+    silhouette di un omino.
+  - **H2, verificato per differenza** (è la prova che chiedeva la regola «non deve cambiare nulla»): con il codice
+    nuovo e con `git stash` (H2 tolto) ho scattato gli stessi ritagli di `/dev/hotseat` e `/dev/scenari` e li ho
+    confrontati pixel per pixel — **tabellone, riga dei dadi e schermata finale identici al byte** (0 pixel diversi
+    su 365.600, 25.664 e 233.940), e il markup della carta identico all'md5 (1.813 byte). In più: **zero** elementi
+    `canvas` in pagina, e le sole richieste `/rive/` sono le sonde `HEAD` (`pawns.riv`, `dice.riv`, `card.riv`,
+    `finale.riv` → 404), una per file per sessione.
+  - **H3, verificato con i test e a occhio**: 17 prove (determinazione, distribuzione di tipi contata dalla
+    `classic`, monete metà guadagni e metà perdite, scale che salgono e serpenti che scendono, estremi tutti diversi,
+    niente sulla 1 e sulla 100, nessuna testa fra la 2 e la 12, validatore verde su dodici semi, decorazioni solo su
+    caselle libere non attraversate, disco su due caselle attaccate, errore chiaro quando i disegni non bastano). Su
+    **200 semi** misurati a parte: tutte le disposizioni valide, quattro decorazioni in 198 casi, tre in uno e due in
+    uno, con una sola casella decorabile in un caso (la regola viene prima del numero). `/dev/disposizioni` guardata
+    a schermo: 4 tabelloni, 0 canvas, riepiloghi coerenti.
+  - **Trovato e corretto durante la verifica:** React segnalava in console un **disallineamento di idratazione** sui
+    tabelloni generati (`Math.hypot`/`Math.sin` non danno a Node e al browser gli stessi ultimi bit, quindi un `cx`
+    differiva nell'ultima cifra). I punti si arrotondano a due decimali e gli angoli a uno, dove nascono (D-71); dopo
+    la correzione `/dev/disposizioni` ricaricata **non ha più messaggi in console**.
+- **Non verificato / non verificabile da qui:**
+  - il comportamento dei wrapper **con** i `.riv`: senza i file non c'è niente da caricare. Resta la prova del
+    proprietario al primo export (il segnaposto deve sparire da solo). In particolare **non ho potuto guardare la
+    pedina dentro il `foreignObject`**: l'unico pezzo di H2 che cambia aspetto quando il file arriva;
+  - i **tempi in millisecondi** delle animazioni (Chrome strozza i timer nella scheda guidata da qui: l'ordine si
+    verifica, la durata no — stesso limite dei pacchetti E e G);
+  - la **mascotte**: non è collegata da nessuna parte, quindi non c'è niente da guardare;
+  - l'**aspetto dei tabelloni generati in partita**: si vedono in `/dev/disposizioni`, non in una serata vera, perché
+    la disposizione di una stanza resta `classic`.
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), sezione «Pacchetto H»: **H1** (i due
+  disegni a 48 px), **H2** (i wrapper collegati e il segnaposto che non cambia niente), **H3** (il generatore in
+  `/dev/disposizioni`). Non serve Docker né Supabase: tutto in `pnpm dev`.
+- **Decisioni Derivate aggiunte:** D-68 (in partita il segnaposto è il componente attuale della schermata), D-69 (un
+  animazione decorativa non può mangiare informazione di gioco), D-70 (il disegno e il generatore misurano l'ingombro
+  con lo stesso modulo), D-71 (i numeri che finiscono nel disegno si arrotondano). `docs/design.md` § Animazioni Rive
+  e § Illustrazioni aggiornati di conseguenza.
+- **Domande per il proprietario:**
+  1. **Dove sta la mascotte, e cosa le fa cambiare espressione?** È l'unico asset Rive senza un posto
+     nell'interfaccia: servono una schermata (la lobby? la carta? il diario?) e i momenti che devono muoverle il
+     `mood` (0 neutro, 1 felice, 2 sorpreso, 3 triste, 4 esultante). Finché non c'è una risposta non la collego: un
+     personaggio messo a caso è peggio di un personaggio fermo.
+  2. **I tabelloni generati hanno più incroci della `classic`.** Nessun vincolo di `rules.md` lo vieta, ma a occhio la
+     `classic` è più ordinata perché le posizioni sono state scelte a mano. Se vuoi, il generatore può preferire
+     scale e serpenti distanziati (una regola in più, da documentare): dimmi se è un problema o se va bene così.
+  3. **Una decorazione accanto a una casella sfida** (che è nera piena) la tocca con il nero. D-65 parla di scale e
+     serpenti, non dei vicini: il generatore oggi non guarda il tipo delle caselle attorno. Si aggiunge in una riga se
+     dà fastidio.
+  4. Restano le tue tre di prima, che non ho toccato: la **durata della carta del quiz**, se la **pausa della sfida
+     esterna** debba fermare il timer, e dove va la **mascotte** (punto 1 di questo elenco).
+- **Limiti noti / debito tecnico:**
+  - il generatore è più lento di quanto serva (circa 90 ms per tabellone: la misura delle caselle attraversate è
+    O(caselle × punti del tratto) e si rifà a ogni tentativo). Va bene per una pagina di sviluppo e per un seme
+    scelto una volta; se un giorno si generasse a ogni serata, conviene calcolare prima le caselle occupate e
+    pescare solo fra le libere;
+  - `DECORATION_SHAPES` sta in `src/engine/board-generator.ts` e le forme si disegnano in `board.tsx`: aggiungere una
+    forma vuol dire toccare due file (e il tipo `DecorationShape` in `types.ts`);
+  - i tabelloni generati **non sono contenuti versionati**: non finiscono in `supabase/seed.sql` e la lobby non li
+    offre. È voluto (F7-02 è una funzione e un modo per guardarla), ma significa che un seme che ti piace oggi non è
+    conservato da nessuna parte: dirlo a voce e lo salvo come disposizione con un nome.

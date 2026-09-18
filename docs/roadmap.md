@@ -262,28 +262,56 @@ Dopo la fase 3: **prima serata giocabile**.
   caselle domanda hanno 35 disegni diversi. Dal pacchetto G le **decorazioni** multi-cella sono forme piene
   (`disc`, `crescent`, `hill`, `diamond` in `board.tsx`, scelte in `src/content/boards/classic.ts`, D-65) e i tre
   disegni che a 48 px non si leggevano (`deep-mirror`, `deep-roots`, `memories-phone`) sono rifatti. Verificato in
-  locale il 2026-09-18: le decorazioni sono state spostate sulle caselle 46 e 90 (sulla 23 e sulla 26 si fondevano
-  con il serpente e con la scala) e il rombo è pieno e non più un anello; `memories-phone` ora si legge. Restano
-  aperti `deep-mirror` (ambiguo) e `deep-roots` (a 48 px è ancora un omino): sono giudizi del proprietario, voci
-  G1 e G2 del Registro.
+  locale il 2026-09-18: le decorazioni sono state spostate sulle caselle 46 e 90 (sulla 23 e sulla 26 si fondono
+  con il serpente e con la scala) e il rombo è pieno e non più un anello; `memories-phone` ora si legge.
+  **Dal pacchetto H** i due disegni che restavano aperti sono rifatti (H1): `deep-mirror` è uno specchio a mano visto
+  di fronte — ovale più alto che largo, cornice spessa, manico corto e largo, e dentro una fascia diagonale di carta
+  su fondo di inchiostro, con 4 unità di carta fra cornice e fondo — e `deep-roots` è terra in sezione, con la terra
+  come campitura piena e quattro radici asimmetriche che si assottigliano a gradini. Resta il suo occhio: la voce H1
+  del Registro dice cosa guardare a 48 px.
 - [L] **F6-03** Scale e serpenti definitivi (montanti e pioli, corpo a macchie, testa con occhio).
   Nota: fatti nel pacchetto F (macchie, occhio, lingua, coda che si assottiglia; scale con montanti e pioli
   bianchi bordati di nero), con `geometry.test.ts`. Verificato in locale il 2026-09-18: si leggono anche sopra le
-  caselle nere. Resta l'occhio del proprietario (voce F6-02 · F6-03 del Registro).
+  caselle nere. Resta l'occhio del proprietario (voce F6-02 · F6-03 del Registro). Dal pacchetto H l'asse della
+  scala e il corpo del serpente si calcolano in `src/engine/board-geometry.ts` (D-70): la forma non cambia, cambia
+  dove nasce.
 - [L] **F6-04** Rive: wrapper e segnaposto per pedine (6), dadi, carta; file `.riv` creati a mano nell'editor Rive.
   Nota: dal pacchetto G i wrapper ci sono (`src/art/rive/`: `PawnView`, `DieView`, `CardView`, `MascotView`,
   `FinaleView`), ognuno col suo segnaposto e con la sonda che prende il file appena c'è (nome esatto in `files.ts`,
   contratto in docs/design.md § Animazioni Rive). I `.riv` restano da disegnare a mano: la lista degli artboard, delle
-  macchine a stati e degli ingressi è nella voce F6-04 · F6-05 del Registro. I wrapper **non sono ancora collegati**
-  alle schermate: il tabellone usa la pedina di `features/board/pawn.tsx`.
+  macchine a stati e degli ingressi è nella voce F6-04 · F6-05 del Registro.
+  **Dal pacchetto H i wrapper sono collegati alle schermate** (D-68): il tabellone usa `PawnView` al posto della
+  pedina SVG, i dadi `DieView`, le carte `CardView`. Finché i `.riv` mancano non cambia niente di quello che si vede:
+  in partita il segnaposto di ogni wrapper è il **componente attuale** della schermata (il cerchio SVG con il numero
+  del posto, il dado a pallini, la carta con il suo ingresso di Motion), e il campione di `/dev/art` resta nella
+  pagina. Resta da verificare col primo `.riv` esportato che il file prenda il posto del segnaposto.
 - [L] **F6-05** Rive: wrapper e segnaposto per mascotte (6) e finale; file `.riv` creati a mano nell'editor Rive.
   Nota: come F6-04 — stesso pacchetto, stessi wrapper, stessa voce del Registro; i segnaposto si guardano tutti
   insieme in fondo a `/dev/art`.
+  **Dal pacchetto H** `FinaleView` è collegato alla schermata finale come **ornamento** in uno spazio nuovo in testa
+  alla sezione, con segnaposto «niente»: le tre rivelazioni e le loro frasi restano come sono, perché il file riceve
+  solo `winner` e `revealStar` (D-69). La **mascotte** non è collegata: non ha un posto nell'interfaccia e dove
+  metterla è una decisione del proprietario (vedi la domanda nel log del pacchetto H).
 - [ ] **F6-06** Suoni opzionali.
 
 ## Fase 7 · Extra — _versione rifinita_
 
 - [ ] **F7-01** Emulatore DS nel browser per sfide a punteggio (file caricato solo in locale); elenco giochi da decidere.
-- [ ] **F7-02** Generatore casuale di disposizioni da seme.
+- [L] **F7-02** Generatore casuale di disposizioni da seme.
+  Nota: `generateBoard(seed)` in `src/engine/board-generator.ts` (pacchetto H). Funzione **pura**: il caso viene solo
+  dal seme (generatore congruenziale a interi, niente `Math.random`), quindi stesso seme = stessa disposizione anche
+  su macchine diverse. Rispetta i vincoli di [rules.md § Tabellone](rules.md#tabellone) — la distribuzione di tipi
+  della `classic`, 7 scale e 6 serpenti, nessun estremo condiviso, niente sulla 1 e sulla 100, al massimo 5 file,
+  nessuna testa di serpente fra la 2 e la 12 — e la regola delle decorazioni di D-65, misurata con
+  `src/engine/board-geometry.ts`, lo stesso modulo da cui il tabellone disegna scale e serpenti (D-70). Gli id delle
+  illustrazioni arrivano da fuori (`illustrationsByCategory()` del registro); se non bastano, il generatore lancia
+  dicendo quanti ne mancano. Le decorazioni sono quattro forme, ma la regola viene prima del numero: se le caselle
+  libere che nulla attraversa sono meno di quattro, se ne mettono meno (su 200 semi: quattro in 198 casi, tre e due
+  negli altri due).
+  Si guarda in **`/dev/disposizioni`** (pagina di sviluppo, 404 in produzione): quattro semi fissi più quello che si
+  scrive nel campo, disegnati dal componente vero della partita. **Non cambia la partita**: la disposizione di ogni
+  stanza resta `classic`; quale tabellone usi una serata nuova è una decisione di prodotto. 17 prove in
+  `board-generator.test.ts`. Prossimo passo naturale (F7-03): salvare un seme come disposizione con un nome, per
+  sceglierlo in lobby.
 - [ ] **F7-03** Altre disposizioni predefinite.
 - [ ] **F7-04** Bilanciamento dopo le prime partite (solo `RULES` e contenuti).

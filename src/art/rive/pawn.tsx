@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { PawnId, PlayerColor } from "@/engine";
 import { RIVE_FILES } from "./files";
 import { RiveCanvas, useRiveFile } from "./rive";
@@ -9,7 +10,9 @@ import { RiveCanvas, useRiveFile } from "./rive";
  *
  * Il colore del giocatore resta **fuori** dal disegno: i `.riv` sono in bianco e nero e il
  * gettone colorato lo mette il wrapper sotto la testa. Senza il file, il segnaposto è il
- * cerchio colorato con il numero del posto — lo stesso della pedina del tabellone.
+ * cerchio colorato con il numero del posto — lo stesso della pedina del tabellone; chi collega
+ * il wrapper a una schermata può passare il **segnaposto attuale della schermata** con
+ * `placeholder`, così finché il file manca non cambia niente di quello che si vedeva prima.
  */
 export type PawnViewProps = {
   /** L'animale scelto in lobby: un artboard per animale. */
@@ -23,12 +26,15 @@ export type PawnViewProps = {
   celebrate?: number;
   /** La pedina che sta muovendo adesso. */
   active?: boolean;
+  /** Cosa mostrare finché il file non c'è (senza, il cerchio di `/dev/art`). */
+  placeholder?: ReactNode;
   className?: string;
 };
 
-export function PawnView({ animal, color, number, hop, celebrate, active, className }: PawnViewProps) {
+export function PawnView({ animal, color, number, hop, celebrate, active, placeholder, className }: PawnViewProps) {
   const available = useRiveFile(RIVE_FILES.pawns);
-  if (!available) return <PawnToken color={color} number={number} className={className} />;
+  if (!available)
+    return <>{placeholder ?? <PawnToken color={color} number={number} className={className} />}</>;
 
   return (
     <span className={`relative inline-block ${className ?? ""}`}>

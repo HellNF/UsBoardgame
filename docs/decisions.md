@@ -637,6 +637,17 @@ Due vincoli che vengono dal guardare il tabellone vero, e che la verifica locale
    di carta, quindi ogni decorazione riceve **sempre** un morso lì. Una forma piena lo regge (si legge come una
    tacca); una fascia sottile si interrompe e la forma cambia significato. Il rombo era nato come anello — un rombo
    di carta dentro quello nero — e si leggeva come una freccia: ora è pieno.
+3. **Mai su una casella di bordo.** La cornice esterna del tabellone è spessa ~16 unità e si disegna **dopo** le
+   decorazioni, quindi sulla prima e sull'ultima riga e colonna si mangia il margine di 12 e i due neri diventano
+   uno: il disco sulle caselle 4-5 si fondeva con la cornice di sotto. La cornice è il terzo nero, dopo le scale e
+   i serpenti; questa regola è arrivata dopo le altre due, guardando il tabellone renderizzato (H).
+
+Il conto lo fa `crossedCells` in `src/engine/board-geometry.ts` (lo stesso modulo che usa il generatore, D-70):
+si decora solo una casella libera, interna e non attraversata. Nella disposizione `classic` ne restano **quattro**
+— 35, 46, 64, 84 — e le uniche due adiacenti sono la 35 e la 46, quindi la disposizione scritta a mano porta
+**tre** decorazioni su tre righe diverse (46, 64, 84) e nessuna forma su due caselle: quella la usa il generatore,
+dove i vincoli lasciano più spazio. La falce resta fuori da `classic` perché somiglia all'illustrazione
+`deep-moon`. Le posizioni non si scelgono a occhio: si calcolano.
 
 ### D-66 · Un riquadro in `/dev/scenari` per ogni minigioco che si vuole guardare (G3)
 
@@ -672,3 +683,70 @@ Una correzione al contratto di `docs/design.md`: l'ingresso `winner` di `finale.
 I segnaposto si guardano tutti insieme in fondo a `/dev/art`. Non hanno test: il progetto non ha un
 ambiente DOM per i componenti (`vitest` gira in `node` e include solo `*.test.ts`), quindi la prova è
 la pagina.
+
+---
+
+## Le rifiniture (pacchetto H)
+
+### D-68 · In partita il segnaposto di un wrapper è il componente attuale della schermata
+
+**Derivata, su indicazione del proprietario (F6-04, F6-05).** I cinque wrapper di `src/art/rive/` sono
+collegati alle schermate che hanno un posto per loro: la pedina del tabellone, il dado, la carta,
+la schermata finale. Ognuno prende un `placeholder` — **quello che si vede finché il `.riv` non c'è** —
+e le schermate di gioco ci passano il componente che si vede oggi:
+
+- la **pedina** resta il cerchio SVG con il numero del posto (`PawnToken`): dentro l'SVG il canvas Rive
+  entra solo attraverso un `foreignObject`, perché un canvas è HTML;
+- il **dado** resta `DieFace`, il dado a **pallini**; il dado a cifra di `/dev/art` è il campione della
+  pagina, non il dado della partita;
+- la **carta** passa `placeholder="children"`: l'ingresso è già un'animazione di Motion (D-57) e il
+  mezzo giro in CSS del segnaposto di `/dev/art` litigherebbe con lei;
+- la **finale** passa `placeholder="none"` (vedi D-69).
+
+Regola generale: **il campione di `/dev/art` serve a guardare il wrapper, in partita il segnaposto è
+sempre il componente attuale**. Finché i `.riv` mancano non deve cambiare niente di quello che si vede.
+_Verificato:_ tabellone, riga dei dadi e schermata finale **identici al pixel** prima e dopo il
+collegamento, markup della carta identico, zero elementi `canvas` e una sola sonda `HEAD` per file.
+
+### D-69 · Un'animazione decorativa non può mangiare informazione di gioco
+
+**Derivata, su indicazione del proprietario (F6-05).** `finale.riv` entra nella schermata finale come
+**ornamento**, in uno spazio nuovo in testa alla sezione, e non prende il posto di niente. Le tre
+rivelazioni continuano a scrivere le loro frasi — «Sapientone», «Campione», il nome del vincitore,
+compreso «nessuno: stesse risposte giuste» — perché il file riceve solo `winner` e `revealStar` e non
+può portare quell'informazione. Il segnaposto di quello spazio è `"none"`: finché il `.riv` manca la
+schermata resta identica al pixel.
+
+È la stessa regola che ha già deciso il dado a pallini e l'ingresso della carta che resta (D-68),
+portata al caso limite: dove il wrapper **sarebbe** uno scambio di tutta la schermata, non lo è.
+_Conseguenza dichiarata:_ `revealStar` scatta **a ogni pressione** (`revealed` va da 0 a 3: le prime
+due sono le due stelle bonus, la terza scopre il vincitore) e `winner` resta un numero come dice il
+contratto. Se disegnando il file servisse sapere **quale** stella si sta scoprendo, si aggiunge un
+`number star` e si aggiorna la tabella di [design.md](design.md): quella decisione si prende davanti
+all'editor, col file in mano.
+
+### D-70 · Il disegno del tabellone e il generatore misurano l'ingombro con lo stesso modulo
+
+**Derivata (F7-02).** La geometria che serve **anche al motore** sta in `src/engine/board-geometry.ts`:
+l'asse di una scala, il corpo di un serpente e **quali caselle un tratto attraversa** (distanza dal
+rettangolo della casella, ritirato di `DECORATION_INSET`, con la tolleranza dell'ingombro vero — metà
+montante più tratto per le scale, metà corpo per i serpenti). `src/features/board/geometry.ts` costruisce
+i disegni da quei campioni: montanti, pioli, macchie, coda.
+
+_Perché:_ la regola di D-65 («si decora solo una casella che nulla attraversa») la deve poter applicare
+il **generatore**, che vive nel motore e non può importare `src/features`. Con la misura in due posti,
+il generatore avrebbe evitato caselle che sembrano libere e non lo sono (o viceversa) — e il difetto
+corretto a mano sulla 23 e sulla 26 sarebbe potuto tornare per una svista, non per una scelta.
+
+### D-71 · I numeri che finiscono nel disegno si arrotondano
+
+**Derivata, trovata verificando `/dev/disposizioni` (F7-02).** I punti di un serpente e i pioli di una
+scala nascono da `Math.sin`, `Math.hypot` e `Math.atan2`: Node e il browser **non li calcolano con gli
+stessi ultimi bit**, quindi un `cx` differiva nell'ultima cifra fra l'HTML del server e quello del
+browser e React segnalava in console un disallineamento di idratazione («This won't be patched up»).
+Ora i punti si arrotondano a due decimali e gli angoli a uno, dove nascono
+(`src/engine/board-geometry.ts`); i percorsi erano già arrotondati.
+
+_Perché:_ a scala di tabellone 0,01 unità non si vede, mentre un errore in console a ogni caricamento sì
+(è la stessa preoccupazione di D-60). Il difetto c'era anche prima di questo pacchetto: si vedeva solo
+sui tabelloni le cui coordinate cadevano sulla cifra sfortunata, come capita con quelli generati.

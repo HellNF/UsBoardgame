@@ -48,9 +48,11 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   `hill` (mezzo disco appoggiato in basso), `diamond` (rombo). Stanno sotto scale,
   serpenti e numeri: dove passa una scala o un serpente vincono loro, e il numero della casella resta leggibile
   grazie all'alone (A1). Niente più segnaposto a filo (G1, D-65).
-  Due vincoli su dove e come (D-65): si mettono su caselle che **nessuna scala e nessun serpente attraversa**
-  (due neri pieni uno sull'altro si fondono in una macchia), e sono **piene, mai anelli** (l'alone del numero
-  morde sempre l'angolo in alto a sinistra: una forma piena lo regge, una fascia sottile si spezza).
+  Tre vincoli su dove e come (D-65): si mettono su caselle che **nessuna scala e nessun serpente attraversa**
+  (due neri pieni uno sull'altro si fondono in una macchia), **mai su una casella di bordo** (la cornice è spessa
+  16 unità e si disegna dopo: si mangia il margine), e sono **piene, mai anelli** (l'alone del numero morde sempre
+  l'angolo in alto a sinistra: una forma piena lo regge, una fascia sottile si spezza). Le caselle legali le
+  calcola `crossedCells` in `src/engine/board-geometry.ts`, non l'occhio.
 - Le caselle domanda e stella portano **l'illustrazione** del registro (`src/art/illustrations`) dentro un tondo di
   carta, nello strato dei numeri: è l'alone di A1, e il numero della casella si disegna sopra a tutto.
 
@@ -73,6 +75,13 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 - Tratto `strokeWidth` 5,5, `strokeLinecap="round"`, `strokeLinejoin="round"`; almeno una campitura piena per
   illustrazione. Nessun testo dentro gli SVG.
 - Leggibili a 48 px: niente dettagli sotto le 3 unità.
+- **L'angolo in alto a sinistra resta libero:** nella casella il numero si disegna sopra l'illustrazione con il suo
+  alone di carta, e quell'alone morde lì. Una campitura piena regge il morso come una tacca; un tratto sottile o una
+  fascia che attraversa l'angolo viene **tagliata in due** e il disegno si spezza (è la stessa regola delle
+  decorazioni, D-65: piene sì, sottili no). Un disegno si guarda a 48 px **nella casella**, non solo in `/dev/art`.
+- La silhouette conta più del dettaglio: a 48 px «massa in alto + tratti lisci in basso» si legge sempre come un
+  corpo (una persona, un tavolo, un animale a quattro zampe). Per uscirne serve un segno che i corpi non hanno —
+  per le radici la **biforcazione** (`deep-roots`, tre versioni buttate prima di trovarlo).
 - Prodotto (F6-02): **38 disegni**, 35 per le domande (7 per categoria) e 3 stelle. Le decorazioni multi-cella
   non sono file: sono le forme di `decorations` disegnate nel tabellone.
 - La pagina `/dev/art` (solo sviluppo, 404 in produzione) li mostra tutti a 48 px e a 200 px: è la misura con cui
@@ -108,6 +117,16 @@ segnaposto, basandosi sulla tabella qui sotto.
 - Ogni wrapper React (`src/art/rive/*.tsx`) carica il file con `@rive-app/react-canvas`, espone props tipizzate
   (es. `<Pawn animal="fox" color="red" hop={n} />`) e mostra il segnaposto finché il file non è caricato o se manca.
   I wrapper ci sono: `PawnView`, `DieView`, `CardView`, `MascotView`, `FinaleView` (registro in `src/art/rive/index.ts`).
+- **Dove sono collegati** (D-68): la pedina del tabellone, il dado, la carta e la schermata finale. La pedina disegna
+  il canvas Rive dentro un `foreignObject`, perché dentro un SVG il canvas è HTML e non entra altrimenti. La
+  **mascotte** non è collegata: non ha un posto nell'interfaccia.
+- **In partita il segnaposto è il componente attuale della schermata**: ogni wrapper prende `placeholder`, e le
+  schermate ci passano quello che si vede oggi — il cerchio SVG della pedina, il dado a **pallini** (`DieFace`), la
+  carta con i suoi figli (`placeholder="children"`, perché l'ingresso è già Motion, D-57). I segnaposto disegnati per
+  `/dev/art` restano il **campione della pagina**: servono a guardare il wrapper, non a stare in partita.
+- Nella **schermata finale** il file è un **ornamento**, in uno spazio nuovo in testa alla sezione, e il segnaposto di
+  quello spazio è «niente» (`placeholder="none"`): le tre rivelazioni e le loro frasi restano come sono. Un'animazione
+  decorativa non può mangiare informazione di gioco (D-69).
 - La presenza del file si controlla **una volta per sessione** con una richiesta `HEAD` su `public/rive/<file>`: senza
   file resta il segnaposto e in console compare la riga di rete del 404 (una per file, non un errore dell'app). Sul
   server la risposta è sempre «non c'è», così il primo disegno è il segnaposto e non si disallinea l'idratazione.
