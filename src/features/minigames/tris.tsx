@@ -67,7 +67,7 @@ export function TicTacToeBoard(props: MinigameViewProps) {
   return (
     <div className="flex flex-col items-center gap-4 font-sans text-ink">
       {/* `gap-px` su fondo `bg-ink`: le righe nere della griglia sono i bordi delle celle. */}
-      <div className="grid w-72 grid-cols-3 gap-px border-2 border-ink bg-ink">
+      <div className="mx-auto grid w-full max-w-[min(30rem,58vh)] grid-cols-3 gap-px border-2 border-ink bg-ink">
         {state.board.map((cell, index) => {
           const playable = seat !== null && cell === null;
           return (

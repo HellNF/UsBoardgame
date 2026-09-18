@@ -102,12 +102,24 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
     setError(null);
   }, []);
 
+  /**
+   * Ricomincia con un seme dato. Il seme non si cambia da solo: decide dadi e carte, quindi
+   * cambiarlo a partita in corso lascerebbe le pedine dove sono con un mazzo nuovo — mezzo
+   * stato di una partita e mezzo di un'altra.
+   */
+  const restartWithSeed = useCallback(
+    (nextSeed: number) => {
+      setSessionSeed(Math.max(1, nextSeed));
+      setState(createInitialState(allSettings, firstSeat));
+      setEvents([]);
+      setError(null);
+    },
+    [allSettings, firstSeat],
+  );
+
   const restart = useCallback(() => {
-    setState(createInitialState(allSettings, firstSeat));
-    setEvents([]);
-    setError(null);
-    setSessionSeed((value) => value + 1);
-  }, [allSettings, firstSeat]);
+    restartWithSeed(sessionSeed + 1);
+  }, [restartWithSeed, sessionSeed]);
 
   const question = useMemo(() => {
     const card = state.card;
@@ -202,6 +214,33 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
 
         <details className="rounded border-2 border-dashed border-ink/50 px-3 py-2 font-sans text-xs">
           <summary className="cursor-pointer">Strumenti di prova (solo sviluppo)</summary>
+          {/*
+            Il seme della demo: senza questo campo la hot seat ricomincia sempre con lo stesso
+            seme e quindi con gli stessi dadi e le stesse carte nello stesso ordine — comodo per
+            riprodurre un difetto, ingannevole quando si prova il gioco, perché sembra che le
+            attività escano sempre alla stessa profondità della partita. Nella partita vera non
+            succede: là il caso viene da `crypto.randomInt` e le sfide già uscite si scartano.
+          */}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1">
+              Seme
+              <input
+                type="number"
+                min={1}
+                value={sessionSeed}
+                onChange={(event) => restartWithSeed(Number(event.target.value) || 1)}
+                className="w-16 rounded border-2 border-ink bg-paper px-1 py-0.5"
+              />
+            </label>
+            <button
+              type="button"
+              className="rounded border-2 border-ink px-2 py-1"
+              onClick={() => restartWithSeed(Math.floor(Math.random() * 9999) + 1)}
+            >
+              Seme a caso
+            </button>
+            <span className="text-ink/60">cambiarlo ricomincia la partita</span>
+          </div>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
