@@ -11,7 +11,8 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 3. **Geometria, non decorazione:** il tipo di casella si riconosce dalla forma (vedi tabella).
 4. **Tratto spesso e campiture piene** per le illustrazioni, con le tinte della tavolozza (D-75).
 5. **Una schermata sola** (≥ 1024 × 768, D-16): la partita non fa scorrere la pagina; il tabellone si adatta
-   all'altezza disponibile e, se serve, scorre solo il pannello di destra. Chi ha il turno si riconosce a colpo
+   all'altezza disponibile e, se serve, scorre solo il pannello di destra. Quando si apre una carta, però, la
+   schermata diventa **l'attività**: la carta prende tutto e il tabellone sparisce (D-76). Chi ha il turno si riconosce a colpo
    d'occhio — bordo pieno della riga, pallino pieno del colore del giocatore, etichetta "Tocca a te" — e non dal
    solo colore.
 
@@ -42,14 +43,22 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   casella** (carta, o inchiostro sulle caselle sfida) frapposto fra il segno e ciò che c'è sotto. Dove una scala o
   un serpente passano su una casella, numero e simbolo restano leggibili: senza l'alone finiscono sotto la linea.
 
-- **Scale:** due montanti neri spessi, pioli bianchi bordati di nero, generate dagli estremi `from`/`to`.
+- **Scale:** due montanti neri **sottili** (tratto 8, montanti a 32 unità di distanza), pioli bianchi, generate
+  dagli estremi `from`/`to`.
+- **Peso delle linee:** scale e serpenti si attraversano il tabellone senza dominarlo. Erano una scala larga 62
+  unità e un serpente 26 con onde da 30 — masse nere che coprivano mezze caselle vicine e rendevano il tabellone
+  illeggibile; ora sono 32 e 16 con onde da 14 (`LADDER_*` e `SNAKE_*` in `src/engine/board-geometry.ts`, usate
+  sia dal disegno sia dalle misure). Una linea sottile non deve diventare invisibile: sotto l'inchiostro ci va un
+  **alone di carta** (3 unità per lato), altrimenti su una casella sfida, che è nera, restano solo i pioli e le
+  macchie bianche a galleggiare.
+- Le **pedine** stanno sopra tutto e possono coprire numeri e disegni: è voluto, una pedina deve dire dove sei.
   **Inclinazione minima 18° sull'orizzontale**, per le scale e per i serpenti: sotto quella soglia la linea si
   legge come una sbarra piatta e non come una salita o una discesa. Il numero viene dalla `classic`, dove la
   linea più piatta è esattamente 18° (la scala 51→67); il generatore di F7-02 ne produceva il 17% sotto i 20°, fino
   a 6,3° su 200 semi. **Dal pacchetto J il vincolo è anche nel generatore** (`RULES.board.minAngleDegrees`,
   misurato con `elementAngle` in `src/engine/board-geometry.ts`): il candidato sotto soglia non entra nemmeno
   nell'elenco di quelli pescabili, come per i tetti di leggibilità.
-- **Serpenti:** curva di Bézier sinuosa generata dagli estremi, corpo nero a macchie, coda che si assottiglia,
+- **Serpenti:** curva di Bézier sinuosa generata dagli estremi, corpo nero sottile a macchie, coda che si assottiglia,
   testa con un occhio e la lingua. La generazione deve essere deterministica per disposizione (stesso tabellone =
   stessa forma).
 - **Decorazioni multi-cella** (`decorations` nella disposizione): forme **piene** in inchiostro, contenute nel

@@ -656,7 +656,7 @@ una migrazione — se un punto del prompt chiedesse un giudizio, sarebbe un erro
     di leggibilità il vincolo si applica **mentre pesca i candidati**: una scala sotto soglia non entra nemmeno
     nell'elenco, quindi non si scarta mai un tabellone finito. Con la soglia in mano, l'elenco dei candidati perde
     le scale «lunghe e piatta» (una fila e cinque colonne: 11°).
-  - **J2 (F3-05, D-76)** `[L]`: `pnpm content:push` non riscrive più un tabellone pubblicato. Legge prima i tabelloni
+  - **J2 (F3-05, D-78)** `[L]`: `pnpm content:push` non riscrive più un tabellone pubblicato. Legge prima i tabelloni
     dal database e **confronta** ognuno con il file locale: stesso id, stesso layout e stesso nome vuol dire niente
     da fare; un layout diverso **ferma lo script** (uscita 3) dicendo quale id è cambiato e le due strade (id nuovo,
     oppure `pnpm content:push -- --force`). Il confronto è su **JSON canonico** (chiavi in ordine) perché `jsonb` non
@@ -664,7 +664,7 @@ una migrazione — se un punto del prompt chiedesse un giudizio, sarebbe un erro
     controllo viene **prima** della prima scrittura, quindi un fermo non lascia mezzo contenuto pubblicato. Domande e
     sfide restano con l'upsert normale: i testi si correggono. La sequenza sta in `scripts/lib/content-publish.ts`
     (con i suoi test); `scripts/push-content.ts` è il guscio.
-  - **J3 (F2-03, F2-04, D-77)** `[L]`: il canale della stanza è **privato** (`private: true`) e una **migrazione
+  - **J3 (F2-03, F2-04, D-79)** `[L]`: il canale della stanza è **privato** (`private: true`) e una **migrazione
     nuova** (`supabase/migrations/20260918180000_private_realtime.sql`) mette due policy su `realtime.messages`: una
     per ricevere e una per inviare (la presenza fa `channel.track`), entrambe con
     `realtime.topic() = 'room:' || public.current_room_id()` — l'helper RLS che dice in che stanza sta chi chiede,
@@ -734,8 +734,8 @@ una migrazione — se un punto del prompt chiedesse un giudizio, sarebbe un erro
   riga Inclinazione ≥ 18° su tutti i tabelloni, e guardare le scale che salgono di una fila), **J2** (il push che si
   ferma su un tabellone modificato, senza scrivere, e la scappatoia `-- --force`), **J3** (due sessioni vere: la
   presenza e le mosse con il canale privato, e come riconoscere una policy troppo stretta — l'elenco è scritto lì).
-- **Decisioni Derivate aggiunte:** D-76 (un tabellone pubblicato è immutabile, e `content:push` lo fa rispettare:
-  JSON canonico, controllo **prima** di ogni scrittura, uscita 3, `-- --force`) e D-77 (si entra nel canale della
+- **Decisioni Derivate aggiunte:** D-78 (un tabellone pubblicato è immutabile, e `content:push` lo fa rispettare:
+  JSON canonico, controllo **prima** di ogni scrittura, uscita 3, `-- --force`) e D-79 (si entra nel canale della
   stanza solo con una sessione in quella stanza: due policy su `realtime.messages`, `realtime.topic()` contro
   `current_room_id()`). Aggiornati anche **D-73** e **D-74** con le risposte del proprietario (sulla riga della
   partita va solo l'id; la mascotte sta nella riga del giocatore di `SidePanel`). `docs/architecture.md` § Tempo

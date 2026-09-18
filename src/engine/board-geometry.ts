@@ -23,13 +23,13 @@ export const CELL = 100;
 export const BOARD = CELL * RULES.board.size;
 
 /** Distanza fra i montanti di una scala (metà per lato). */
-export const LADDER_HALF_WIDTH = 24;
+export const LADDER_HALF_WIDTH = 16;
 /** Tratto con cui si disegnano montanti e pioli. */
-export const LADDER_STROKE = 14;
+export const LADDER_STROKE = 8;
 /** Spessore del corpo di un serpente. */
-export const SNAKE_BODY_WIDTH = 26;
+export const SNAKE_BODY_WIDTH = 16;
 /** Ampiezza delle onde del corpo di un serpente. */
-export const SNAKE_AMPLITUDE = 30;
+export const SNAKE_AMPLITUDE = 14;
 /** Margine con cui una decorazione multi-cella sta dentro le sue caselle (docs/design.md). */
 export const DECORATION_INSET = 12;
 

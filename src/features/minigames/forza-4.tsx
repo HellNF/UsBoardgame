@@ -68,7 +68,7 @@ export function ConnectFourBoard(props: MinigameViewProps) {
   return (
     <div className="flex flex-col items-center gap-4 font-sans text-ink">
       {/* `gap-px` su fondo `bg-ink`: le linee nere della griglia sono le fessure fra le celle. */}
-      <div className="grid w-full max-w-md grid-cols-7 gap-px border-2 border-ink bg-ink">
+      <div className="mx-auto grid w-full max-w-[min(40rem,78vh)] grid-cols-7 gap-px border-2 border-ink bg-ink">
         {columns.map((column) => {
           // La colonna è piena quando anche la sua riga più alta è occupata.
           const full = state.board[ROWS - 1][column] !== null;

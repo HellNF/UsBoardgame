@@ -86,11 +86,11 @@ export function snakeGeometry(from: CellNumber, to: CellNumber): SnakeGeometry {
   // Macchie: una sì e una no, tenute lontane dalla testa e dalla coda.
   const spots: SnakeGeometry["spots"] = [];
   for (let index = 2; index < points.length - 2; index += 2) {
-    spots.push({ at: points[index], angle: tangentAngle(points, index), rx: 10, ry: 6 });
+    spots.push({ at: points[index], angle: tangentAngle(points, index), rx: 6, ry: 3.5 });
   }
 
   // Coda: gli ultimi tratti ridisegnati via via più sottili.
-  const widths = [22, 17, 12, 7];
+  const widths = [13, 10, 7, 4];
   const tailPoints = points.slice(Math.max(0, points.length - 9));
   const step = (tailPoints.length - 1) / widths.length;
   const tail: SnakeGeometry["tail"] = widths.map((width, index) => ({
@@ -103,7 +103,7 @@ export function snakeGeometry(from: CellNumber, to: CellNumber): SnakeGeometry {
     body: smoothPath(points),
     points,
     head,
-    headAngle: Math.round((Math.atan2(delta.y, delta.x) * 180) / Math.PI * 10) / 10,
+    headAngle: Math.round(((Math.atan2(delta.y, delta.x) * 180) / Math.PI) * 10) / 10,
     spots,
     tail,
   };

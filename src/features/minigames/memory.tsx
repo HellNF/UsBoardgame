@@ -67,7 +67,7 @@ export function MemoryBoard(props: MinigameViewProps) {
         </span>
       </p>
 
-      <div className="grid w-72 grid-cols-4 gap-3">
+      <div className="mx-auto grid w-full max-w-[min(34rem,64vh)] grid-cols-4 gap-3">
         {state.cards.map((value, index) => {
           // Una carta resta scoperta anche quando la coppia è già stata incassata.
           const matched = state.matched[index];

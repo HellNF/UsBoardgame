@@ -324,6 +324,12 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 - [ ] Le risposte giuste del quiz-lampo viaggiano nello stato (D-55): chi guarda gli strumenti per sviluppatori del
       browser le vede. Per una partita fra due persone che si fidano va bene; se dovesse dare fastidio, il
       confronto va spostato sul server come per le domande a scelta multipla.
+- [ ] **Il tempo nelle attività, e quanto deve pesare.** Indicazione del proprietario (2026-09-18): il conto alla
+      rovescia è **ansiogeno** e non è quello che si cerca in una serata in due — «se esce una bella riflessione con
+      l'altra persona vale più il tempo che passa con l'altra persona che il vincere». Un limite alle attività ci
+      sta, ma non come pressione. Da decidere insieme, e riguarda tre cose che oggi hanno un timer: la carta del
+      quiz (`durationSeconds`), le sfide lampo e la pausa della sfida esterna. Le due voci qui sotto sono casi
+      particolari di questa.
 - [ ] La pausa della sfida esterna (F4-05) non ferma il timer della carta: se si va a giocare fuori il tempo
       scorre e la sfida può scadere mentre non si guarda. Per i duelli non è un guaio (alla scadenza si passa alla
       doppia conferma, che è già dove si dichiara), ma va deciso se la pausa deve fermare anche il conto.
@@ -900,11 +906,53 @@ reference, 36 sono stati presi come erano; `deep-mirror` e `deep-roots` erano ri
 quelle che a 48 px erano una «C» e un tavolo — e sono stati rifatti sulle forme nuove; `tastes-guitar` era l'ultimo
 illeggibile (un palloncino) e ha un corpo nuovo, con la vita invece di due cerchi sovrapposti.
 
+### D-76 · L'attività aperta prende tutto lo schermo e blocca il resto
+
+**Su indicazione del proprietario** (2026-09-18). La carta viveva nella colonna di destra, accanto al tabellone.
+Va bene per il dado e per i punteggi, non per un'attività: una domanda o un tris si guardano **in due**, e il
+tabellone di fianco è solo una distrazione. Da qui `src/features/cards/card-stage.tsx`: quando `state.card` non è
+nullo la carta occupa lo schermo (`fixed inset-0`), il tabellone non si vede, e la schermata si chiude da sé quando
+la carta è risolta. Vale nella partita vera e nella hot seat; **non** in `/dev/scenari`, che è un catalogo di 29
+riquadri e li mostra in fila.
+
+Tre cose che questa scelta ha portato con sé:
+
+- **Niente comandi persi.** La carta è autosufficiente: «Salta domanda» è un pulsante dentro la carta della
+  domanda, e gli oggetti attivi si usano solo **prima** del tiro (`ACTIVE_ITEMS`, `preRoll`), quindi mai mentre una
+  carta è aperta. Nascondere il pannello laterale non toglie niente.
+- **La fascia in alto è il contesto che dava il tabellone:** su che casella sei, di chi è il turno, i due punteggi,
+  e nella partita vera la stanza, il posto e se l'altro è collegato. Senza, a schermo pieno si perde il filo.
+- **Il contenitore non si anima.** Una schermata che deve _bloccare_ non può dipendere da un'animazione per essere
+  opaca: se i fotogrammi vengono strozzati (scheda in secondo piano) l'opacità resta a metà e il tabellone si vede
+  attraverso — è successo, misurato a `0.547`. L'ingresso ce l'ha già la carta dentro (D-57); questo strato compare
+  e basta. La regola generale: **l'opacità di uno strato che nasconde non si anima**.
+
+La carta sta al centro dello schermo quando è bassa e scorre dall'inizio quando è più alta (i minigiochi lo sono):
+verificato che a 600, 300 e 200 px di altezza disponibile la cima della carta resta visibile e non viene tagliata.
+
+### D-77 · Il tabellone della serata si sceglie in lobby
+
+**Decisione del proprietario** (2026-09-18), che chiude la voce aperta «quale disposizione usa una serata nuova».
+In lobby si sceglie fra la **Classica** — preselezionata — e le due o tre disposizioni congelate (F7-03), ognuna
+con un nome dicibile.
+
+Non serve nessuna migrazione, ed è la ragione per cui questa strada è quella giusta: `games.settings.boardId` è
+**già** scritto sulla riga della partita quando la serata nasce (`src/server/room/lobby.ts`), quindi una serata
+passata sa da sé quale tabellone ha usato e il diario si ridisegna uguale. Resta il vincolo dell'altra metà: un
+tabellone pubblicato non cambia più (regola 7 di `AGENTS.md` estesa ai tabelloni), altrimenti l'id sulla riga
+punterebbe a un contenuto diverso da quello giocato.
+
+Chi fa cosa: le disposizioni congelate le scelgo guardandole (con i nomi), e vanno congelate **dopo** il vincolo
+dei 18° — una congelata non si muove più, e non si fissa un tabellone con le scale che si leggono come sbarre.
+La scelta in lobby è codice, quindi di Hermes.
+
+Scartate: «sempre la classica», che non usa il generatore; e «una a sorte ogni serata», che è una sorpresa ma non
+fa tornare la disposizione che vi è piaciuta.
 ---
 
 ## Prima della prima serata (pacchetto J)
 
-### D-76 · Un tabellone pubblicato è immutabile, e `content:push` lo fa rispettare
+### D-78 · Un tabellone pubblicato è immutabile, e `content:push` lo fa rispettare
 
 **Derivata, su indicazione del proprietario (J2, pacchetto J).** Un tabellone pubblicato **non si riscrive**. La
 riga della partita porta solo l'id (`games.settings.boardId`) e il diario di una serata passata lo ridisegna
@@ -931,7 +979,7 @@ storia da proteggere: si riallinea **una volta** con `--force`, e da lì in poi 
 strade è del proprietario; la sequenza proposta (e perché conviene farla **prima** della prima serata) è nel log del
 pacchetto J.
 
-### D-77 · Si entra nel canale della stanza solo con una sessione in quella stanza
+### D-79 · Si entra nel canale della stanza solo con una sessione in quella stanza
 
 **Derivata, chiude la voce «Presenza non protetta» (J3, pacchetto J).** Il canale della stanza è
 `supabase.channel("room:<id>", { config: { private: true } })` e due policy su `realtime.messages`

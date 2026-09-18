@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Board } from "@/features/board/board";
 import { useMoveQueue } from "@/features/board/use-move-queue";
 import { CardPanel } from "@/features/cards/card-panel";
+import { CARD_TITLES } from "@/features/cards/card-panel";
+import { CardStage, StageScores } from "@/features/cards/card-stage";
 import { Dice } from "@/features/dice/dice";
 import { challenges } from "@/content/challenges";
 import { questions } from "@/content/questions";
@@ -100,12 +102,24 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
     setError(null);
   }, []);
 
+  /**
+   * Ricomincia con un seme dato. Il seme non si cambia da solo: decide dadi e carte, quindi
+   * cambiarlo a partita in corso lascerebbe le pedine dove sono con un mazzo nuovo — mezzo
+   * stato di una partita e mezzo di un'altra.
+   */
+  const restartWithSeed = useCallback(
+    (nextSeed: number) => {
+      setSessionSeed(Math.max(1, nextSeed));
+      setState(createInitialState(allSettings, firstSeat));
+      setEvents([]);
+      setError(null);
+    },
+    [allSettings, firstSeat],
+  );
+
   const restart = useCallback(() => {
-    setState(createInitialState(allSettings, firstSeat));
-    setEvents([]);
-    setError(null);
-    setSessionSeed((value) => value + 1);
-  }, [allSettings, firstSeat]);
+    restartWithSeed(sessionSeed + 1);
+  }, [restartWithSeed, sessionSeed]);
 
   const question = useMemo(() => {
     const card = state.card;
@@ -177,16 +191,7 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
               rollCount={rollCount}
             />
 
-            <CardPanel
-              state={state}
-              question={question}
-              challenge={challenge}
-              act={act}
-              now={now}
-              names={names}
-              /* Hot seat: i due giocatori sono davanti allo stesso schermo e vedono tutti i comandi. */
-              viewerSeat="all"
-            />
+            {/* La carta non sta più qui: quando c'è, va a tutto schermo (`CardStage`, D-76). */}
           </>
         )}
 
@@ -209,6 +214,33 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
 
         <details className="rounded border-2 border-dashed border-ink/50 px-3 py-2 font-sans text-xs">
           <summary className="cursor-pointer">Strumenti di prova (solo sviluppo)</summary>
+          {/*
+            Il seme della demo: senza questo campo la hot seat ricomincia sempre con lo stesso
+            seme e quindi con gli stessi dadi e le stesse carte nello stesso ordine — comodo per
+            riprodurre un difetto, ingannevole quando si prova il gioco, perché sembra che le
+            attività escano sempre alla stessa profondità della partita. Nella partita vera non
+            succede: là il caso viene da `crypto.randomInt` e le sfide già uscite si scartano.
+          */}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1">
+              Seme
+              <input
+                type="number"
+                min={1}
+                value={sessionSeed}
+                onChange={(event) => restartWithSeed(Number(event.target.value) || 1)}
+                className="w-16 rounded border-2 border-ink bg-paper px-1 py-0.5"
+              />
+            </label>
+            <button
+              type="button"
+              className="rounded border-2 border-ink px-2 py-1"
+              onClick={() => restartWithSeed(Math.floor(Math.random() * 9999) + 1)}
+            >
+              Seme a caso
+            </button>
+            <span className="text-ink/60">cambiarlo ricomincia la partita</span>
+          </div>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
@@ -283,6 +315,35 @@ export function GameTable({ seed = 1, firstSeat = 1, names = DEFAULT_NAMES, sett
           </ul>
         </details>
       </div>
+
+      {/* La carta aperta: schermata piena che blocca il tabellone (D-76). */}
+      {state.card !== null && !finished && (
+        <CardStage
+          label={CARD_TITLES[state.card.type]}
+          head={
+            <>
+              <span className="border border-ink px-2 py-0.5 tracking-[0.15em] uppercase">Hot seat</span>
+              <span className="whitespace-nowrap">
+                Casella {state.players[state.turn].position} · tocca a {names[state.turn]}
+              </span>
+              <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1">
+                <StageScores state={state} names={names} colors={allSettings.colors} />
+              </span>
+            </>
+          }
+        >
+          <CardPanel
+            state={state}
+            question={question}
+            challenge={challenge}
+            act={act}
+            now={now}
+            names={names}
+            /* Hot seat: i due giocatori sono davanti allo stesso schermo e vedono tutti i comandi. */
+            viewerSeat="all"
+          />
+        </CardStage>
+      )}
     </div>
   );
 }

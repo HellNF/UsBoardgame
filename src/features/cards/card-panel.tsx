@@ -48,8 +48,8 @@ function cardKey(card: ActiveCard): string {
   }
 }
 
-/** Titolo della cornice: il tipo di carta si legge subito. */
-const CARD_TITLES: Record<ActiveCard["type"], string> = {
+/** Titolo della cornice: il tipo di carta si legge subito. Lo usa anche `CardStage`. */
+export const CARD_TITLES: Record<ActiveCard["type"], string> = {
   question: "Domanda",
   challenge: "Sfida",
   event: "Imprevisto",
