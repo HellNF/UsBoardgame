@@ -112,6 +112,20 @@ export type GameRow = {
   ready: unknown;
 };
 
+/**
+ * Gli id dei tabelloni **pubblicati** (K2).
+ *
+ * La lobby offre le disposizioni di `@/content/boards`, ma un tabellone si gioca solo se è anche nel
+ * database (`loadBoard` lo legge da lì, D-78): una congelata appena scritta e non ancora pubblicata
+ * sarebbe una scelta che porta a una partita che non si ridisegna. Meglio non offrirla, e dirlo:
+ * `pnpm content:push` (o `content:seed` + `db:reset` in locale), e `pnpm check:ready` lo segnala.
+ */
+export async function publishedBoardIds(admin: SupabaseClient): Promise<Set<string>> {
+  const result = await admin.from("boards").select("id");
+  if (result.error) throw new Error(`Lettura dei tabelloni pubblicati: ${result.error.message}`);
+  return new Set(((result.data ?? []) as { id: string }[]).map((row) => row.id));
+}
+
 /** La partita aperta della stanza, se c'è. */
 export async function findOpenGame(admin: SupabaseClient, roomId: string): Promise<GameRow | null> {
   const result = await admin
