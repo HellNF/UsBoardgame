@@ -328,15 +328,19 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 - [ ] Le risposte giuste del quiz-lampo viaggiano nello stato (D-55): chi guarda gli strumenti per sviluppatori del
       browser le vede. Per una partita fra due persone che si fidano va bene; se dovesse dare fastidio, il
       confronto va spostato sul server come per le domande a scelta multipla.
-- [ ] **Il tempo nelle attività, e quanto deve pesare.** Indicazione del proprietario (2026-09-18): il conto alla
+- [x] **Il tempo nelle attività, e quanto deve pesare.** Indicazione del proprietario (2026-09-18): il conto alla
       rovescia è **ansiogeno** e non è quello che si cerca in una serata in due — «se esce una bella riflessione con
       l'altra persona vale più il tempo che passa con l'altra persona che il vincere». Un limite alle attività ci
-      sta, ma non come pressione. Da decidere insieme, e riguarda tre cose che oggi hanno un timer: la carta del
-      quiz (`durationSeconds`), le sfide lampo e la pausa della sfida esterna. Le due voci qui sotto sono casi
-      particolari di questa.
-- [ ] La pausa della sfida esterna (F4-05) non ferma il timer della carta: se si va a giocare fuori il tempo
-      scorre e la sfida può scadere mentre non si guarda. Per i duelli non è un guaio (alla scadenza si passa alla
-      doppia conferma, che è già dove si dichiara), ma va deciso se la pausa deve fermare anche il conto.
+      sta, ma non come pressione. **Chiusa dal pacchetto L (D-82):** il tempo è **indicativo**. La carta dichiara
+      una durata suggerita (un'informazione per la schermata) e nessun orologio produce più un esito: la carta si
+      chiude con un verdetto o con la dichiarazione di **entrambi** i giocatori (`DECLARE_TIME_UP`). Riguardava tre
+      cose con un timer — la carta del quiz, le sfide lampo e la pausa della sfida esterna — e adesso nessuna delle
+      tre scade da sé. Il conto che si vede sulla carta lo rifà il proprietario (D-75), quieto e in salita.
+- [x] La pausa della sfida esterna (F4-05) non ferma il timer della carta: se si va a giocare fuori il tempo
+      scorre e la sfida può scadere mentre non si guarda. **Chiusa dal pacchetto L:** con D-82 non c'è più nessun
+      conto che scorre, quindi la pausa non ha niente da fermare — si può restare fuori quanto serve. La pausa
+      resta della schermata (le dichiarazioni spariscono finché non si torna), e nel pacchetto L è sparito anche
+      l'orologio di pagina che le carte non leggevano più (Registro L2).
 - [ ] Tentativi di accesso: il contatore del ritardo è in memoria del processo (D-50); se il sito diventasse
       pubblico va spostato su Postgres (una tabella di tentativi per stanza).
 - [x] **L'archivio delle partite non si riempie mai.** Nessuno scriveva `status = 'finished'`: quando il motore
@@ -1045,3 +1049,40 @@ seed fa fallire `pnpm check`, invece di lasciare la disallineatura in giro fino 
 
 È la stessa idea di D-78, spostata **prima**: il guard controlla al momento della pubblicazione, questo al
 momento del commit.
+
+---
+
+## Il tempo indicativo (pacchetto L)
+
+### D-82 · Il tempo è indicativo, e la carta si chiude a mano
+
+**Derivata dalle parole del proprietario (L1, L2), 2026-09-18.** «Il tempo è un po' molto ansiogeno… se esce
+una bella riflessione con l'altra persona vale più il tempo che passa con l'altra persona che il vincere», e
+«il tempo lascialo indicativo, niente timer ansiogeni». Da qui una regola sola: **nessun orologio produce un
+esito**.
+
+- `card.deadlineAt` — l'istante di scadenza deciso dal server — sparisce. Al suo posto la carta porta
+  **`suggestedSeconds`**, la durata suggerita: min(durata della carta nel contenuto, massimo della serata, e
+  per la sfida lampo [`challenges.snakeFlashSeconds` = 30]). È un'informazione per la schermata, non un
+  giudice.
+- `TIMER_EXPIRED` — l'azione che il client mandava **da solo** quando l'orologio passava — diventa
+  `DECLARE_TIME_UP`, la dichiarazione di una persona. Serve quella di **entrambi** i giocatori: con una sola la
+  carta resta aperta. Quando ci sono tutte e due valgono gli esiti di prima (una prova senza verdetto è non
+  riuscita, un duello passa alla doppia conferma e il minigioco si abbandona). Gli eventi sono
+  `TIME_UP_DECLARED` (uno dei due l'ha detto) e `CHALLENGE_TIME_UP` (lo dicono tutti e due).
+- **Perché entrambi, e non uno solo:** così nessuno può chiudere la sfida dell'altro, e non serve nessuna
+  guardia sull'orologio (un duello non si può abbandonare per scappare da un minigioco che si sta perdendo).
+  Il prezzo è dichiarato e sta nel rapporto del pacchetto L: **con un posto assente la carta aspetta**, e non
+  c'è più nessun timer che la chiuda al posto suo.
+- La **regola del tempo finito resta**: non si cancella niente, si sposta la decisione dai due giocatori
+  all'orologio — che è esattamente quello che chiedeva il proprietario.
+- Supera la parte «timer» di [D-33](#d-33--timer-e-rivincita-delle-sfide): la rivincita dopo un disaccordo
+  resta com'è (stessa carta, dichiarazioni azzerate), ma non riparte più da una nuova scadenza.
+- Il **conto sulla carta è del proprietario**: qui sparisce solo quello vecchio, che leggeva `deadlineAt` (D-75).
+  Il tempo che sale, quieto, accanto a «circa N minuti» lo scrive lui; `suggestedSeconds` è il numero che gli
+  serve, e l'hook idratato (`useHydrated`, D-60) resta al suo posto apposta per quel lavoro.
+
+**L2 (la pausa della sfida esterna) si chiude da sé.** La pausa di «Andiamo a giocare» (F4-05) è sempre stata
+della schermata, non della partita: non fermava il conto, e da D-82 non c'è più nessun conto da fermare. Restava
+il pezzo di codice che guardava un conto che non conta più — l'orologio di pagina che passava `now` a ogni carta
+ogni secondo, per un conto alla rovescia che non esiste — ed è stato tolto.
