@@ -1,48 +1,35 @@
 /**
  * Coniglio — personaggio `rabbit`.
  *
- * Le orecchie sono lunghe **e inclinate di lato**: due ellissi verticali identiche fanno una
- * sagoma simmetrica che a 34 px legge come una forcella, non come un animale. Inclinandole di
- * otto gradi verso fuori la sagoma diventa riconoscibile anche piccola.
+ * Le orecchie sono **larghe e lunghe**, non due spine — sottili facevano un topo — e una è più
+ * dritta dell'altra, che è l'unica ragione per cui sembra disegnato a mano e non stampato.
+ *
+ * Le curve sono **sbilenche di proposito**: nella reference (`docs/reference/mascots/`) niente è
+ * simmetrico — una spalla è più alta dell'altra, le due orecchie non sono uguali, la coda
+ * finisce a punta. La prima versione era fatta di uova simmetriche e si vedeva.
  */
 import { Face, type FaceSpec } from "./face";
-import { CharacterFrame } from "./frame";
+import { CharacterFrame, Mass } from "./frame";
 import type { CharacterProps } from "./types";
-
-const FUR = "var(--color-art-sand)";
-const CREAM = "var(--color-art-cream)";
 
 const FACE: FaceSpec = {
   eyes: [
-    { x: 41, y: 36 },
-    { x: 59, y: 36 },
+    { x: 39, y: 61 },
+    { x: 61, y: 60 },
   ],
-  eyeR: 3.3,
-  mouth: { x: 50, y: 56 },
-  mouthWidth: 11,
+  rx: 11.5,
+  ry: 12,
+  mouth: { x: 50, y: 80, w: 12 },
 };
 
 export function Rabbit(props: CharacterProps) {
   return (
     <CharacterFrame {...props}>
-      <g data-parte="corpo">
-        <path d="M33 86C31 70 38 57 50 57C62 57 69 70 67 86Z" fill={FUR} />
-        <path d="M42 86C40 75 43 67 50 67C57 67 60 75 58 86Z" fill={CREAM} />
-      </g>
-      <g data-parte="orecchie">
-        <g transform="rotate(-9 40 20)">
-          <ellipse cx="40" cy="17" rx="7.5" ry="17" fill={FUR} />
-          <ellipse cx="40" cy="16" rx="3.4" ry="11" fill={CREAM} strokeWidth={3} />
-        </g>
-        <g transform="rotate(9 60 20)">
-          <ellipse cx="60" cy="17" rx="7.5" ry="17" fill={FUR} />
-          <ellipse cx="60" cy="16" rx="3.4" ry="11" fill={CREAM} strokeWidth={3} />
-        </g>
-      </g>
-      <g data-parte="testa">
-        <circle cx="50" cy="40" r="21" fill={FUR} />
-        <path d="M50 44C57 44 61 48 61 52C61 57 56 60 50 60C44 60 39 57 39 52C39 48 43 44 50 44Z" fill={CREAM} stroke="none" />
-      </g>
+      <Mass>
+        <path d="M37 47C29 37 23 18 27 10C31 3 41 8 42 23C43 34 39 43 37 47Z" />
+        <path d="M63 46C72 38 80 22 77 14C74 7 64 11 61 25C59 36 62 43 63 46Z" />
+        <path d="M51 40C63 40 72 48 73 59C78 65 82 72 81 80C80 90 66 93 50 93C34 93 19 90 19 79C19 71 23 65 28 59C29 48 39 40 51 40Z" />
+      </Mass>
       <Face spec={FACE} mood={props.mood} />
     </CharacterFrame>
   );

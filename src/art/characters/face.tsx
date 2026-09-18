@@ -1,148 +1,141 @@
 /**
- * La faccia dei personaggi: occhi e bocca, per umore.
+ * La faccia dei personaggi: due occhi grandi, e quasi nient'altro.
  *
- * Sei animali per cinque umori sono trenta facce, e disegnarle una per una vuol dire che al
- * terzo cambio non si somigliano più. Qui l'animale dice **dove** stanno gli occhi e la bocca
- * (`FaceSpec`, nel suo file) e l'umore dice **come** sono fatti: così cambiare il sorriso lo
- * cambia a tutti e sei, e un occhio resta un occhio anche sulla testa larga della rana.
+ * È l'unica cosa che i personaggi hanno dentro la sagoma, e viene dalle reference del
+ * proprietario (`docs/reference/mascots/`): là un animale è **una macchia piena** con due occhi
+ * bianchi grandi e tondi dentro, attaccati in mezzo alla faccia, con una pupilla piccola. Non
+ * c'è naso, quasi mai c'è bocca, e il muso non esiste.
  *
- * Due tipi di occhio, perché due animali hanno l'occhio come segno principale: `punto` è il
- * puntino d'inchiostro (volpe, coniglio, orso), `disco` è il disco chiaro con la pupilla
- * (gatto, rana, civetta) — e a 34 px, che è quanto misura una pedina sul tabellone, il disco è
- * l'unica cosa che si veda ancora.
+ * L'umore sta **negli occhi**, non nella bocca, e anche quello viene dalla reference: la
+ * palpebra che scende è d'inchiostro come la sagoma, quindi non si aggiunge un segno, se ne
+ * **toglie** uno. È la differenza fra disegnare una faccia e disegnare una macchia con due
+ * buchi.
+ *
+ * I sei personaggi sono **tutti d'inchiostro**, e si distinguono solo per la sagoma: provata
+ * anche la strada mista (due chiari con il contorno, come nella prima reference) e su un
+ * tabellone di carta i due chiari erano i più deboli — e per combinazione erano proprio i due
+ * animali con cui la lobby fa partire una serata.
  */
 import type { CharacterMood } from "./types";
 
 export type FaceSpec = {
-  /** I centri dei due occhi. */
+  /** I centri dei due occhi: nella reference sono grandi e si toccano quasi. */
   eyes: readonly [{ x: number; y: number }, { x: number; y: number }];
-  /** Raggio: del puntino, oppure del disco chiaro. */
-  eyeR: number;
-  eyeStyle?: "punto" | "disco";
-  /** Il riempimento del disco (`var(--color-art-…)`); serve solo con `disco`. */
-  discFill?: string;
-  /** Il centro della bocca. Senza, l'animale non ne ha una: la civetta ha il becco. */
-  mouth?: { x: number; y: number };
-  mouthWidth?: number;
+  /** Raggi dell'occhio. */
+  rx: number;
+  ry: number;
+  /** Dove nasce la bocca, quando l'umore ne vuole una. */
+  mouth?: { x: number; y: number; w: number };
 };
 
 const INK = "var(--color-ink)";
-
-/** La bocca: un segno solo, diverso per umore. */
-function Mouth({ mood, x, y, w }: { mood: CharacterMood; x: number; y: number; w: number }) {
-  const half = w / 2;
-  switch (mood) {
-    case "felice":
-      return <path d={`M${x - half} ${y - w * 0.12}Q${x} ${y + w * 0.5} ${x + half} ${y - w * 0.12}`} />;
-    case "triste":
-      return <path d={`M${x - half} ${y + w * 0.28}Q${x} ${y - w * 0.32} ${x + half} ${y + w * 0.28}`} />;
-    case "sorpreso":
-      // Il tondo non cresce con la bocca: sulla rana, che l'ha larga 30, un raggio proporzionale
-      // diventava un buco in mezzo alla faccia.
-      return <circle cx={x} cy={y + w * 0.1} r={Math.min(w * 0.22, 3.6)} fill={INK} stroke="none" />;
-    case "esultante":
-      // Bocca aperta: l'unica piena, perché l'esultanza si vede da lontano o non si vede.
-      return (
-        <path
-          d={`M${x - half} ${y - w * 0.1}Q${x} ${y + w * 0.75} ${x + half} ${y - w * 0.1}Z`}
-          fill={INK}
-        />
-      );
-    default:
-      return <path d={`M${x - half * 0.7} ${y}h${half * 1.4}`} />;
-  }
-}
+const PAPER = "var(--color-paper)";
 
 /**
- * Il sopracciglio della tristezza: **alto dalla parte del naso**, basso verso l'esterno.
+ * Quanto è grande la pupilla rispetto all'occhio.
  *
- * Il verso non è un dettaglio, è l'unica cosa che distingue triste da arrabbiato: renderizzando
- * la prima versione tutti e sei sembravano furiosi, perché l'avevo disegnato al contrario
- * (alto fuori, basso dentro, che è il cipiglio). Gira col segno di `x - 50`, così i due occhi
- * sono uno lo specchio dell'altro.
+ * 0,3 e non 0,42: al 42% l'occhio esce a **ciambella** — un anello bianco con un buco — mentre
+ * nella reference è un occhio bianco grande con un punto dentro.
  */
-function Brow({ x, y, r }: { x: number; y: number; r: number }) {
-  // Le due altezze in unità di raggio, prese dai due capi del sopracciglio: quello verso il
-  // naso sta a 2.8, quello verso l'orecchio a 1.6. Quale dei due sia il capo sinistro dipende
-  // da che occhio è.
-  const left = x < 50 ? 1.6 : 2.8;
-  const right = x < 50 ? 2.8 : 1.6;
+const PUPIL = 0.3;
+
+/**
+ * La palpebra della tristezza: **del colore della sagoma**, quindi non aggiunge un segno alla
+ * faccia, ne toglie un pezzo all'occhio.
+ *
+ * È inclinata, e l'inclinazione è tutta la differenza fra triste e assonnato: scende verso
+ * **l'esterno** e resta alta dalla parte del naso. Simmetrica — com'era nella prima versione —
+ * l'animale sembrava solo mezzo addormentato.
+ */
+function Lid({ x, y, rx, ry }: { x: number; y: number; rx: number; ry: number }) {
+  const outer = y - ry * 0.05;
+  const inner = y - ry * 0.48;
+  const left = x < 50 ? outer : inner;
+  const right = x < 50 ? inner : outer;
   return (
     <path
-      d={`M${x - r * 1.8} ${y - r * left}Q${x} ${y - r * 2.4} ${x + r * 1.8} ${y - r * right}`}
-      strokeWidth={3.5}
+      d={`M${x - rx - 1} ${left}Q${x} ${y - ry * 1.9} ${x + rx + 1} ${right}Z`}
+      fill={INK}
+      stroke="none"
     />
   );
 }
 
-/** Un occhio a puntino, con la palpebra dei due umori che ne hanno bisogno. */
-function DotEye({ mood, x, y, r }: { mood: CharacterMood; x: number; y: number; r: number }) {
-  if (mood === "esultante")
-    // Gli occhi chiusi all'insù: il puntino non sa esultare.
-    return <path d={`M${x - r * 1.5} ${y + r * 0.5}Q${x} ${y - r * 1.4} ${x + r * 1.5} ${y + r * 0.5}`} />;
-
-  const radius = mood === "sorpreso" ? r * 1.45 : r;
-  return (
-    <>
-      <circle cx={x} cy={y} r={radius} fill={INK} stroke="none" />
-      {mood === "triste" && <Brow x={x} y={y} r={r} />}
-    </>
-  );
-}
-
-/** Un occhio a disco: il disco è sempre lo stesso, la pupilla dice l'umore. */
-function DiscEye({
+function Eye({
   mood,
   x,
   y,
-  r,
-  fill,
+  rx,
+  ry,
 }: {
   mood: CharacterMood;
   x: number;
   y: number;
-  r: number;
-  fill: string;
+  rx: number;
+  ry: number;
 }) {
-  const pupil = mood === "sorpreso" ? r * 0.3 : r * 0.44;
-  const lift = mood === "triste" ? r * 0.3 : 0;
+  if (mood === "esultante")
+    // L'occhio chiuso che ride: un arco bianco, come il gatto che dorme nella reference. Non è
+    // un occhio con qualcosa sopra, è un altro segno.
+    return (
+      <path
+        d={`M${x - rx} ${y + ry * 0.35}Q${x} ${y - ry * 0.95} ${x + rx} ${y + ry * 0.35}`}
+        fill="none"
+        stroke={PAPER}
+        strokeWidth={rx * 0.5}
+        strokeLinecap="round"
+      />
+    );
+
+  const pupil = mood === "sorpreso" ? rx * PUPIL * 0.62 : rx * PUPIL;
+  const drop = mood === "triste" ? ry * 0.34 : 0;
+  // Felice schiaccia l'occhio: è la strizzata di chi sorride. Serve anche per una ragione
+  // meccanica, trovata da una prova e non a occhio — la civetta non ha bocca, e senza questo la
+  // sua faccia felice usciva **identica** a quella neutra.
+  const height = mood === "felice" ? ry * 0.76 : ry;
+
   return (
     <>
-      <circle cx={x} cy={y} r={r} fill={fill} strokeWidth={4.5} />
-      {mood === "esultante" ? (
-        // L'occhio chiuso all'insù **dentro** il disco: senza, la civetta — che non ha bocca —
-        // esultava identica a come stava neutra, perché l'unico segno era la pupilla.
-        <path
-          d={`M${x - r * 0.62} ${y + r * 0.28}Q${x} ${y - r * 0.58} ${x + r * 0.62} ${y + r * 0.28}`}
-          strokeWidth={r * 0.34}
-        />
-      ) : (
-        <circle cx={x} cy={y + lift} r={pupil} fill={INK} stroke="none" />
-      )}
-      {/* Felice: la palpebra di sotto che sale, cioè l'occhio che ride. */}
-      {mood === "felice" && (
-        <path
-          d={`M${x - r * 0.9} ${y + r * 0.42}Q${x} ${y + r * 1.15} ${x + r * 0.9} ${y + r * 0.42}`}
-          strokeWidth={r * 0.28}
-        />
-      )}
-      {mood === "triste" && <Brow x={x} y={y} r={r * 0.62} />}
+      <ellipse cx={x} cy={y} rx={rx} ry={height} fill={PAPER} stroke={INK} strokeWidth={2.2} />
+      <ellipse cx={x} cy={y + drop} rx={pupil} ry={pupil * 1.06} fill={INK} stroke="none" />
+      {mood === "triste" && <Lid x={x} y={y} rx={rx} ry={height} />}
     </>
   );
 }
 
+/** La bocca: piccolissima, e solo dove serve. Nella reference quasi nessuno ce l'ha. */
+function Mouth({ mood, x, y, w }: { mood: CharacterMood; x: number; y: number; w: number }) {
+  if (mood === "felice")
+    return (
+      <path
+        d={`M${x - w / 2} ${y}Q${x} ${y + w * 0.55} ${x + w / 2} ${y}`}
+        fill="none"
+        stroke={PAPER}
+        strokeWidth={w * 0.22}
+        strokeLinecap="round"
+      />
+    );
+  if (mood === "esultante")
+    return (
+      <path
+        d={`M${x - w * 0.6} ${y - w * 0.1}Q${x} ${y + w * 0.85} ${x + w * 0.6} ${y - w * 0.1}Z`}
+        fill={PAPER}
+        stroke="none"
+      />
+    );
+  if (mood === "sorpreso")
+    return <circle cx={x} cy={y + w * 0.15} r={w * 0.18} fill={PAPER} stroke="none" />;
+  return null;
+}
+
 export function Face({ spec, mood = "neutro" }: { spec: FaceSpec; mood?: CharacterMood }) {
-  const { eyes, eyeR, eyeStyle = "punto", discFill = "var(--color-art-cream)", mouth } = spec;
+  const { eyes, rx, ry, mouth } = spec;
   return (
     <g data-parte="faccia">
-      {eyes.map((eye) =>
-        eyeStyle === "disco" ? (
-          <DiscEye key={eye.x} mood={mood} x={eye.x} y={eye.y} r={eyeR} fill={discFill} />
-        ) : (
-          <DotEye key={eye.x} mood={mood} x={eye.x} y={eye.y} r={eyeR} />
-        ),
-      )}
-      {mouth ? <Mouth mood={mood} x={mouth.x} y={mouth.y} w={spec.mouthWidth ?? 14} /> : null}
+      {eyes.map((eye) => (
+        <Eye key={eye.x} mood={mood} x={eye.x} y={eye.y} rx={rx} ry={ry} />
+      ))}
+      {mouth ? <Mouth mood={mood} x={mouth.x} y={mouth.y} w={mouth.w} /> : null}
     </g>
   );
 }

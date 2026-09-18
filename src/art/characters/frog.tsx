@@ -1,45 +1,36 @@
 /**
  * Rana — personaggio `frog`.
  *
- * Gli occhi stanno **sopra** la testa, su due bozzi, e la bocca è larga quanto la faccia: sono
- * le due misure che rendono una rana una rana. La testa è un'ellisse schiacciata, così la
- * sagoma è larga e bassa dove le altre cinque sono alte e tonde.
+ * L'unica macchia **larga e bassa**, con gli occhi **sopra** la testa su due bozzi di misura
+ * diversa: due cose che non ha nessun altro, e che si leggono prima di qualsiasi dettaglio. La
+ * bocca è larga quanto la faccia.
+ *
+ * Le curve sono **sbilenche di proposito**: nella reference (`docs/reference/mascots/`) niente è
+ * simmetrico — una spalla è più alta dell'altra, le due orecchie non sono uguali, la coda
+ * finisce a punta. La prima versione era fatta di uova simmetriche e si vedeva.
  */
 import { Face, type FaceSpec } from "./face";
-import { CharacterFrame } from "./frame";
+import { CharacterFrame, Mass } from "./frame";
 import type { CharacterProps } from "./types";
-
-const SKIN = "var(--color-art-green)";
-const BELLY = "var(--color-art-cream)";
 
 const FACE: FaceSpec = {
   eyes: [
-    { x: 33, y: 26 },
-    { x: 67, y: 26 },
+    { x: 31, y: 37 },
+    { x: 68, y: 35 },
   ],
-  eyeR: 8,
-  eyeStyle: "disco",
-  mouth: { x: 50, y: 55 },
-  mouthWidth: 30,
+  rx: 12,
+  ry: 12,
+  mouth: { x: 50, y: 71, w: 26 },
 };
 
 export function Frog(props: CharacterProps) {
   return (
     <CharacterFrame {...props}>
-      <g data-parte="corpo">
-        <path d="M27 86C25 70 36 58 50 58C64 58 75 70 73 86Z" fill={SKIN} />
-        <path d="M40 86C38 76 43 69 50 69C57 69 62 76 60 86Z" fill={BELLY} />
-      </g>
-      <g data-parte="zampe">
-        <path d="M28 86C22 86 19 82 21 78M72 86C78 86 81 82 79 78" />
-      </g>
-      <g data-parte="bozzi">
-        <circle cx="33" cy="26" r="12" fill={SKIN} />
-        <circle cx="67" cy="26" r="12" fill={SKIN} />
-      </g>
-      <g data-parte="testa">
-        <ellipse cx="50" cy="45" rx="29" ry="21" fill={SKIN} />
-      </g>
+      <Mass>
+        <circle cx="31" cy="37" r="16" />
+        <circle cx="68" cy="35" r="15" />
+        <path d="M50 41C71 41 89 53 89 69C89 85 71 92 49 92C28 92 11 85 11 68C11 52 30 41 50 41Z" />
+      </Mass>
       <Face spec={FACE} mood={props.mood} />
     </CharacterFrame>
   );

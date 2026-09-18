@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cellCenter, ladderGeometry, snakeGeometry } from "./geometry";
+import { cellCenter, insideFrame, ladderGeometry, snakeGeometry } from "./geometry";
 
 /**
  * La geometria di scale e serpenti (F6-03) si genera dagli estremi della disposizione: qui si
@@ -59,5 +59,38 @@ describe("serpenti: corpo a macchie e coda assottigliata (F6-03)", () => {
 
   it("stessa coppia di estremi, stessa forma: nessun caso nel disegno", () => {
     expect(snakeGeometry(87, 37)).toEqual(snakeGeometry(87, 37));
+  });
+});
+
+describe("insideFrame: le pedine di bordo non finiscono sotto la cornice", () => {
+  // La cornice copre i primi ~14,5 di una casella di bordo (D-65 per le decorazioni, e la
+  // stessa cosa vale per le pedine). Lo scostamento va verso il centro del tabellone, e negli
+  // angoli vale sui due assi.
+  it("la casella 1 (angolo in basso a sinistra) si scosta a destra e in alto", () => {
+    const center = cellCenter(1);
+    const moved = insideFrame(1, center, 7);
+    expect(moved.x).toBe(center.x + 7);
+    expect(moved.y).toBe(center.y - 7);
+  });
+
+  it("la casella 100 (angolo in alto a sinistra) si scosta a destra e in basso", () => {
+    const center = cellCenter(100);
+    const moved = insideFrame(100, center, 7);
+    expect(moved.x).toBe(center.x + 7);
+    expect(moved.y).toBe(center.y + 7);
+  });
+
+  it("una casella di mezzo non si scosta", () => {
+    const center = cellCenter(45);
+    expect(insideFrame(45, center, 7)).toEqual(center);
+  });
+
+  it("una casella di bordo su un asse solo si scosta su quell'asse solo", () => {
+    // La 10 è l'ultima della prima riga: bordo destro e bordo basso, quindi è un angolo.
+    // La 11 le sta sopra, sul bordo destro e basta.
+    const center = cellCenter(11);
+    const moved = insideFrame(11, center, 7);
+    expect(moved.x).toBe(center.x - 7);
+    expect(moved.y).toBe(center.y);
   });
 });

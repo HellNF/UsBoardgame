@@ -1,4 +1,4 @@
-import { type CellNumber } from "@/engine";
+import { cellToCoord, type CellNumber } from "@/engine";
 import {
   BOARD,
   CELL,
@@ -127,6 +127,28 @@ export function cellsBounds(cells: CellNumber[], margin = 0): { x: number; y: nu
 
 /** Punti del centro di una serie di caselle (per le animazioni). */
 export const centersOf = (cells: CellNumber[]): Point[] => cells.map(cellCenter);
+
+/**
+ * Sposta una posizione **dentro** la cornice, se la casella sta sul bordo.
+ *
+ * È la stessa lezione di [D-65](../../../docs/decisions.md) applicata alle pedine invece che
+ * alle decorazioni: la cornice è a 8 unità dal bordo con un tratto di 13, quindi copre i primi
+ * 14,5 di una casella di bordo. Sulla casella 1 — che è in un angolo, e dove le pedine partono
+ * **tutte e due** — quello che finiva sotto il nero non era la sagoma (nera su nero non si
+ * vede) ma le due cose **colorate**: la pedana e l'alone del turno.
+ *
+ * Lo scostamento è sui due assi, quindi negli angoli vale per entrambi.
+ */
+export function insideFrame(cell: CellNumber, point: Point, room: number): Point {
+  const { row, col } = cellToCoord(cell);
+  const last = BOARD / CELL - 1;
+  const dx = col === 0 ? room : col === last ? -room : 0;
+  // La riga 0 è quella in **basso** (la casella 1 è l'angolo in basso a sinistra), quindi la
+  // riga 0 si scosta verso l'alto, cioè verso y minori.
+  const dy = row === 0 ? -room : row === last ? room : 0;
+  return { x: point.x + dx, y: point.y + dy };
+}
+
 
 // ---------------------------------------------------------------------------
 // Aritmetica dei punti (solo disegno)

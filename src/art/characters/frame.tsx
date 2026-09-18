@@ -1,17 +1,37 @@
 /**
- * La cornice comune dei sei personaggi: l'SVG, la pedana del colore e i gruppi con un nome.
+ * La cornice comune dei sei personaggi: l'SVG, la pedana del colore e l'alone di carta.
+ *
+ * Il valore predefinito è **pieno e senza contorno** (`fill` d'inchiostro, `stroke` nessuno), e
+ * non è un dettaglio tecnico: è l'idioma delle reference (`docs/reference/mascots/`). Là un
+ * animale non è un contorno con dentro un colore, è **una macchia**. Il primo tentativo l'avevo
+ * fatto all'opposto — contorni neri con dentro le tinte delle illustrazioni — e non
+ * assomigliava a niente di quello che il proprietario aveva chiesto.
  *
  * Perché un SVG e non un canvas: la pedina sta **dentro** il tabellone, che è un SVG, e finora
  * per infilarci il canvas di Rive serviva un `foreignObject` (H2). Un `<svg>` annidato ci entra
  * da solo, come le illustrazioni delle caselle.
- *
- * I gruppi hanno un `id` in italiano (`coda`, `corpo`, `orecchie`, `testa`, `faccia`) e non è
- * decorazione: sono i pezzi che si muovono uno rispetto all'altro nell'animazione, e sono anche
- * i nomi che servirebbero per riggare lo stesso disegno nell'editor Rive
- * ([D-14](../../../docs/decisions.md)).
  */
 import type { ReactNode } from "react";
 import type { CharacterProps } from "./types";
+
+const INK = "var(--color-ink)";
+
+/**
+ * La sagoma: tutte le forme dell'animale — testa, orecchie, coda — che diventano **una macchia
+ * sola**.
+ *
+ * È il pezzo che fa funzionare lo stile. Le forme si sovrappongono e sono tutte dello stesso
+ * inchiostro, senza contorno: quindi non c'è nessuna linea interna, e il bordo basso di un
+ * orecchio non taglia la testa. Disegnare ogni forma col suo contorno — che è come avevo fatto
+ * la prima volta — sfalda il disegno in pezzi.
+ */
+export function Mass({ children }: { children: ReactNode }) {
+  return (
+    <g data-parte="sagoma" fill={INK} stroke="none">
+      {children}
+    </g>
+  );
+}
 
 export function CharacterFrame({
   x = 0,
@@ -30,9 +50,8 @@ export function CharacterFrame({
       width={size}
       height={size}
       viewBox="0 0 100 100"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={5}
+      fill="var(--color-ink)"
+      stroke="none"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
@@ -40,9 +59,9 @@ export function CharacterFrame({
     >
       {/*
         L'alone di carta, la stessa soluzione delle scale e dei serpenti: il personaggio finisce
-        anche sopra una casella sfida, che è nera, e il gatto — che è blu notte — lì si perde. È
-        il disegno **ripetuto**, non un filtro e non un `<use>`: un filtro e un `<use>` hanno
-        bisogno di un `id` unico nel documento, e sul tabellone di personaggi ce n'è più di uno.
+        anche sopra una casella sfida, che è nera, e una macchia d'inchiostro lì sparisce. È il
+        disegno **ripetuto**, non un filtro e non un `<use>`: un filtro e un `<use>` hanno
+        bisogno di un `id` unico nel documento, e di personaggi sul tabellone ce n'è più di uno.
         Le regole CSS battono gli attributi di presentazione, quindi la copia esce tutta color
         carta e con il tratto grosso senza toccare i `fill` dei disegni.
 
@@ -60,23 +79,25 @@ export function CharacterFrame({
 }
 
 /**
- * La pedana: il colore del giocatore, che nel disegno non c'è.
+ * La pedana: il colore del giocatore, che nel personaggio non c'è.
  *
- * Il numero del posto ci sta dentro perché è quello che si legge quando la pedina è alta 34 px
- * sul tabellone e dell'animale si vede solo la sagoma — la stessa informazione che portava il
- * cerchio col numero di prima, e che così non si perde.
+ * Nelle reference non c'è niente sotto i piedi, ed è giusto: quei disegni sono solo inchiostro.
+ * Ma il colore nel gioco vuol dire **di chi è la pedina**, e lo stesso animale lo può scegliere
+ * chiunque dei due, quindi da qualche parte deve stare. Sta a terra, fuori dalla sagoma, così
+ * la macchia resta pulita — e il numero del posto ci sta dentro perché a 34 px è quello che si
+ * legge quando dell'animale si vede solo il profilo.
  */
 function Pedana({ color, seat }: { color: NonNullable<CharacterProps["base"]>; seat?: number }) {
   return (
     <g data-parte="pedana">
-      <ellipse cx="50" cy="89" rx="30" ry="8.5" fill={`var(--color-player-${color})`} />
+      <ellipse cx="50" cy="91" rx="30" ry="7.5" fill={`var(--color-player-${color})`} />
       {seat === undefined ? null : (
         <text
           x="50"
-          y="89"
+          y="91"
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize="13"
+          fontSize="12"
           fontFamily="var(--font-sans)"
           fill="var(--color-paper)"
           stroke="none"

@@ -47,9 +47,9 @@ export type PawnProps = {
 /**
  * Lato del riquadro della pedina, in unità del tabellone (una casella è 100).
  *
- * 78 e non 96: a 96 il personaggio è **una volta e mezza** il disco che ha sostituito (che era
- * un cerchio di raggio 32) e nell'angolo in basso a sinistra, dove sta la casella 1, la pedana
- * usciva dalla cornice. Visto renderizzando, non ragionando.
+ * 72 e non 96: a 96 il personaggio è **una volta e mezza** il disco che ha sostituito (che era
+ * un cerchio di raggio 32) e nell'angolo in basso a sinistra, dove sta la casella 1, usciva
+ * dalla cornice. Visto renderizzando, non ragionando.
  */
 const PAWN_BOX = 72;
 
@@ -63,6 +63,14 @@ const PAWN_LIFT = 4;
  * del turno: un numero solo, in un posto solo.
  */
 export const PAWN_FEET_Y = (89 / 100) * PAWN_BOX - PAWN_BOX / 2 - PAWN_LIFT;
+
+/**
+ * Quanto si scosta una pedina su una casella di bordo, verso il centro del tabellone.
+ *
+ * Sette unità: bastano a togliere la pedana e l'alone del turno da sotto la cornice, e sono
+ * poche abbastanza da non far sembrare la pedina fuori dalla sua casella.
+ */
+export const PAWN_NUDGE = 7;
 
 /**
  * Il punto fermo delle deformazioni: i piedi, non il centro.

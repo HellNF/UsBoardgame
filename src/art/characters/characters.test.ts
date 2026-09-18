@@ -40,9 +40,9 @@ describe("registro dei personaggi", () => {
 });
 
 describe("disegno", () => {
-  it.each(characterIds)("`%s` si disegna, con la testa e la faccia al loro posto", (id) => {
+  it.each(characterIds)("`%s` si disegna: una sagoma e una faccia", (id) => {
     const markup = draw(id);
-    expect(markup).toContain('data-parte="testa"');
+    expect(markup).toContain('data-parte="sagoma"');
     expect(markup).toContain('data-parte="faccia"');
     expect(markup).toContain("<svg");
   });
@@ -50,8 +50,8 @@ describe("disegno", () => {
   it.each(characterIds)("`%s` porta l'alone di carta, cioè il disegno due volte", (id) => {
     const markup = draw(id);
     expect(markup).toContain("stroke-paper");
-    // La testa compare due volte: una nell'alone, una nel disegno.
-    expect(markup.split('data-parte="testa"').length - 1).toBe(2);
+    // La sagoma compare due volte: una nell'alone, una nel disegno.
+    expect(markup.split('data-parte="sagoma"').length - 1).toBe(2);
   });
 
   it.each(characterIds)("`%s` con la pedana scrive il numero del posto una volta sola", (id) => {
@@ -67,5 +67,17 @@ describe("disegno", () => {
       MOODS_BY_NUMBER.map((mood) => [mood, draw(id, { mood })]),
     );
     expect(new Set(drawings.values()).size).toBe(MOODS_BY_NUMBER.length);
+  });
+
+  // D-82 corretta: le reference (`docs/reference/mascots/`) sono solo inchiostro e carta, e i
+  // personaggi seguono quelle. Il colore nel gioco vuol dire «di chi è la pedina», quindi in un
+  // personaggio non ci può essere: se ce ne fosse, un animale sarebbe rosso o blu per sempre.
+  it.each(characterIds)("`%s` non usa nessuna tinta delle illustrazioni", (id) => {
+    expect(draw(id, { mood: "felice" })).not.toContain("--color-art-");
+  });
+
+  it.each(characterIds)("`%s` porta il colore del giocatore solo nella pedana", (id) => {
+    expect(draw(id)).not.toContain("--color-player-");
+    expect(draw(id, { base: "blue" })).toContain("--color-player-blue");
   });
 });

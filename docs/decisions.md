@@ -1064,10 +1064,16 @@ non passa a giocare. Disegnarli in SVG li mette in gioco subito e non chiude nes
 
 Tre conseguenze registrate perché sono regole, non gusti:
 
-1. **I personaggi sono a colori**, con la tavolozza delle illustrazioni (D-75). Con sei animali la prima cosa che
-   li separa è la tinta; in solo inchiostro restava la sola sagoma, e a 34 px non basta. Cambia anche il contratto
-   dei `.riv`, che prima chiedeva bianco e nero: un `mascots.riv` in bianco e nero ora sarebbe un personaggio
-   **diverso** da quello che si vede in partita (docs/design.md § Animazioni Rive).
+1. **I personaggi sono solo inchiostro e carta**, e lo stile è quello delle reference del proprietario
+   (`docs/reference/mascots/`): una macchia piena con due occhi bianchi grandi dentro. Il contratto dei `.riv`
+   resta quello di prima, bianco e nero.
+
+   Questo punto era scritto al contrario e l'ho corretto **dopo che il proprietario ha visto il primo disegno**:
+   avevo chiesto se i personaggi andassero a colori come le illustrazioni, lui aveva detto sì, e li ho disegnati
+   come contorni d'inchiostro riempiti con le tinte di D-75. Poi ha mandato le reference — che sono in bianco e
+   nero — e la risposta vera era un'altra: «non sono per nulla come le reference». La lezione non è sul colore, è
+   che una domanda sullo stile fatta **prima** di avere la reference sotto gli occhi non vale niente, e che la
+   reference si guarda prima di disegnare, non dopo.
 2. **Il colore del giocatore resta fuori dal disegno**, nella pedana sotto i piedi, col numero del posto scritto
    dentro. Lo stesso animale lo può scegliere chiunque dei due.
 3. **L'alone del turno si è spostato a terra.** Era un anello attorno alla pedina, e attorno a un disco di raggio

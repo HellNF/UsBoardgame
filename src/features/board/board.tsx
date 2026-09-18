@@ -15,8 +15,8 @@ import {
   type PlayerColor,
   type Seat,
 } from "@/engine";
-import { BOARD, CELL, cellCenter, cellsBounds, ladderGeometry, snakeGeometry } from "./geometry";
-import { PAWN_FEET_Y, Pawn } from "./pawn";
+import { BOARD, CELL, cellCenter, cellsBounds, insideFrame, ladderGeometry, snakeGeometry } from "./geometry";
+import { PAWN_FEET_Y, PAWN_NUDGE, Pawn } from "./pawn";
 import { pawnRouteFor, type PawnRoute as PawnRouteForBoard } from "./route";
 
 /**
@@ -231,6 +231,16 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
     return { from: cell, to: cell, points: [cellCenter(cell)], duration: 0, kind: "fermo" };
   };
   const routes: Record<Seat, PawnRoute> = { 1: route(1), 2: route(2) };
+  // La pedina arriva **dentro** la cornice: su una casella di bordo l'ultimo punto si scosta
+  // verso il centro del tabellone, così la pedana e l'alone del turno non finiscono sotto il
+  // nero. Solo l'ultimo punto, che è la posizione a riposo: il percorso resta continuo.
+  for (const seat of [1, 2] as Seat[]) {
+    const points = [...routes[seat].points];
+    const last = points.length - 1;
+    const end = points[last];
+    if (end) points[last] = insideFrame(routes[seat].to, end, PAWN_NUDGE);
+    routes[seat] = { ...routes[seat], points };
+  }
   // Sulla stessa casella le due pedine si coprirebbero: si scostano di lato.
   if (state.players[1].position === state.players[2].position) {
     for (const seat of [1, 2] as Seat[]) {
@@ -409,8 +419,8 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
                 cx: end.x,
                 cy: end.y + PAWN_FEET_Y,
                 opacity: active ? 0.4 : 0,
-                rx: active ? 32 : 26,
-                ry: active ? 10 : 8,
+                rx: active ? 26 : 21,
+                ry: active ? 9 : 7,
               }}
               transition={{ duration: route.duration || 0.2 }}
               fill={`var(--color-player-${colors[seat]})`}

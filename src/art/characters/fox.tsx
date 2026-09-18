@@ -1,49 +1,43 @@
 /**
  * Volpe — personaggio `fox`.
  *
- * Il segno è la **coda**, e per questo sporge a destra fuori dal corpo: a 34 px le orecchie
- * a punta da sole la fanno confondere col gatto, la coda no. La punta bianca è un cerchio e
- * non un disegno, perché a quella misura un cerchio chiaro in fondo alla coda è già «volpe».
+ * La **coda grande quanto lei**, con la **punta di carta**: è quello che la separa dal gatto,
+ * che ha la coda sottile e senza punta. Ed è anche come è fatta una volpe vera, che non capita
+ * spesso quando si disegna per contrasto invece che per verità.
+ *
+ * La coda esce dal **fianco** e sale lungo il lato destro. Le versioni precedenti la facevano
+ * uscire dalla spalla, e a quel punto era un'ala; prima ancora era un nastro che andava e
+ * tornava, e il vuoto in mezzo la faceva sembrare il manico di una tazza.
+ *
+ * Le curve sono **sbilenche di proposito**: nella reference (`docs/reference/mascots/`) niente è
+ * simmetrico — una spalla è più alta dell'altra, le due orecchie non sono uguali, la coda
+ * finisce a punta. La prima versione era fatta di uova simmetriche e si vedeva.
  */
 import { Face, type FaceSpec } from "./face";
-import { CharacterFrame } from "./frame";
+import { CharacterFrame, Mass } from "./frame";
 import type { CharacterProps } from "./types";
-
-const FUR = "var(--color-art-terracotta)";
-const CREAM = "var(--color-art-cream)";
 
 const FACE: FaceSpec = {
   eyes: [
-    { x: 41, y: 34 },
-    { x: 59, y: 34 },
+    { x: 30, y: 57 },
+    { x: 52, y: 56 },
   ],
-  eyeR: 3.4,
-  mouth: { x: 50, y: 51 },
-  mouthWidth: 13,
+  rx: 11.5,
+  ry: 12,
+  mouth: { x: 41, y: 77, w: 12 },
 };
 
 export function Fox(props: CharacterProps) {
   return (
     <CharacterFrame {...props}>
-      <g data-parte="coda">
-        <path d="M67 84C86 81 95 62 84 53C77 47 68 52 69 62C70 70 67 78 60 80Z" fill={FUR} />
-        <circle cx="87" cy="58" r="7.5" fill={CREAM} stroke="none" />
-      </g>
-      <g data-parte="corpo">
-        <path d="M33 86C31 70 38 57 50 57C62 57 69 70 67 86Z" fill={FUR} />
-        <path d="M42 86C40 75 43 67 50 67C57 67 60 75 58 86Z" fill={CREAM} />
-      </g>
-      <g data-parte="orecchie">
-        <path d="M31 25 27 5 47 17Z" fill={FUR} />
-        <path d="M69 25 73 5 53 17Z" fill={FUR} />
-        <path d="M33 22 31 11 41 17Z" fill={CREAM} strokeWidth={3} />
-        <path d="M67 22 69 11 59 17Z" fill={CREAM} strokeWidth={3} />
-      </g>
-      <g data-parte="testa">
-        <circle cx="50" cy="38" r="22" fill={FUR} />
-        <path d="M50 42C58 42 62 47 62 51C62 57 56 60 50 60C44 60 38 57 38 51C38 47 42 42 50 42Z" fill={CREAM} stroke="none" />
-      </g>
+      <Mass>
+        <path d="M62 84C82 94 98 82 98 58C98 46 86 45 85 60C84 74 74 80 60 72Z" />
+        <path d="M14 50C8 34 5 14 10 9C15 4 25 16 30 23L43 37Z" />
+        <path d="M66 45C72 30 74 12 70 8C65 3 56 15 51 22L42 35Z" />
+        <path d="M42 26C57 26 66 37 67 51C72 58 74 66 73 76C72 88 57 92 41 92C24 91 11 87 9 76C7 65 13 57 16 50C17 37 27 26 42 26Z" />
+      </Mass>
       <Face spec={FACE} mood={props.mood} />
+      <ellipse data-parte="punta" cx="91" cy="55" rx="8" ry="9" fill="var(--color-paper)" stroke="none" />
     </CharacterFrame>
   );
 }

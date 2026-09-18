@@ -1,52 +1,37 @@
 /**
  * Civetta — personaggio `owl`.
  *
- * I ciuffi sono bassi e aperti verso fuori, e non due punte in cima: alti e verticali
- * facevano la stessa sagoma delle orecchie del gatto, che è l'unico altro animale a punte.
+ * Gli occhi sono i più grandi dei sei e **si toccano** in mezzo alla faccia: è quello che nella
+ * reference fa una civetta. Il becco è un triangolo di carta fra i due, l'unico altro segno —
+ * una bocca su una faccia fatta di occhi non ci sta.
  *
- * I due dischi chiari della faccia sono grandi e **si toccano** al centro: è quello che si
- * vede di una civetta anche a 34 px, e nessuno degli altri cinque ha due macchie chiare così
- * in alto. Non ha bocca: al suo posto c'è il becco, e l'umore lo dicono le pupille e il
- * sopracciglio della faccia condivisa.
+ * Le curve sono **sbilenche di proposito**: nella reference (`docs/reference/mascots/`) niente è
+ * simmetrico — una spalla è più alta dell'altra, le due orecchie non sono uguali, la coda
+ * finisce a punta. La prima versione era fatta di uova simmetriche e si vedeva.
  */
 import { Face, type FaceSpec } from "./face";
-import { CharacterFrame } from "./frame";
+import { CharacterFrame, Mass } from "./frame";
 import type { CharacterProps } from "./types";
-
-const FEATHERS = "var(--color-art-blue)";
-const CREAM = "var(--color-art-cream)";
 
 const FACE: FaceSpec = {
   eyes: [
-    { x: 39, y: 36 },
-    { x: 61, y: 36 },
+    { x: 36, y: 50 },
+    { x: 64, y: 49 },
   ],
-  eyeR: 10.5,
-  eyeStyle: "disco",
-  discFill: CREAM,
+  rx: 14,
+  ry: 14.5,
 };
 
 export function Owl(props: CharacterProps) {
   return (
     <CharacterFrame {...props}>
-      <g data-parte="corpo">
-        <path d="M32 86C30 70 37 57 50 57C63 57 70 70 68 86Z" fill={FEATHERS} />
-        <path d="M43 86C41 76 44 68 50 68C56 68 59 76 57 86Z" fill={CREAM} />
-      </g>
-      <g data-parte="ali">
-        <path d="M34 64C29 72 30 81 34 86M66 64C71 72 70 81 66 86" />
-      </g>
-      <g data-parte="ciuffi">
-        <path d="M29 27 21 12 41 19Z" fill={FEATHERS} />
-        <path d="M71 27 79 12 59 19Z" fill={FEATHERS} />
-      </g>
-      <g data-parte="testa">
-        <circle cx="50" cy="38" r="23" fill={FEATHERS} />
-      </g>
+      <Mass>
+        <path d="M27 32C22 21 22 13 26 11C30 9 34 17 36 24Z" />
+        <path d="M73 31C77 22 78 15 75 13C71 11 67 18 65 24Z" />
+        <path d="M50 19C67 19 80 31 82 50C85 61 87 73 84 81C80 90 65 93 49 93C33 93 17 90 14 81C12 72 14 60 18 49C20 31 33 19 50 19Z" />
+      </Mass>
       <Face spec={FACE} mood={props.mood} />
-      <g data-parte="becco">
-        <path d="M50 55 45 45h10z" fill="var(--color-art-amber)" strokeWidth={3.5} />
-      </g>
+      <path data-parte="becco" d="M50 72 42 58C46 56 55 56 58 58Z" fill="var(--color-paper)" stroke="none" />
     </CharacterFrame>
   );
 }
