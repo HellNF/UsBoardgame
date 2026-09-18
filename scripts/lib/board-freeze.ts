@@ -147,10 +147,10 @@ export function barrelSource(slugs: readonly string[]): string {
  * disposizione congelata è un file di dati accanto alla \`classic\`, non una chiamata al generatore:
  * non si muove se un giorno il generatore cambia.
  *
- * Queste disposizioni **non entrano in partita da sole**: \`boards\` in \`index.ts\` resta la
- * \`classic\`, e quale tabellone usi una serata è la decisione di prodotto di F7-03 — insieme al
- * fatto che il tabellone scelto va salvato sulla riga della partita, altrimenti il diario di una
- * serata passata non si può più ridisegnare.
+ * Queste disposizioni entrano in partita appena il file esiste: \`boards\` in \`index.ts\` le mette in
+ * fila dopo la \`classic\`, quindi la lobby le offre senza toccare altro. Quale usa una serata lo
+ * sceglie chi gioca, e l'id finisce su \`games.settings.boardId\` (D-77). Una congelata **non si
+ * muove più**: se una serata la usa, quell'id resta il tabellone che è stato giocato (D-78).
  */
 import type { BoardLayout } from "@/engine/types";
 ${imports === "" ? "" : `\n${imports}\n`}
@@ -175,17 +175,25 @@ export function freezeBoard(options: {
   name: string;
   illustrations?: IllustrationPool;
 }): FrozenBoard {
-  const slug = boardSlug(options.name);
-  if (isReservedSlug(slug)) {
+  const name = options.name.trim();
+  // Un nome che comincia con `-` è quasi sempre un flag scritto male: `pnpm board:freeze 5 --pippo`
+  // congelava una disposizione chiamata «--pippo» (K4). Meglio rifiutare che scrivere un file strano.
+  if (name.startsWith("-")) {
     throw new Error(
-      `«${options.name}» diventa \`${slug}\`, che è un file già esistente: scegli un altro nome.`,
+      `Il nome non può cominciare con «-»: «${name}» sembra un flag scritto male. Scegli un nome, per esempio «Serata d'estate».`,
     );
+  }
+  if (name === "") throw new Error("Il nome è vuoto.");
+
+  const slug = boardSlug(name);
+  if (isReservedSlug(slug)) {
+    throw new Error(`«${name}» diventa \`${slug}\`, che è un file già esistente: scegli un altro nome.`);
   }
 
   const layout = generateBoard({
     seed: options.seed,
     id: slug,
-    name: options.name,
+    name,
     illustrations: options.illustrations ?? illustrationsByCategory(),
   });
   assertValidBoard(layout);

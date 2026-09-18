@@ -1395,7 +1395,148 @@ metà. Non è una migrazione e non lo può fare un agente.
 - **J3 non si può provare da qui affatto** (RLS e Realtime): la migrazione è scritta secondo la documentazione
   Supabase (Realtime Authorization: `realtime.topic()`, `realtime.messages.extension`, RLS già attiva su
   `realtime.messages`) e le due policy sono reversibili. Il resto lo vedi tu con due sessioni vere, e il punto 4 qui
-  sopra dice come distinguere «troppo stretta» da «non ho visto niente».
-- **Una cosa trovata usando lo script di I3** (non corretta, è una riga se la vuoi): `pnpm board:freeze 5 --pippo`
-  crea una disposizione chiamata «--pippo» (il file `pippo.ts`). Non è un problema di sicurezza, ma un nome che
-  comincia con `-` è quasi sempre un flag digitato male: si può rifiutare quando lo chiedi.
+  sopra dice come distinguere «troppo stretta» da «non ho visto niente». **Dal pacchetto K la prova è uno script**
+  (`pnpm check:realtime`): il punto 4 non si fa più a mano, e nella sezione «Pacchetto K» c'è anche come rompere la
+  policy di proposito per vedere i due rossi.
+- **Una cosa trovata usando lo script di I3** (risolta in K4): `pnpm board:freeze 5 --pippo` creava una
+  disposizione chiamata «--pippo» (il file `pippo.ts`). Ora un nome che comincia con `-` viene rifiutato, con il
+  messaggio che lo dice.
+
+## Registro · Pacchetto K (la prova a due sessioni, la scelta in lobby, il controllo dell'ambiente, due guardie) — branch `hermes/k-prima-serata`
+
+Serve un ambiente vero: `pnpm db:start` e `.env.local` (i valori che stampa `pnpm db:start`), come per
+`content:push`. Niente di questa sezione si può provare senza Docker: è il motivo per cui sono script e non test.
+
+### K1 · `pnpm check:realtime` — il canale con due sessioni vere
+
+Lo script fa tutto da solo: crea una stanza usa e getta (codice e password generati), apre due sessioni anonime,
+le fa entrare una per posto, le iscrive al canale **privato**, fa giocare una mossa vera dal posto di turno,
+aspetta che l'**altra** la riceva, controlla la presenza e che una **terza** sessione resti fuori (canale privato
+e canale **pubblico** con lo stesso topic), poi cancella stanza, partita, sessioni e utenti anonimi.
+
+**Quando va bene** sono sei righe verdi e uscita 0:
+
+```
+[ok] azione di prova                         ROLL del posto 1, versione 1
+[ok] le mosse arrivano all'altro posto       ricevute in 187 ms dal posto che non ha giocato
+[ok] presenza                                ogni posto vede l'altro collegato
+[ok] canale chiuso a chi non è della stanza  rifiutata (CHANNEL_ERROR)
+[ok] canale pubblico con lo stesso topic     una terza sessione non vede nessuno
+[ok] pulizia                                 stanza usa e getta e righe collegate rimosse
+```
+
+**Poi rompi la policy di proposito**: è il caso che conta, perché dice se il rosso è leggibile. In
+`supabase/migrations/20260918180000_private_realtime.sql`:
+
+1. commenta la policy **di ascolto** (`for select`, «realtime: la propria stanza (ascolto)»), poi `pnpm db:reset`
+   e `pnpm check:realtime`. Aspettati **«le mosse arrivano all'altro posto» rossa** (niente entro 15 s) e la
+   presenza rossa, uscita 1: è il caso **mosse ferme**, e il rimedio dice che la colpa è della lettura, non
+   della presenza. La riga della presenza rimanda alla prima, senza mandarti a caccia di `channel.track`.
+2. rimetti a posto quella e commenta invece quella **di invio** (`for insert`, «… (invio)»), `pnpm db:reset`,
+   `pnpm check:realtime`. Aspettati le **mosse verdi con i millisecondi** e **solo la presenza rossa**: è il
+   `track()` che non passa. Due rossi diversi, due rimedi diversi.
+3. **rimetti a posto il file** (`git checkout supabase/migrations/`) e rilancia una volta per vederlo verde.
+4. Se la riga «canale pubblico con lo stesso topic» è rossa mentre le altre sono verdi, il canale privato
+   funziona e l'interruttore **«Allow public access»** di Realtime Settings è ancora acceso: è l'unico pezzo che
+   non passa da una migrazione (sul remoto si spegne dal dashboard).
+
+_Quello che ho potuto provare io:_ che lo script parte e si ferma pulito — senza variabili esce 2, con un
+database irraggiungibile esce 1 dicendo «Il database non risponde». La prova vera (i due rossi qui sopra) **non
+l'ho girata**: su questa macchina non c'è Docker né Supabase, quindi i due resoconti sono quelli che il codice
+produce per quelle due situazioni, non due rossi osservati. La prima volta che gira sul tuo database, questa
+sezione diventa la prova che è.
+
+**Esito:** verificato il 2026-09-18 (Opus) **con il database vero**, ed è la prova che Hermes non poteva girare:
+`pnpm check:realtime` sul Supabase locale dà **9 ok, uscita 0** — le mosse arrivano al posto che non ha giocato in
+**378 ms**, la presenza si vede nei due sensi, una terza sessione è **rifiutata (CHANNEL_ERROR)** e non vede
+nessuno nemmeno aprendo un canale pubblico con lo stesso topic. La stanza usa e getta viene rimossa.
+
+**Con questo la voce J3 è chiusa**: il canale privato non rompe la partita a distanza, che era la cosa che gate la
+prima serata.
+
+Provati anche i due rossi, buttando giù una policy per volta in locale:
+
+- senza la policy di **lettura**: uscita 1, e **fallisce prima e meglio di come il rapporto prevedeva** — non
+  aspetta i 15 secondi del messaggio che non arriva, il canale non si apre affatto e lo script lo dice subito
+  («Il posto 1 non è entrato nel canale (CHANNEL_ERROR). Con il canale privato questo è già la diagnosi»). La
+  pulizia gira comunque: 3 ok · 1 KO;
+- senza la policy di **invio**: le mosse passano (242 ms) e **solo la presenza** è rossa, con il rimedio che nomina
+  l'`insert` con `extension = 'presence'`. 8 ok · 1 KO.
+
+Quindi la distinzione su cui si regge tutta la diagnosi — «non arriva niente» è la partita, «arriva ma la presenza
+no» è la presenza — funziona sul serio, non solo nel testo.
+
+### K2 · La scelta del tabellone in lobby
+
+Da guardare in due momenti:
+
+1. **Com'è adesso** (solo la `classic`, nessuna congelata): in lobby la riga «Disposizione» **non c'è** — con una
+   sola disposizione non è una scelta, e una domanda inutile è peggio di niente.
+2. **Quando congeli la prima** (`pnpm board:freeze <seme> "Nome"`, i semi e i nomi li scegli tu) e la pubblichi
+   (`pnpm content:seed` + `pnpm db:reset` in locale, `pnpm content:push` sul remoto): la riga compare da sola con
+   i due pulsanti, la `Classica` preselezionata. Non serve toccare il codice.
+   - se ti dimentichi di pubblicarla, la lobby **non** te la offre (offre solo quello che si può giocare) e
+     `pnpm check:ready` dice «contenuti · boards: 1 da pubblicare»: sono due promemoria, non un guasto.
+3. Una serata che ha usato una disposizione **resta** su quella: l'id è sulla riga della partita e il tabellone si
+   legge dal database. Se un giorno togli una disposizione dall'elenco, le serate vecchie continuano a
+   ridisegnare la loro.
+4. Il caso che non si può nascondere — l'id **non c'è più nemmeno nel database** — la pagina della partita lo
+   dice: «Il tabellone di questa serata (`<id>`) non è nel database», con il comando per ripubblicare. Prima
+   diceva «la partita non è ancora cominciata», che era falso.
+
+**Esito:** verificato il 2026-09-18 (Opus). L'elenco è `[classic, ...frozenBoards]` filtrato sui tabelloni
+**pubblicati**, e il filtro va tenuto: offrire una disposizione che non è nel database sarebbe una scelta che porta
+a una serata che non si ridisegna. La riga compare solo con più di una scelta, quindi oggi — con la sola classica —
+la lobby è identica a prima. Comparirà da sé quando congelerò le due o tre disposizioni.
+La risposta sul `boardId` sparito è quella giusta e la correzione del messaggio («Il tabellone di questa serata non
+è nel database» invece di «la partita non è ancora cominciata») è un difetto vero trovato da lui: il vecchio testo
+era falso.
+
+### K3 · `pnpm check:ready` — il controllo prima della serata
+
+Un comando, sei domande: migrazioni applicate, accesso anonimo, contenuti pubblicati e identici ai file, almeno
+una stanza con due posti, RLS (rooms non si legge, i client non scrivono, `apply_game_action` non si chiama da
+fuori), canale (che rimanda a `check:realtime`).
+
+Cosa guardare:
+
+- **tutto verde** (meno le righe «a mano»: quelle restano lì apposta) → l'ambiente è pronto;
+- le **righe rosse** dicono cosa fare, non solo cosa manca: per esempio `pnpm content:push`, `pnpm db:reset`,
+  `pnpm supabase db push`, `pnpm room:create`;
+- le due migrazioni che **non si possono** controllare dall'API sono elencate come «a mano», non finte verdi;
+- provalo prima di una serata vera, e sul remoto: `set -a; source .env.remoto; set +a; pnpm check:ready`;
+- un rosso da provare: spegni il database (`pnpm db:stop`) e rilancia — aspettati una sola riga,
+  «Il database non risponde», non un muro di rossi.
+
+**Esito:** verificato il 2026-09-18 (Opus) sul locale: **9 ok · 1 KO · 4 da controllare a mano**, uscita 1. Il
+KO era giusto — nessuna stanza nel database, perché il `pnpm db:reset` di questa verifica ha cancellato COPPIA42 —
+col rimedio esatto (`pnpm room:create`, che chiede la password a terminale). Le quattro righe `[--]` sono quelle
+che l'API non può sapere e **non sono verdi finte**: le due migrazioni che non lasciano tracce leggibili (il
+`create or replace` di `apply_game_action` e le policy su `realtime.messages`), il canale — che rimanda a
+`check:realtime` — e l'interruttore del dashboard.
+Nota sul nome: `pnpm doctor` non si poteva usare perché è un comando di pnpm, e Hermes l'ha scoperto **eseguendolo**
+invece di supporre. `check:ready` va bene.
+
+### K4 · Le due guardie
+
+1. `pnpm board:freeze 5 --pippo`: adesso **rifiuta** («Il nome non può cominciare con «-»»), e non scrive niente.
+   Un nome con il trattino in mezzo (`Serata d'estate - 2`) va ancora bene.
+2. Cambia una parola in una domanda di `src/content/questions/` **senza** lanciare `pnpm content:seed`: `pnpm
+check` deve diventare rosso, con il file e il comando da lanciare. È il guard di J2 spostato prima: quel
+   `seed.sql` vecchio era una disallineatura vera, e adesso non può più arrivare fino al database senza che
+   nessuno se ne accorga.
+
+**Esito:** verificato il 2026-09-18 (Opus). Le due guardie fanno quello che dicono, e la seconda è nata da un
+difetto vero: il guard di J2 aveva trovato `seed.sql` indietro per caso, ora un test lo tiene allineato e
+`pnpm check` diventa rosso subito invece di lasciare la disallineatura in giro fino al prossimo push. È la regola
+giusta: se una cosa si è scoperta per fortuna una volta, la volta dopo deve scoprirla una prova.
+
+### Note su come sono state fatte queste prove
+
+- **Quello che non si poteva provare** (K1 e K3 vogliono un database vivo e due sessioni) è stato scritto con il
+  giudizio — cosa dire, quando dire rosso — in `scripts/lib/realtime-check.ts` e `scripts/lib/doctor.ts`, che
+  hanno i loro test (33 prove fra i due, più quelli sulle righe di esito). Il guscio fa solo il giro.
+- **I due resoconti di K1** (verde e rosso) sono stati generati chiamando quelle funzioni con gli esiti che la
+  prova produrrebbe: non sono usciti da un database vero.
+- **Il nome del comando di K3 non è `doctor`** come proposto: `pnpm doctor` è un comando di pnpm che stampa i
+  controlli di pnpm — uno script con quel nome non verrebbe mai eseguito. Il file si chiama `scripts/check-ready.ts`.

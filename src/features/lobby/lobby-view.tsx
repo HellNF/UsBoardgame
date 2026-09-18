@@ -96,22 +96,26 @@ export function LobbyView({
         <section className="flex flex-col gap-8">
           <h2 className="font-display text-4xl italic lg:text-5xl">Impostazioni della serata</h2>
 
-          <fieldset className="border border-ink bg-paper p-5">
-            <legend className={`px-2 ${LABEL_CLASS}`}>Disposizione</legend>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {boardNames.map((board) => (
-                <button
-                  key={board.id}
-                  type="button"
-                  aria-pressed={board.id === boardId}
-                  onClick={() => onBoardChange(board.id)}
-                  className={optionClass(board.id === boardId)}
-                >
-                  {board.name}
-                </button>
-              ))}
-            </div>
-          </fieldset>
+          {/* Con una sola disposizione la scelta non è una scelta: la riga compare quando ne
+              esiste una seconda (congelata con `pnpm board:freeze`, K2). */}
+          {boardNames.length > 1 ? (
+            <fieldset className="border border-ink bg-paper p-5">
+              <legend className={`px-2 ${LABEL_CLASS}`}>Disposizione</legend>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {boardNames.map((board) => (
+                  <button
+                    key={board.id}
+                    type="button"
+                    aria-pressed={board.id === boardId}
+                    onClick={() => onBoardChange(board.id)}
+                    className={optionClass(board.id === boardId)}
+                  >
+                    {board.name}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
 
           <fieldset className="border border-ink bg-paper p-5">
             <legend className={`px-2 ${LABEL_CLASS}`}>Categorie di sfida</legend>

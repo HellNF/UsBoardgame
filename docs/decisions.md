@@ -309,13 +309,17 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 - [x] Carte di gioco per due schermi: **chiusa dal pacchetto E** (D-56). `CardPanel` riceve il posto di chi guarda:
       l'altro non vede più il campo di risposta, ma una riga di attesa che dice cosa sta facendo. Il server
       rifiutava già le azioni non proprie (403), quindi era un problema di chiarezza, non di sicurezza.
-- [ ] Presenza non protetta: chi conosce l'id di una stanza può iscriversi al suo canale e vedere la presenza
-      (i dati di gioco no, li filtra RLS). Si chiude con i canali privati e RLS su `realtime.messages`.
-      **Fatto nel codice dal pacchetto J (D-77)**: canale `private: true` e due policy su `realtime.messages` che
-      ammettono solo chi ha una sessione in **quella** stanza. **Non è chiusa**: manca la verifica in locale con due
-      sessioni vere (Registro J3) e, sul progetto remoto, l'interruttore «Allow public access» di Realtime Settings —
-      un'impostazione del dashboard, non una migrazione. Si chiude quando una serata a distanza funziona con il
-      canale privato.
+- [x] **Presenza non protetta** (chi conosceva l'id di una stanza poteva iscriversi al suo canale e vedere la
+      presenza): **chiusa in locale il 2026-09-18**. Canale `private: true` e due policy su `realtime.messages`
+      che ammettono solo chi ha una sessione in **quella** stanza (D-79), e la verifica con due sessioni vere è
+      passata: `pnpm check:realtime` dà 9 ok sul database locale — le mosse arrivano all'altro posto in 378 ms, la
+      presenza si vede nei due sensi, una terza sessione è rifiutata e non vede nessuno nemmeno su un canale
+      pubblico con lo stesso topic. Provati anche i due rossi buttando giù una policy per volta, e la diagnosi
+      distingue «non arriva niente» (la partita) da «arriva ma la presenza no» (la presenza).
+      **Resta un pezzo sul remoto, che non è una migrazione:** l'interruttore «Allow public access» di Realtime
+      Settings va spento a mano dal dashboard, e poi `pnpm check:realtime` va rilanciato con `.env.remoto` — finché
+      è acceso, un canale pubblico con lo stesso topic vede la presenza. È nella lista delle cose da fare prima
+      della prima serata (Registro, voce K1).
 - [x] `pnpm db:start` non arrivava in fondo (il container dei log `vector` non diventa "healthy"):
       **chiusa il 2026-09-17** con `[analytics] enabled = false` in `supabase/config.toml` (commit `d7658fe`).
 - [x] Il diario mostrava l'id della domanda invece del testo e registrava le monete a zero: **chiusa dal pacchetto
@@ -808,8 +812,10 @@ generatore sta fermo, una disposizione congelata vale per sempre. Lo script **ri
 che esiste, ed è l'unico a chiamare il generatore: i semi e i nomi sono del proprietario, e nel repository non ne
 è congelata nessuna.
 
-Le congelate **non entrano in partita da sole**: `boards` resta la `classic` (l'elenco che la lobby offre), le
-congelate vivono in `frozenBoards`, le validano gli stessi test di `boards.test.ts` e si guardano in
+Le congelate **entrano in partita appena il file esiste**: `boards` in `index.ts` le mette in fila dopo la
+`classic`, quindi la lobby le offre senza toccare altro e chi gioca sceglie (D-77). Congelare una disposizione
+era già «pubblicare» nella sostanza; dal pacchetto K lo è anche nella lobby. Le validano gli stessi test di
+`boards.test.ts` e si guardano in
 `/dev/disposizioni`, che ha una sezione per loro.
 
 _Conseguenza sui dati, da decidere, non di questo pacchetto:_ la riga della partita ha già l'id del tabellone
@@ -998,3 +1004,44 @@ non toglie la presenza, **ferma la partita a distanza** — la verifica in local
 (Registro J3). E su un progetto ospitato l'interruttore **«Allow public access»** di Realtime Settings va spento a
 mano: è un'impostazione del dashboard, non una migrazione (come l'accesso anonimo), e finché è acceso un canale
 _non_ privato con lo stesso topic resta raggiungibile da chiunque conosca l'id.
+
+_Chiarimento dal pacchetto K (K2):_ l'elenco che la lobby **offre** e il tabellone che una serata **usa** sono due
+cose diverse. Il tabellone lo legge `loadBoard` dal database **per id**, quindi togliere una disposizione da
+`boards` non tocca le serate che l'hanno già usata: quelle continuano a ridisegnare il loro, e il diario resta
+quello che è stato giocato. La lista è solo il menù. Resta il caso opposto — l'id non c'è più nemmeno in
+`boards` nel database — e la pagina della partita lo dice con il nome dell'id mancante e il comando per
+ripubblicare i contenuti, invece di far finta che la serata non sia cominciata.
+
+---
+
+## Prima della prima serata (pacchetto K)
+
+### D-80 · La prova che non si può fare in CI è uno script, con un nome suo
+
+**Derivata (K1, K3).** Due cose non si possono provare in Vitest perché vogliono un database vivo: il canale
+Realtime con due sessioni vere e la prontezza di un ambiente. Diventano due script da terminale, e il compito
+resta `[L]` finché non girano davvero:
+
+- **`pnpm check:realtime`** — stanza usa e getta, due sessioni anonime, una mossa vera, e i tre esiti che contano:
+  le mosse arrivano all'altro posto, la presenza si vede, una terza sessione resta fuori. Pulisce sempre, anche
+  quando fallisce, e distingue **mosse ferme** (policy troppo stretta) da **mosse arrivate e presenza spenta**,
+  perché sono due guasti diversi (D-79).
+- **`pnpm check:ready`** — le sei domande sparse nel Registro (migrazioni, accesso anonimo, contenuti pubblicati,
+  una stanza con due posti, RLS, canale). Si chiama così e **non** `doctor` perché `pnpm doctor` è un comando di
+  pnpm: uno script con quel nome non verrebbe mai eseguito.
+
+Entrambi leggono le variabili come `content:push` (`.env.local`, e l'ambiente vince sul file), stampano una riga
+per controllo con il rimedio sotto quelle rosse, escono diversi da zero quando qualcosa non torna, e tengono il
+**giudizio** (cosa dire, quando dire rosso) in `scripts/lib`, con i suoi test: il guscio fa solo il giro.
+
+### D-81 · `supabase/seed.sql` è generato, e un test lo tiene allineato
+
+**Derivata (K4), da un guasto vero.** Il guard di J2 (D-78) si è fermato su `classic` **per caso**, provando il
+database locale: `supabase/seed.sql` era rimasto indietro rispetto a `src/content` da quando le decorazioni erano
+state spostate, quindi la stanza locale nasceva da un contenuto che non era più quello dei file. Il seed è
+generato (`pnpm content:seed`) e non si modifica a mano; ora il generatore vive in `scripts/lib/seed.ts`
+(`seedSource()`) e un test confronta la funzione con il file su disco: cambiare un contenuto senza rigenerare il
+seed fa fallire `pnpm check`, invece di lasciare la disallineatura in giro fino al prossimo push.
+
+È la stessa idea di D-78, spostata **prima**: il guard controlla al momento della pubblicazione, questo al
+momento del commit.

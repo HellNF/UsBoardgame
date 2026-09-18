@@ -5,10 +5,10 @@
  * disposizione congelata è un file di dati accanto alla `classic`, non una chiamata al generatore:
  * non si muove se un giorno il generatore cambia.
  *
- * Queste disposizioni **non entrano in partita da sole**: `boards` in `index.ts` resta la
- * `classic`, e quale tabellone usi una serata è la decisione di prodotto di F7-03 — insieme al
- * fatto che il tabellone scelto va salvato sulla riga della partita, altrimenti il diario di una
- * serata passata non si può più ridisegnare.
+ * Queste disposizioni entrano in partita appena il file esiste: `boards` in `index.ts` le mette in
+ * fila dopo la `classic`, quindi la lobby le offre senza toccare altro. Quale usa una serata lo
+ * sceglie chi gioca, e l'id finisce su `games.settings.boardId` (D-77). Una congelata **non si
+ * muove più**: se una serata la usa, quell'id resta il tabellone che è stato giocato (D-78).
  */
 import type { BoardLayout } from "@/engine/types";
 

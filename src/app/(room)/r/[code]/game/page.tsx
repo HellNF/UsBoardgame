@@ -20,7 +20,22 @@ export default async function GamePage({ params }: PageProps<"/r/[code]/game">) 
   if (room.game.status === "sheets") redirect(`/r/${room.code}/sheet`);
   // `finished` non rimanda più al diario: la schermata finale è il finale della serata.
 
-  if (!room.state || !room.board) {
+  // Tabellone sparito dal database: succede a una serata che punta a un id che non c'è più (un
+  // contenuto mai pubblicato, o cancellato). Non è «non è ancora cominciata», e la lobby non aiuta:
+  // una serata in corso il tabellone non lo cambia (D-77), quindi il messaggio dice cosa manca e
+  // cosa fare, invece di rimandare a un giro a vuoto.
+  if (!room.board) {
+    return (
+      <main className="flex flex-1 items-center justify-center p-8 font-sans">
+        <p className="border-2 border-ink px-4 py-3">
+          Il tabellone di questa serata ({room.settings.boardId}) non è nel database: la partita non si può
+          ridisegnare. Il contenuto si ripubblica con <code>pnpm content:push</code>.
+        </p>
+      </main>
+    );
+  }
+
+  if (!room.state) {
     return (
       <main className="flex flex-1 items-center justify-center p-8 font-sans">
         <p className="border-2 border-ink px-4 py-3">

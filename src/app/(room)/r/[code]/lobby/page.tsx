@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 
 import { boards } from "@/content/boards";
 import { LobbyContainer } from "@/features/lobby/lobby-container";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { currentRoom } from "@/server/room/current";
+import { publishedBoardIds } from "@/server/room/lobby";
 
 /**
  * Lobby (F0-05, F2-02): impostazioni della serata, pronto dei due posti, avvio.
@@ -29,6 +31,12 @@ export default async function LobbyPage({ params }: PageProps<"/r/[code]/lobby">
 
   if (room.game.status === "playing") redirect(`/r/${room.code}/game`);
 
+  // Si offrono solo le disposizioni **pubblicate** (K2): una congelata appena scritta e non ancora
+  // nel database sarebbe una scelta che porta a una partita che non si ridisegna. Se il database non
+  // risponde si offre la lista intera, e la pagina della partita dirà cosa manca.
+  const published = await publishedBoardIds(createSupabaseAdminClient()).catch(() => null);
+  const offered = published === null ? boards : boards.filter((board) => published.has(board.id));
+
   return (
     <main className="flex flex-1 flex-col pb-10">
       <LobbyContainer
@@ -40,7 +48,7 @@ export default async function LobbyPage({ params }: PageProps<"/r/[code]/lobby">
         names={room.names}
         colors={room.colors}
         pawns={room.pawns}
-        boardNames={boards.map((board) => ({ id: board.id, name: board.name }))}
+        boardNames={offered.map((board) => ({ id: board.id, name: board.name }))}
         settings={room.settings}
         ready={(room.game.ready ?? {}) as Record<string, boolean>}
         categoryOptions={CHALLENGE_CATEGORY_ORDER.map((id) => ({
