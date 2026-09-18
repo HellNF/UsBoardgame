@@ -1,6 +1,7 @@
 /**
- * Dado — illustrazione di categoria «buffe» (id `funny-dice`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Buffa Dice — illustrazione di categoria «buffe» (id `funny-dice`).
+ * Dado: quattro facce tonde, una per colore.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,13 +21,10 @@ export function FunnyDice({ x = 0, y = 0, size = 100, className }: IllustrationP
       aria-hidden="true"
       className={className}
     >
-      {/* Quadrato con cinque punti pieni. */}
-      <rect x="16" y="16" width="68" height="68" rx="10" />
-      <circle cx="32" cy="32" r="5" fill="currentColor" />
-      <circle cx="68" cy="32" r="5" fill="currentColor" />
-      <circle cx="50" cy="50" r="6" fill="currentColor" />
-      <circle cx="32" cy="68" r="5" fill="currentColor" />
-      <circle cx="68" cy="68" r="5" fill="currentColor" />
+      <circle cx="34" cy="34" r="15" fill="var(--color-art-red)" />
+      <circle cx="66" cy="34" r="15" fill="var(--color-art-amber)" />
+      <circle cx="34" cy="66" r="15" fill="var(--color-art-blue)" />
+      <circle cx="66" cy="66" r="15" fill="var(--color-art-green)" />
     </svg>
   );
 }

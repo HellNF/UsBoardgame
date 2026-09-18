@@ -1,6 +1,7 @@
 /**
- * Gabbia aperta — illustrazione di categoria «futuro» (id `future-cage`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Futuro Cage — illustrazione di categoria «future» (id `future-cage`).
+ * Gabbia aperta: sbarre d'ambra su base piena, con la pallina in cima.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,11 +21,15 @@ export function FutureCage({ x = 0, y = 0, size = 100, className }: Illustration
       aria-hidden="true"
       className={className}
     >
-      {/* Cupola con tre sbarre, porticina spalancata e fondo pieno. */}
-      <path d="M20 62V42a30 30 0 0 1 60 0v20" />
-      <path d="M34 62V42M50 62V34M66 62V42" strokeWidth={4} />
-      <path d="M66 42 88 34v28" strokeWidth={4} />
-      <rect x="16" y="62" width="68" height="8" rx="4" fill="currentColor" />
+      <path
+        d="M28 84V48c0-14 10-24 22-24s22 10 22 24v36"
+        fill="none"
+        stroke="var(--color-art-amber)"
+        strokeWidth={6}
+      />
+      <path d="M38 84V44M50 84V34M62 84V44" stroke="var(--color-art-amber)" strokeWidth={5} />
+      <path d="M20 84h60" strokeWidth={7} />
+      <circle cx="50" cy="16" r="6" fill="var(--color-art-amber)" />
     </svg>
   );
 }

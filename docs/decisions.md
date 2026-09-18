@@ -850,3 +850,36 @@ senza mood non azzerano: non raccontano niente di nuovo):
 segnaposto che occupa spazio senza fare niente è contro la regola di D-68 (in partita il segnaposto è il
 componente attuale, non un riquadro vuoto). La mappa si applica il giorno in cui il file arriva: il wrapper
 `MascotView` esiste già dal pacchetto G, con `mood` numerico.
+
+### D-75 · Le illustrazioni hanno una tavolozza propria: il tabellone si colora
+
+**Su indicazione del proprietario** (F6-02, reference consegnata il 2026-09-18). Il riferimento sono i 38 disegni
+**a colori** — tinte piatte, contorno scuro, forme tonde — con la richiesta di farli «identici se non ancora
+migliori». I principi di `docs/design.md` dicevano «bianco e nero puro» e «il colore è solo dei giocatori, mai sul
+tabellone»: cambiano qui, perché l'estetica la decide il proprietario e la richiesta è esplicita.
+
+Cosa cambia e cosa no:
+
+- le **illustrazioni** hanno una tavolozza fissa di tinte piatte, i token `--color-art-*` in
+  `src/app/globals.css` (crema, ambra, rosso, blu, cielo, verde, bosco, marrone, terracotta, verde acqua, sabbia,
+  navy). Niente sfumature, niente grigi, nessuna ombra;
+- il **contorno** resta `currentColor` (inchiostro) e spesso: il disegno si legge anche senza colore;
+- il **resto del tabellone non cambia**: caselle, sfide, imprevisti, monete, decorazioni, scale, serpenti e cornice
+  restano bianchi e neri, e il colore delle **pedine** resta l'unico colore che si muove;
+- `docs/specs.md` non si modifica: la sua regola sul bianco e nero è superata da questa voce, come dice
+  `docs/README.md`.
+
+_Perché vale la pena, oltre alla richiesta:_ il colore ha **risolto cinque disegni** che a 48 px non si leggevano in
+bianco e nero e che avevo segnato come da rifare — lo spazzolino (era una chiave), la mela (erano due cerchi), la
+rosa (era una fiamma), il calzino (era una lampadina) e il cono gelato. Una tinta piatta porta informazione che a
+quella misura il tratto non riesce a portare: la mela rossa con la foglia verde è una mela, la stessa sagoma in nero
+non lo era.
+
+**Come si applica** (la parte che resta vera anche dopo): le tinte non si scelgono disegno per disegno ma dai token,
+il contorno non si colora, e un disegno si giudica **a 48 px nella casella** — dove l'alone del numero morde tutto
+ciò che sta sopra e a sinistra di circa (47, 41), colore o no.
+
+**Diviso così** (`HERMES.md` § Chi fa cosa): i disegni li fa e li giudica chi guarda. Dei 38 arrivati con la
+reference, 36 sono stati presi come erano; `deep-mirror` e `deep-roots` erano ridisegni delle versioni vecchie —
+quelle che a 48 px erano una «C» e un tavolo — e sono stati rifatti sulle forme nuove; `tastes-guitar` era l'ultimo
+illeggibile (un palloncino) e ha un corpo nuovo, con la vita invece di due cerchi sovrapposti.

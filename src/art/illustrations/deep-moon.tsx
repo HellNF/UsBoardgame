@@ -1,6 +1,7 @@
 /**
- * Luna — illustrazione di categoria «profonde» (id `deep-moon`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Profonda Moon — illustrazione di categoria «profonde» (id `deep-moon`).
+ * Luna: falce d'ambra, stella in inchiostro nel vuoto della falce.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,9 +21,14 @@ export function DeepMoon({ x = 0, y = 0, size = 100, className }: IllustrationPr
       aria-hidden="true"
       className={className}
     >
-      {/* Falce di luna e una stella piena accanto. */}
-      <path d="M64 12a38 38 0 1 0 0 76 30 30 0 0 1 0-76z" />
-      <path d="M76 44l3 8 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1z" fill="currentColor" />
+      <circle cx="44" cy="50" r="34" fill="var(--color-art-amber)" />
+      <circle cx="62" cy="50" r="30" fill="var(--color-art-paper)" />
+      <path
+        d="M 74.0 27.0 L 77.8 36.7 L 88.3 37.4 L 80.2 44.0 L 82.8 54.1 L 74.0 48.5 L 65.2 54.1 L 67.8 44.0 L 59.7 37.4 L 70.2 36.7 Z"
+        fill="var(--color-art-navy)"
+        stroke="none"
+      />
+      <path d="M24 20v10M19 25h10" stroke="var(--color-art-amber)" strokeWidth={3.5} />
     </svg>
   );
 }

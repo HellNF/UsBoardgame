@@ -4,10 +4,12 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 
 ## Principi
 
-1. **Bianco e nero puro.** Carta `#F2F2F0`, inchiostro `#1A1A1A`. Nessun grigio, nessuna ombra, nessun gradiente.
-2. **Il colore è solo dei giocatori:** gettone della pedina, evidenziazione del turno e punteggi. Mai sul tabellone.
+1. **Bianco e nero per il gioco.** Carta `#F2F2F0`, inchiostro `#1A1A1A`. Nessun grigio, nessuna ombra, nessun
+   gradiente. Le **illustrazioni** sono l'eccezione: hanno una tavolozza propria, piatta (D-75).
+2. **Il colore delle pedine è solo delle pedine:** gettone, evidenziazione del turno e punteggi. Il tabellone lo
+   colorano i disegni delle caselle, non le pedine.
 3. **Geometria, non decorazione:** il tipo di casella si riconosce dalla forma (vedi tabella).
-4. **Tratto spesso e campiture nere** per le illustrazioni, come le stampe della reference.
+4. **Tratto spesso e campiture piene** per le illustrazioni, con le tinte della tavolozza (D-75).
 5. **Una schermata sola** (≥ 1024 × 768, D-16): la partita non fa scorrere la pagina; il tabellone si adatta
    all'altezza disponibile e, se serve, scorre solo il pannello di destra. Chi ha il turno si riconosce a colpo
    d'occhio — bordo pieno della riga, pallino pieno del colore del giocatore, etichetta "Tocca a te" — e non dal
@@ -23,6 +25,7 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 | `player-blue`  | `#2F4B9E`        | giocatore                          |
 | `player-green` | `#2E5E3E`        | giocatore (proposta, da validare)  |
 | `player-ochre` | `#C08A2B`        | giocatore (proposta, da validare)  |
+| `art-*`        | 12 tinte piatte  | solo illustrazioni (D-75)          |
 | `font-display` | Playfair Display | titoli, sempre in corsivo          |
 | `font-sans`    | Space Grotesk    | testo e numeri                     |
 
@@ -63,7 +66,7 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 
 | Tipo di casella | Resa                                                                      |
 | --------------- | ------------------------------------------------------------------------- |
-| Domanda         | bianca + illustrazione della categoria                                    |
+| Domanda         | bianca + illustrazione a colori della categoria                           |
 | Sfida           | nera piena, numero in bianco                                              |
 | Imprevisto      | metà nera in diagonale                                                    |
 | Monete          | cerchio nero pieno (+3) o vuoto (−2), anche come semicerchio su più celle |
@@ -74,8 +77,9 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 
 - Un componente per file: `tastes-bottle.tsx` esporta `TastesBottle`; registro `index.ts` con
   `IllustrationId → componente` (`Illustration` rende un id con `createElement`, o niente se l'id non c'è).
-- `viewBox="0 0 100 100"`, margine interno di 12 unità, `fill` e `stroke` solo `currentColor` o
-  `var(--color-paper)`. `x`, `y` e `size` posizionano il disegno dentro l'SVG che lo contiene (il tabellone è
+- `viewBox="0 0 100 100"`, margine interno di 12 unità; il **contorno** è `currentColor` (inchiostro) e i
+  riempimenti sono i token `--color-art-*` della tavolozza delle illustrazioni, o `var(--color-paper)` (D-75):
+  niente sfumature, niente grigi, e il disegno si legge anche senza colore. `x`, `y` e `size` posizionano il disegno dentro l'SVG che lo contiene (il tabellone è
   1000 × 1000, una casella 100).
 - Tratto `strokeWidth` 5,5, `strokeLinecap="round"`, `strokeLinejoin="round"`; almeno una campitura piena per
   illustrazione. Nessun testo dentro gli SVG.

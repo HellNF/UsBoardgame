@@ -1,6 +1,7 @@
 /**
- * Tazza di caffè — illustrazione di categoria «gusti» (id `tastes-cup`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Gusto Cup — illustrazione di categoria «gusti» (id `tastes-cup`).
+ * Tazza: crema su piattino, con il manico e il fumo.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,12 +21,10 @@ export function TastesCup({ x = 0, y = 0, size = 100, className }: IllustrationP
       aria-hidden="true"
       className={className}
     >
-      {/* Tazza con manico, caffè pieno e due fili di vapore. */}
-      <path d="M28 44h40v14a18 18 0 0 1-18 18h-4a18 18 0 0 1-18-18z" />
-      <path d="M68 50a10 10 0 0 1 0 18" />
-      <path d="M22 84h56" strokeWidth={6} />
-      <rect x="32" y="48" width="32" height="6" fill="currentColor" />
-      <path d="M42 34c0-8 8-6 8-14M58 34c0-8 8-6 8-14" strokeWidth={4} />
+      <path d="M22 40h40v14a20 20 0 0 1-40 0z" fill="var(--color-art-cream)" />
+      <path d="M62 45h5a8 8 0 0 1 0 16h-5" fill="none" />
+      <path d="M16 78h56" strokeWidth={7} />
+      <path d="M32 32c4-6 0-9 2-15M46 32c4-6 0-9 2-15" stroke="var(--color-art-brown)" strokeWidth={4} />
     </svg>
   );
 }

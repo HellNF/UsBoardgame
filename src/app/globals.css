@@ -2,7 +2,8 @@
 
 /*
  * Design token. Fonte: docs/design.md § Palette.
- * Bianco e nero puro: il colore compare solo sulle pedine dei giocatori.
+ * Il colore dei giocatori è solo sulle pedine, sul turno e sui punteggi; le **illustrazioni**
+ * hanno una tavolozza propria di tinte piatte (D-68), presa dalla reference del proprietario.
  */
 @theme {
   --color-paper: #f2f2f0;
@@ -12,6 +13,20 @@
   --color-player-blue: #2f4b9e;
   --color-player-green: #2e5e3e;
   --color-player-ochre: #c08a2b;
+
+  /* Tavolozza delle illustrazioni (D-68): nomi di tinta, non di uso. */
+  --color-art-cream: #f7f1e3;
+  --color-art-amber: #f2b23c;
+  --color-art-red: #e8483a;
+  --color-art-navy: #1e2a38;
+  --color-art-blue: #3e7cb1;
+  --color-art-sky: #a8cfe0;
+  --color-art-green: #3e8e4e;
+  --color-art-forest: #1f6b3a;
+  --color-art-brown: #a9662f;
+  --color-art-terracotta: #c4683c;
+  --color-art-teal: #2e7d74;
+  --color-art-sand: #e6dcc2;
 
   --font-display: var(--font-playfair), Georgia, serif;
   --font-sans: var(--font-space-grotesk), system-ui, sans-serif;

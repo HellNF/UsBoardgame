@@ -1,6 +1,7 @@
 /**
- * Lucchetto — illustrazione di categoria «profonde» (id `deep-lock`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Profonda Lock — illustrazione di categoria «profonde» (id `deep-lock`).
+ * Lucchetto: corpo di rosso, archetto e toppa in inchiostro.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,11 +21,10 @@ export function DeepLock({ x = 0, y = 0, size = 100, className }: IllustrationPr
       aria-hidden="true"
       className={className}
     >
-      {/* Archetto, corpo e buco della serratura pieno. */}
-      <path d="M32 46V36a18 18 0 0 1 36 0v10" strokeWidth={7} />
-      <rect x="22" y="46" width="56" height="38" rx="5" />
-      <circle cx="50" cy="60" r="6" fill="currentColor" />
-      <path d="M50 66v9" strokeWidth={5} />
+      <path d="M35 46V34a15 15 0 0 1 30 0v12" strokeWidth={6.5} />
+      <rect x="21" y="46" width="58" height="42" rx="9" fill="var(--color-art-red)" />
+      <circle cx="50" cy="62" r="7" fill="var(--color-art-navy)" stroke="none" />
+      <path d="M46 66h8l2 11H44z" fill="var(--color-art-navy)" stroke="none" />
     </svg>
   );
 }

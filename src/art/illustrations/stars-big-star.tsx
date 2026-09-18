@@ -1,8 +1,8 @@
 /**
- * Stella grande — illustrazione di casella stella (id `stars-big-star`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Stella BigStar — illustrazione di categoria «stelle» (id `stars-big-star`).
+ * Stella grande, con i raggi intorno.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
-import { starPath } from "./star";
 import type { IllustrationProps } from "./types";
 
 export function StarsBigStar({ x = 0, y = 0, size = 100, className }: IllustrationProps) {
@@ -21,9 +21,11 @@ export function StarsBigStar({ x = 0, y = 0, size = 100, className }: Illustrati
       aria-hidden="true"
       className={className}
     >
-      {/* Stella doppia: quella dentro resta del colore della carta. */}
-      <path d={starPath(50, 52, 40, 17)} fill="currentColor" />
-      <path d={starPath(50, 52, 20, 9)} fill="var(--color-paper)" stroke="none" />
+      <path
+        d="M 50.0 16.0 L 58.8 39.9 L 84.2 40.9 L 64.3 56.6 L 71.2 81.1 L 50.0 67.0 L 28.8 81.1 L 35.7 56.6 L 15.8 40.9 L 41.2 39.9 Z"
+        fill="var(--color-art-amber)"
+      />
+      <path d="M50 6v8M20 14l5 6M80 14l-5 6" stroke="var(--color-art-amber)" strokeWidth={4} />
     </svg>
   );
 }

@@ -1,6 +1,7 @@
 /**
- * Candela — illustrazione di categoria «profonde» (id `deep-candle`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Profonda Candle — illustrazione di categoria «profonde» (id `deep-candle`).
+ * Candela: cero di crema col gocciolo, fiamma d'ambra e candeliere pieno.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,12 +21,12 @@ export function DeepCandle({ x = 0, y = 0, size = 100, className }: Illustration
       aria-hidden="true"
       className={className}
     >
-      {/* Fiamma piena, cerone col gocciolo e candeliere. */}
-      <path d="M50 10c9 12 9 18 0 26-9-8-9-14 0-26z" fill="currentColor" />
-      <path d="M50 36v4" strokeWidth={4} />
-      <rect x="38" y="40" width="24" height="42" rx="3" />
-      <path d="M62 48v10a4 4 0 0 1-8 0" strokeWidth={4} />
-      <path d="M26 82h48" strokeWidth={6} />
+      <path d="M50 10c9 12 9 19 0 26-9-7-9-14 0-26z" fill="var(--color-art-amber)" />
+      <path d="M50 36v5" strokeWidth={4} />
+      <rect x="38" y="41" width="24" height="38" rx="3" fill="var(--color-art-cream)" />
+      <path d="M62 50v9a4 4 0 0 1-8 0" strokeWidth={3.5} />
+      <path d="M24 83h52l-6-8H30z" fill="var(--color-art-navy)" />
+      <path d="M20 26v9M15.5 30.5h9" stroke="var(--color-art-amber)" strokeWidth={3.5} />
     </svg>
   );
 }

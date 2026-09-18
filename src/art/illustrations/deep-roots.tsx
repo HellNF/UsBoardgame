@@ -19,6 +19,9 @@
  * radici diventano una frangia sola; e la radice si assottiglia per **gradini** con la punta
  * tonda, non come un cuneo appuntito, che sotto una campitura piena si legge come un dente.
  * Nessun tratto scende sotto le 3 unità (docs/design.md).
+ *
+ * Colore (D-75): le radici sono marroni come nella reference, la zolla resta inchiostro — così il
+ * disegno conserva il suo ancoraggio scuro e si legge anche dove il colore non arriva.
  */
 import type { IllustrationProps } from "./types";
 
@@ -121,13 +124,23 @@ export function DeepRoots({ x = 0, y = 0, size = 100, className }: IllustrationP
       {/* Prima le radici, così la zolla le copre dove entrano nella terra. */}
       {MAIN.map((root) =>
         rootSegments(root.base, root.tip, root.bend, root.taper, 7).map((segment, step) => (
-          <path key={`${root.id}-${step}`} d={segment.d} strokeWidth={segment.width} />
+          <path
+            key={`${root.id}-${step}`}
+            d={segment.d}
+            stroke="var(--color-art-brown)"
+            strokeWidth={segment.width}
+          />
         )),
       )}
       {FORKS.map((fork, index) => {
         const base = parentAt.get(fork.parent)?.(fork.t) ?? { x: 50, y: 40 };
         return rootSegments(base, fork.tip, fork.bend, fork.taper, 5).map((segment, step) => (
-          <path key={`fork-${index}-${step}`} d={segment.d} strokeWidth={segment.width} />
+          <path
+            key={`fork-${index}-${step}`}
+            d={segment.d}
+            stroke="var(--color-art-brown)"
+            strokeWidth={segment.width}
+          />
         ));
       })}
       <path d={SOIL} fill="currentColor" stroke="none" />

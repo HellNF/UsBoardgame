@@ -1,6 +1,7 @@
 /**
- * Piantina — illustrazione di categoria «futuro» (id `future-sprout`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Futuro Sprout — illustrazione di categoria «future» (id `future-sprout`).
+ * Piantina: vaso di terracotta e due foglie di verde.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,12 +21,11 @@ export function FutureSprout({ x = 0, y = 0, size = 100, className }: Illustrati
       aria-hidden="true"
       className={className}
     >
-      {/* Vaso con le foglie: quella di sinistra è piena. */}
-      <path d="M32 62h36l-6 24H38z" />
-      <path d="M26 58h48" strokeWidth={6} />
-      <path d="M50 58V36" strokeWidth={5} />
-      <path d="M50 44c-10-2-14-10-14-16 9 0 14 6 14 16z" fill="currentColor" />
-      <path d="M50 46c10-2 14-10 14-16-9 0-14 6-14 16z" />
+      <rect x="30" y="62" width="40" height="26" rx="3" fill="var(--color-art-terracotta)" />
+      <path d="M28 62h44l-4-9H32z" fill="var(--color-art-terracotta)" />
+      <path d="M50 62V36" strokeWidth={5} />
+      <path d="M50 48c-12-1-20-9-20-20 12 0 20 8 20 20z" fill="var(--color-art-green)" />
+      <path d="M50 45c12-1 20-9 20-20-12 0-20 8-20 20z" fill="var(--color-art-green)" />
     </svg>
   );
 }
