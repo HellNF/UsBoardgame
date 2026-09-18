@@ -2,20 +2,23 @@
  * Radici — illustrazione di categoria «profonde» (id `deep-roots`).
  * Regole di disegno: docs/design.md § Illustrazioni SVG.
  *
- * Un pezzo di terra visto in sezione: la terra è una **campitura piena** in alto (non un
- * tratteggio: a 48 px un tratteggio da 2,5 unità sparisce, e il minimo di docs/design.md è
- * 3 unità) e le radici scendono da lì, **spesse dove nascono e sottili in punta**, con
- * direzioni aperte a ventaglio e lunghezze tutte diverse.
+ * Il segno che dice «radice» è la **biforcazione**: tre radici principali che si aprono in
+ * forcelle, sotto una zolla di terra sottile. È la terza versione, e le due precedenti sono la
+ * ragione per cui questa è fatta così — a 48 px il disegno non viene letto per i dettagli ma
+ * per la silhouette, e «massa in alto + tratti lisci in basso» è sempre un corpo:
  *
- * Niente tronco sopra la terra: il blocchetto in alto con due tratti simmetrici sotto dava la
- * silhouette di una persona con le gambe aperte, ed era quello che si vedeva a 48 px (H1).
- * Così pure le due trappole trovate rifacendolo: radici parallele e di lunghezza simile si
- * leggono come le zampe di una cosa sola, e radici che si toccano alla base diventano una
- * frangia sola. Servono lo spazio di carta fra le basi e l'asimmetria.
+ * - tronco con due tratti simmetrici sotto → una persona con le gambe aperte;
+ * - campitura piena rettangolare con quattro tratti lisci sotto → un tavolo (H1);
+ * - campitura piena tonda con gli stessi tratti → un animale a quattro zampe.
  *
- * La radice si assottiglia per **gradini** (da 11 a 3,5 unità) e non come un cuneo appuntito:
- * il cuneo, sotto una campitura piena, si legge come un dente o un artiglio. La punta resta
- * tonda, come la coda dei serpenti del tabellone.
+ * Nessuna gamba si biforca, quindi bastano le forcelle a rovesciare la lettura. Da lì tutto il
+ * resto: la terra è una **striscia sottile** con gli estremi assottigliati e i bordi irregolari
+ * (una zolla, non un asse), e le radici sono tre, di lunghezze diverse e mai parallele.
+ *
+ * Restano le due regole trovate rifacendolo (H1): fra le basi ci vuole carta, altrimenti le
+ * radici diventano una frangia sola; e la radice si assottiglia per **gradini** con la punta
+ * tonda, non come un cuneo appuntito, che sotto una campitura piena si legge come un dente.
+ * Nessun tratto scende sotto le 3 unità (docs/design.md).
  */
 import type { IllustrationProps } from "./types";
 
@@ -25,59 +28,81 @@ type Point = { x: number; y: number };
 const round = (value: number): number => Math.round(value * 10) / 10;
 const at = (point: Point): string => `${round(point.x)} ${round(point.y)}`;
 
-/**
- * Spessori di una radice, dalla base alla punta: otto gradini da 11 a 3,5 unità (nessuno sotto
- * le 3, a 48 px sparirebbe). Tanti e piccoli perché pochi gradini grossi si vedono come
- * ginocchia meccaniche a 200 px: con le punte tonde i gradini non si distinguono.
- */
-const WIDTHS = Array.from({ length: 8 }, (_, index) => 11 - (11 - 3.5) * (index / 7));
+/** Spessore di una radice: dalla base alla punta. */
+type Taper = { from: number; to: number };
 
 /**
- * Una radice: una curva smorzata dalla base alla punta, disegnata a gradini di spessore.
- * `bend` piega la radice di lato, così non sono tutte dritte.
+ * La curva di una radice: una quadratica dalla base alla punta, con il punto di controllo
+ * spostato di lato da `bend` — è quello che la piega e le toglie l'aria del tratto dritto.
+ * Ritorna il punto a una frazione della curva, che serve anche alle forcelle per attaccarsi.
  */
-function rootSegments(base: Point, tip: Point, bend: number): { d: string; width: number }[] {
+function curve(base: Point, tip: Point, bend: number): (t: number) => Point {
   const delta = { x: tip.x - base.x, y: tip.y - base.y };
   const length = Math.hypot(delta.x, delta.y) || 1;
-  // Normale all'asse: è la direzione in cui la radice si piega.
+  // Normale all'asse: la direzione in cui la radice si piega.
   const normal = { x: -delta.y / length, y: delta.x / length };
   const control = {
     x: base.x + delta.x * 0.55 + normal.x * bend,
     y: base.y + delta.y * 0.55 + normal.y * bend,
   };
 
-  // La quadratica base → controllo → punta, campionata in `WIDTHS.length` tratti.
-  const pointAt = (t: number): Point => {
+  return (t: number) => {
     const u = 1 - t;
     return {
       x: u * u * base.x + 2 * u * t * control.x + t * t * tip.x,
       y: u * u * base.y + 2 * u * t * control.y + t * t * tip.y,
     };
   };
-
-  return WIDTHS.map((width, index) => {
-    const from = pointAt(index / WIDTHS.length);
-    const to = pointAt((index + 1) / WIDTHS.length);
-    return { d: `M ${at(from)} L ${at(to)}`, width };
-  });
 }
 
 /**
- * Le radici: basi, punte e pieghe scelte a mano, tutte diverse. Fra una base e l'altra restano
- * almeno 10 unità di carta, altrimenti le radici si fondono in una frangia sola.
+ * Una radice, disegnata a gradini di spessore lungo la sua curva. I gradini sono tanti e
+ * piccoli: pochi e grossi si vedono come ginocchia meccaniche a 200 px, mentre con le punte
+ * tonde non si distinguono.
  */
-const ROOTS: { base: Point; tip: Point; bend: number }[] = [
-  // Esce di lato verso sinistra e finisce alta: è la più corta.
-  { base: { x: 26, y: 26 }, tip: { x: 14, y: 54 }, bend: 5 },
-  // La più lunga: scende a sinistra e si porta il peso del disegno.
-  { base: { x: 42, y: 28 }, tip: { x: 31, y: 87 }, bend: -5 },
-  // Seconda per lunghezza, verso destra.
-  { base: { x: 60, y: 28 }, tip: { x: 70, y: 76 }, bend: -4 },
-  // Verso destra, corta: nessuna coppia con quella di sinistra.
-  { base: { x: 77, y: 25 }, tip: { x: 88, y: 47 }, bend: -4 },
-];
+function rootSegments(
+  base: Point,
+  tip: Point,
+  bend: number,
+  taper: Taper,
+  steps: number,
+): { d: string; width: number }[] {
+  const pointAt = curve(base, tip, bend);
+  return Array.from({ length: steps }, (_, index) => {
+    const from = pointAt(index / steps);
+    const to = pointAt((index + 1) / steps);
+    return {
+      d: `M ${at(from)} L ${at(to)}`,
+      width: taper.from + (taper.to - taper.from) * (index / (steps - 1)),
+    };
+  });
+}
+
+/** Le tre radici principali: lunghezze diverse, nessuna coppia parallela. */
+const MAIN = [
+  // La base sta sotto la parte piena della zolla, non sotto la punta che si assottiglia:
+  // attaccata all'estremo la radice si staccava dal resto del disegno.
+  { id: "sinistra", base: { x: 43, y: 26 }, tip: { x: 29, y: 62 }, bend: 5, taper: { from: 10.5, to: 4 } },
+  { id: "centro", base: { x: 54, y: 26 }, tip: { x: 46, y: 88 }, bend: -4, taper: { from: 11, to: 3.5 } },
+  { id: "destra", base: { x: 72, y: 25 }, tip: { x: 84, y: 64 }, bend: -5, taper: { from: 10, to: 3.8 } },
+] as const;
+
+/** Le forcelle: `t` è il punto della radice madre da cui partono. */
+const FORKS = [
+  { parent: "sinistra", t: 0.5, tip: { x: 42, y: 54 }, bend: -3, taper: { from: 5, to: 3.2 } },
+  { parent: "centro", t: 0.4, tip: { x: 68, y: 60 }, bend: -4, taper: { from: 6, to: 3.2 } },
+  { parent: "centro", t: 0.66, tip: { x: 34, y: 80 }, bend: 3, taper: { from: 5, to: 3.2 } },
+  { parent: "destra", t: 0.55, tip: { x: 74, y: 84 }, bend: -2, taper: { from: 5.5, to: 3.2 } },
+] as const;
+
+/** La zolla: estremi assottigliati e bordi irregolari sopra e sotto. */
+const SOIL =
+  "M28 22C36 17 46 21 55 18C64 15 73 20 81 18C85 17 87 19 88 21" +
+  "C85 27 80 26 74 27C65 30 56 25 47 28C39 31 32 27 28 26Z";
 
 export function DeepRoots({ x = 0, y = 0, size = 100, className }: IllustrationProps) {
+  const parentAt = new Map(MAIN.map((root) => [root.id, curve(root.base, root.tip, root.bend)]));
+
   return (
     <svg
       x={x}
@@ -93,18 +118,19 @@ export function DeepRoots({ x = 0, y = 0, size = 100, className }: IllustrationP
       aria-hidden="true"
       className={className}
     >
-      {/* Le radici: prima loro, così la terra le copre dove entrano. */}
-      {ROOTS.map((root, index) =>
-        rootSegments(root.base, root.tip, root.bend).map((segment, step) => (
-          <path key={`${index}-${step}`} d={segment.d} strokeWidth={segment.width} />
+      {/* Prima le radici, così la zolla le copre dove entrano nella terra. */}
+      {MAIN.map((root) =>
+        rootSegments(root.base, root.tip, root.bend, root.taper, 7).map((segment, step) => (
+          <path key={`${root.id}-${step}`} d={segment.d} strokeWidth={segment.width} />
         )),
       )}
-      {/* La terra: campitura piena, con il bordo di sotto irregolare come una sezione. */}
-      <path
-        d="M12 12h76v10c-6 5-14 2-20 5-8 4-16 1-22 4-8 2-14 0-20 2-6 2-10 0-14-3z"
-        fill="currentColor"
-        stroke="none"
-      />
+      {FORKS.map((fork, index) => {
+        const base = parentAt.get(fork.parent)?.(fork.t) ?? { x: 50, y: 40 };
+        return rootSegments(base, fork.tip, fork.bend, fork.taper, 5).map((segment, step) => (
+          <path key={`fork-${index}-${step}`} d={segment.d} strokeWidth={segment.width} />
+        ));
+      })}
+      <path d={SOIL} fill="currentColor" stroke="none" />
     </svg>
   );
 }

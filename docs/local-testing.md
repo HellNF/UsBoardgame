@@ -1037,6 +1037,44 @@ ovale quasi **circolare**, e un cerchio con un manico sotto è un lecca-lecca. I
 leggono, lo specchio si legge. **Il tuo occhio vale più del mio:** se a 48 px vedi ancora un omino, dimmelo e lo
 rifaccio (ma dimmi anche cosa deve sembrare a chi guarda).
 
+**Esito (Opus):** rasterizzati entrambi a 48 px veri (Chrome headless) e ingranditi ×8, poi guardati **dentro la
+casella** del tabellone, che è la prova che mancava.
+
+**Lo specchio è fatto:** ovale più alto che largo, cornice spessa, riflesso chiaro, manico corto. Si legge.
+
+**Le radici no, e le ho rifatte io** (era grafica, quindi mia). L'omino era andato, ma al suo posto c'era un
+**tavolo**: piano rettangolare e quattro gambe che si assottigliano. Il motivo non era l'asimmetria, che Hermes
+aveva risolto, ma la sagoma: la campitura della terra era un rettangolo con gli angoli a squadra e il bordo di
+sopra dritto. L'ondulazione del bordo di sotto c'era nel percorso, però ondeggiava di 2-5 unità su una fascia alta
+20, e a 48 px non si vede.
+
+Tre versioni mie, tutte guardate a 48 px, e servono a chi verrà dopo:
+
+1. **zolla tonda e piena** con le stesse radici sotto → un animale a quattro zampe. «Massa in alto + tratti lisci
+   in basso» resta un corpo, qualunque forma abbia la massa;
+2. **striscia sottile** al posto della massa → non più un animale, ma di nuovo uno sgabello: le radici erano lisce
+   e non ramificate, cioè gambe;
+3. **striscia sottile + biforcazioni** → radici. **Nessuna gamba si biforca:** è quello il segno, e da solo
+   rovescia la lettura. Tre radici principali che si aprono in quattro forcelle.
+
+Poi, guardandola **nella casella 81**, un difetto che in `/dev/art` non si vedeva: l'alone del numero tagliava in
+due la striscia di terra e staccava la radice di sinistra dal resto. È la regola degli anelli (D-65) applicata a un
+disegno: una fascia sottile non regge il morso dell'alone. Risolto tenendo **libero l'angolo in alto a sinistra**
+(la zolla parte da x 28) e attaccando la radice di sinistra sotto la parte piena della zolla, non sotto la punta.
+Le due regole sono in `docs/design.md` § Illustrazioni SVG.
+
+**Difetto trovato mentre guardavo, e stava anche in `main`:** una decorazione su una **casella di bordo** si fonde
+con la cornice del tabellone (spessa 16 unità e disegnata dopo le decorazioni). Si vedeva nel seme 1 del generatore
+(`hill 81`) e nel tabellone `classic`: il disco sulle caselle 4-5 toccava la cornice di sotto, e per la stessa
+ragione erano sbagliate la falce sulla 9 e il rombo sulla **90** — la casella dove l'avevo messo io correggendo il
+pacchetto G. Spostando le decorazioni fuori dai serpenti ci avevo portato dentro la cornice.
+
+Corretto in `classic` e scritto in D-65 come terzo vincolo. E le posizioni non le ho più scelte a occhio: con
+`crossedCells` di `board-geometry.ts` — il modulo di H3 — restano **quattro** caselle legali (35, 46, 64, 84), e
+due di quelle che avevo scelto guardando il tabellone (59 e 65) erano attraversate dal serpente 62→18 e da quello
+87→37. Il tabellone ora porta tre decorazioni su tre righe diverse: colle sulla 46, disco sulla 64, rombo sulla 84.
+**Resta a te:** al generatore manca lo stesso vincolo di bordo, ed è lavoro di Hermes.
+
 ### H2 · I wrapper collegati: non deve cambiare niente (F6-04, F6-05)
 
 Il wrapper di ogni asset Rive esisteva dal pacchetto G ma non era chiamato da nessuna schermata. Ora la pedina del

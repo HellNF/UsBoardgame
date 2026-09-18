@@ -48,9 +48,11 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
   `hill` (mezzo disco appoggiato in basso), `diamond` (rombo). Stanno sotto scale,
   serpenti e numeri: dove passa una scala o un serpente vincono loro, e il numero della casella resta leggibile
   grazie all'alone (A1). Niente più segnaposto a filo (G1, D-65).
-  Due vincoli su dove e come (D-65): si mettono su caselle che **nessuna scala e nessun serpente attraversa**
-  (due neri pieni uno sull'altro si fondono in una macchia), e sono **piene, mai anelli** (l'alone del numero
-  morde sempre l'angolo in alto a sinistra: una forma piena lo regge, una fascia sottile si spezza).
+  Tre vincoli su dove e come (D-65): si mettono su caselle che **nessuna scala e nessun serpente attraversa**
+  (due neri pieni uno sull'altro si fondono in una macchia), **mai su una casella di bordo** (la cornice è spessa
+  16 unità e si disegna dopo: si mangia il margine), e sono **piene, mai anelli** (l'alone del numero morde sempre
+  l'angolo in alto a sinistra: una forma piena lo regge, una fascia sottile si spezza). Le caselle legali le
+  calcola `crossedCells` in `src/engine/board-geometry.ts`, non l'occhio.
 - Le caselle domanda e stella portano **l'illustrazione** del registro (`src/art/illustrations`) dentro un tondo di
   carta, nello strato dei numeri: è l'alone di A1, e il numero della casella si disegna sopra a tutto.
 
@@ -73,6 +75,13 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 - Tratto `strokeWidth` 5,5, `strokeLinecap="round"`, `strokeLinejoin="round"`; almeno una campitura piena per
   illustrazione. Nessun testo dentro gli SVG.
 - Leggibili a 48 px: niente dettagli sotto le 3 unità.
+- **L'angolo in alto a sinistra resta libero:** nella casella il numero si disegna sopra l'illustrazione con il suo
+  alone di carta, e quell'alone morde lì. Una campitura piena regge il morso come una tacca; un tratto sottile o una
+  fascia che attraversa l'angolo viene **tagliata in due** e il disegno si spezza (è la stessa regola delle
+  decorazioni, D-65: piene sì, sottili no). Un disegno si guarda a 48 px **nella casella**, non solo in `/dev/art`.
+- La silhouette conta più del dettaglio: a 48 px «massa in alto + tratti lisci in basso» si legge sempre come un
+  corpo (una persona, un tavolo, un animale a quattro zampe). Per uscirne serve un segno che i corpi non hanno —
+  per le radici la **biforcazione** (`deep-roots`, tre versioni buttate prima di trovarlo).
 - Prodotto (F6-02): **38 disegni**, 35 per le domande (7 per categoria) e 3 stelle. Le decorazioni multi-cella
   non sono file: sono le forme di `decorations` disegnate nel tabellone.
 - La pagina `/dev/art` (solo sviluppo, 404 in produzione) li mostra tutti a 48 px e a 200 px: è la misura con cui

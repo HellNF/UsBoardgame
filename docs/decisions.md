@@ -637,6 +637,17 @@ Due vincoli che vengono dal guardare il tabellone vero, e che la verifica locale
    di carta, quindi ogni decorazione riceve **sempre** un morso lì. Una forma piena lo regge (si legge come una
    tacca); una fascia sottile si interrompe e la forma cambia significato. Il rombo era nato come anello — un rombo
    di carta dentro quello nero — e si leggeva come una freccia: ora è pieno.
+3. **Mai su una casella di bordo.** La cornice esterna del tabellone è spessa ~16 unità e si disegna **dopo** le
+   decorazioni, quindi sulla prima e sull'ultima riga e colonna si mangia il margine di 12 e i due neri diventano
+   uno: il disco sulle caselle 4-5 si fondeva con la cornice di sotto. La cornice è il terzo nero, dopo le scale e
+   i serpenti; questa regola è arrivata dopo le altre due, guardando il tabellone renderizzato (H).
+
+Il conto lo fa `crossedCells` in `src/engine/board-geometry.ts` (lo stesso modulo che usa il generatore, D-70):
+si decora solo una casella libera, interna e non attraversata. Nella disposizione `classic` ne restano **quattro**
+— 35, 46, 64, 84 — e le uniche due adiacenti sono la 35 e la 46, quindi la disposizione scritta a mano porta
+**tre** decorazioni su tre righe diverse (46, 64, 84) e nessuna forma su due caselle: quella la usa il generatore,
+dove i vincoli lasciano più spazio. La falce resta fuori da `classic` perché somiglia all'illustrazione
+`deep-moon`. Le posizioni non si scelgono a occhio: si calcolano.
 
 ### D-66 · Un riquadro in `/dev/scenari` per ogni minigioco che si vuole guardare (G3)
 
