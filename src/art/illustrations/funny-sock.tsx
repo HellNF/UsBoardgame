@@ -1,6 +1,7 @@
 /**
- * Calzino — illustrazione di categoria «buffe» (id `funny-sock`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Buffa Sock — illustrazione di categoria «buffe» (id `funny-sock`).
+ * Calzino: crema con la punta e il tallone di blu e due righe in cima.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,10 +21,11 @@ export function FunnySock({ x = 0, y = 0, size = 100, className }: IllustrationP
       aria-hidden="true"
       className={className}
     >
-      {/* Polsino pieno in alto, una riga e il piede verso destra. */}
-      <path d="M36 12h22v34c0 12 16 12 16 26a16 16 0 0 1-16 16c-14 0-22-8-22-20z" />
-      <rect x="36" y="12" width="22" height="10" fill="currentColor" />
-      <path d="M36 32h22" strokeWidth={4} />
+      <path d="M38 12h26v32c0 12-4 18-14 24-8 5-15 3-15-5 0-6 4-9 10-11" fill="var(--color-art-cream)" />
+      <path d="M38 20h26" strokeWidth={4} />
+      <rect x="38" y="22" width="26" height="6" fill="var(--color-art-blue)" stroke="none" />
+      <rect x="38" y="30" width="26" height="7" fill="var(--color-art-red)" stroke="none" />
+      <circle cx="42" cy="74" r="9" fill="var(--color-art-blue)" stroke="none" />
     </svg>
   );
 }

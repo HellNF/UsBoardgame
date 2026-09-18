@@ -1,6 +1,7 @@
 /**
- * Clessidra — illustrazione di categoria «profonde» (id `deep-hourglass`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Profonda Hourglass — illustrazione di categoria «profonde» (id `deep-hourglass`).
+ * Clessidra: calotte d'acciaio, vetro di crema e sabbia d'ambra.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,14 +21,11 @@ export function DeepHourglass({ x = 0, y = 0, size = 100, className }: Illustrat
       aria-hidden="true"
       className={className}
     >
-      {/* Due coni con la sabbia: quella sotto è piena. */}
-      <path d="M28 12h44M28 88h44" strokeWidth={6} />
-      <path
-        d="M34 12v14c0 10 16 12 16 22s-16 12-16 22v18M66 12v14c0 10-16 12-16 22s16 12 16 22v18"
-        strokeWidth={4}
-      />
-      <path d="M42 22h16l-8 10z" fill="currentColor" />
-      <path d="M40 76c4-8 16-8 20 0z" fill="currentColor" />
+      <rect x="24" y="10" width="52" height="11" rx="3" fill="var(--color-art-blue)" />
+      <rect x="24" y="79" width="52" height="11" rx="3" fill="var(--color-art-blue)" />
+      <path d="M30 21h40v9L53 50l17 20v9H30v-9l17-20z" fill="var(--color-art-cream)" />
+      <path d="M35 26h30L52 46z" fill="var(--color-art-amber)" stroke="none" />
+      <path d="M37 78h26c-1-8-5-13-13-13s-12 5-13 13z" fill="var(--color-art-amber)" stroke="none" />
     </svg>
   );
 }

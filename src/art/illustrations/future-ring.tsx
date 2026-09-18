@@ -1,6 +1,7 @@
 /**
- * Anello — illustrazione di categoria «futuro» (id `future-ring`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Futuro Ring — illustrazione di categoria «future» (id `future-ring`).
+ * Anello: fascia d'ambra e diamante di blu, con la scintilla.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,10 +21,9 @@ export function FutureRing({ x = 0, y = 0, size = 100, className }: Illustration
       aria-hidden="true"
       className={className}
     >
-      {/* Cerchio con la pietra: la metà alta è piena. */}
-      <circle cx="50" cy="64" r="22" strokeWidth={7} />
-      <path d="M50 12 66 30 50 48 34 30z" />
-      <path d="M50 12 66 30H34z" fill="currentColor" />
+      <circle cx="50" cy="64" r="23" fill="none" stroke="var(--color-art-amber)" strokeWidth={9} />
+      <path d="M50 14l14 14-14 14-14-14z" fill="var(--color-art-blue)" />
+      <path d="M80 24v10M75 29h10" stroke="var(--color-art-amber)" strokeWidth={3.5} />
     </svg>
   );
 }

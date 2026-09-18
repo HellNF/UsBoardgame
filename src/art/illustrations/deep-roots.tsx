@@ -1,6 +1,7 @@
 /**
- * Radici — illustrazione di categoria «profonde» (id `deep-roots`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Profonda Roots — illustrazione di categoria «profonde» (id `deep-roots`).
+ * Radici: dal ceppo si aprono in forcelle, in marrone.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,13 +21,18 @@ export function DeepRoots({ x = 0, y = 0, size = 100, className }: IllustrationP
       aria-hidden="true"
       className={className}
     >
-      {/* Radici: dal tronco si aprono, si allargano e si biforcano in punte sottili. */}
-      <path d="M46 12h8v18h-8z" fill="currentColor" />
-      <path d="M14 38h72" strokeWidth={2.5} strokeDasharray="5 7" />
-      <path d="M50 30v14M50 38c-9 8-15 14-19 28M50 38c9 8 15 14 19 28" strokeWidth={5} />
-      <path d="M32 64c-4 6-6 10-8 16M32 64c1 7 1 11-1 16" strokeWidth={3.5} />
-      <path d="M68 64c4 6 6 10 8 16M68 64c-1 7-1 11 1 16" strokeWidth={3.5} />
-      <path d="M50 68c-2 6-3 10-4 14M50 68c2 6 3 10 4 14" strokeWidth={3.5} />
+      <path d="M46 10h8v14h-8z" fill="var(--color-art-forest)" />
+      <path d="M50 24v8" stroke="var(--color-art-brown)" strokeWidth={5} />
+      <path
+        d="M50 30c-8 7-13 13-17 26M50 30c8 7 13 13 17 26M50 32v28"
+        stroke="var(--color-art-brown)"
+        strokeWidth={4.5}
+      />
+      <path
+        d="M33 56c-4 5-6 9-8 14M33 56c1 6 1 10-1 15M67 56c4 5 6 9 8 14M67 56c-1 6-1 10 1 15M50 60c-2 6-3 10-4 14M50 60c2 6 3 10 4 14"
+        stroke="var(--color-art-brown)"
+        strokeWidth={3.5}
+      />
     </svg>
   );
 }

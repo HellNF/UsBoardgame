@@ -1,6 +1,7 @@
 /**
- * Aereo di carta — illustrazione di categoria «futuro» (id `future-plane`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Futuro Plane — illustrazione di categoria «future» (id `future-plane`).
+ * Aereo di carta: ali di crema, piega in inchiostro e scia tratteggiata.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,10 +21,9 @@ export function FuturePlane({ x = 0, y = 0, size = 100, className }: Illustratio
       aria-hidden="true"
       className={className}
     >
-      {/* Punta a destra, con l'ala sinistra piena. */}
-      <path d="M10 60 90 18 54 88 44 60z" />
-      <path d="M44 60 90 18" strokeWidth={4} />
-      <path d="M10 60 44 60 54 88z" fill="currentColor" />
+      <path d="M12 56 88 16 54 86 44 60z" fill="var(--color-art-cream)" />
+      <path d="M44 60 88 16" strokeWidth={5} />
+      <path d="M10 76c6-2 11-5 15-9M13 89c8-3 15-7 21-14" strokeWidth={3.5} strokeDasharray="5 6" />
     </svg>
   );
 }

@@ -1,6 +1,7 @@
 /**
- * Macchina da scrivere — illustrazione di categoria «ricordi» (id `memories-typewriter`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Ricordo Typewriter — illustrazione di categoria «ricordi» (id `memories-typewriter`).
+ * Macchina da scrivere: corpo di verde acqua, foglio di crema, tasti.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,12 +21,11 @@ export function MemoriesTypewriter({ x = 0, y = 0, size = 100, className }: Illu
       aria-hidden="true"
       className={className}
     >
-      {/* Foglio con tre righe scritte, rullo pieno e tastiera. */}
-      <rect x="28" y="12" width="44" height="40" />
-      <path d="M38 24h26M38 32h18M38 40h22" strokeWidth={3.5} />
-      <rect x="16" y="52" width="68" height="30" rx="4" />
-      <rect x="16" y="52" width="68" height="6" fill="currentColor" />
-      <path d="M28 70h44" strokeWidth={3.5} />
+      <path d="M24 42h52l6 24H18z" fill="var(--color-art-teal)" />
+      <rect x="16" y="66" width="68" height="10" rx="3" fill="var(--color-art-teal)" />
+      <rect x="36" y="14" width="28" height="24" fill="var(--color-art-cream)" />
+      <path d="M30 34h40" strokeWidth={4} />
+      <path d="M28 72h4M40 72h4M52 72h4M64 72h4" stroke="var(--color-art-cream)" strokeWidth={4} />
     </svg>
   );
 }

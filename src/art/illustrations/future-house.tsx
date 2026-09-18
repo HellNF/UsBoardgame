@@ -1,6 +1,7 @@
 /**
- * Casa — illustrazione di categoria «futuro» (id `future-house`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Futuro House — illustrazione di categoria «future» (id `future-house`).
+ * Casa: tetto di rosso, muri di crema, porta marrone e finestra d'ambra.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,11 +21,10 @@ export function FutureHouse({ x = 0, y = 0, size = 100, className }: Illustratio
       aria-hidden="true"
       className={className}
     >
-      {/* Tetto, porta piena e una finestra tonda. */}
-      <path d="M14 50 50 20l36 30" strokeWidth={6} />
-      <rect x="24" y="50" width="52" height="34" />
-      <rect x="42" y="60" width="16" height="24" fill="currentColor" />
-      <circle cx="34" cy="62" r="4" fill="currentColor" />
+      <path d="M50 16 88 48H12z" fill="var(--color-art-red)" />
+      <rect x="24" y="48" width="52" height="36" fill="var(--color-art-cream)" />
+      <path d="M42 84V62h16v22z" fill="var(--color-art-brown)" />
+      <path d="M30 57h11v11H30z" fill="var(--color-art-amber)" />
     </svg>
   );
 }

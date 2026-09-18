@@ -1,6 +1,7 @@
 /**
- * Rosa — illustrazione di categoria «profonde» (id `deep-rose`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Profonda Rose — illustrazione di categoria «profonde» (id `deep-rose`).
+ * Rosa: boccio di rosso con la spirale dentro, foglie di verde e stelo.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,13 +21,15 @@ export function DeepRose({ x = 0, y = 0, size = 100, className }: IllustrationPr
       aria-hidden="true"
       className={className}
     >
-      {/* Bocciolo a spirale, gambo e due foglie: quella di sinistra è piena. */}
-      <circle cx="50" cy="30" r="18" />
-      <path d="M50 46a16 16 0 1 1 16-16" strokeWidth={4} />
-      <path d="M50 40a11 11 0 1 0-11-10" strokeWidth={4} />
-      <path d="M50 48v40" strokeWidth={5} />
-      <path d="M50 64c-11-2-15-10-15-17 9 0 15 7 15 17z" fill="currentColor" />
-      <path d="M50 76c11-2 15-10 15-17-9 0-15 7-15 17z" />
+      <circle cx="50" cy="34" r="19" fill="var(--color-art-red)" />
+      <path
+        d="M50 25c5 1 8 5 8 9s-3 7-7 7-6-3-5-6c1-2 3-3 5-2"
+        stroke="var(--color-art-navy)"
+        strokeWidth={3.5}
+      />
+      <path d="M50 53v30" stroke="var(--color-art-forest)" strokeWidth={5} />
+      <path d="M50 62c-9-6-16-4-19 3 6 6 14 5 19-3z" fill="var(--color-art-green)" />
+      <path d="M50 71c9-6 16-4 19 3-6 6-14 5-19-3z" fill="var(--color-art-green)" />
     </svg>
   );
 }

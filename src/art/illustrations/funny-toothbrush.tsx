@@ -1,6 +1,7 @@
 /**
  * Spazzolino — illustrazione di categoria «buffe» (id `funny-toothbrush`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Manico, testina e setole.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,11 +21,10 @@ export function FunnyToothbrush({ x = 0, y = 0, size = 100, className }: Illustr
       aria-hidden="true"
       className={className}
     >
-      {/* Manico orizzontale, testina e quattro setole. */}
-      <path d="M12 62h46" strokeWidth={7} />
-      <rect x="58" y="52" width="28" height="20" rx="6" />
-      <path d="M64 52V40M72 52V40M80 52V40" strokeWidth={4} />
-      <circle cx="16" cy="62" r="4" fill="currentColor" />
+      {/* Manico dritto di rosso, testina di crema e setole di blu. */}
+      <rect x="12" y="64" width="52" height="13" rx="6.5" fill="var(--color-art-red)" />
+      <rect x="58" y="56" width="30" height="15" rx="5" fill="var(--color-art-cream)" />
+      <path d="M64 51v-9M72 51v-11M80 51v-9" stroke="var(--color-art-blue)" strokeWidth={4} />
     </svg>
   );
 }

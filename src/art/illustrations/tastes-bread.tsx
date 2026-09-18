@@ -1,6 +1,7 @@
 /**
- * Filone di pane — illustrazione di categoria «gusti» (id `tastes-bread`).
- * Regole di disegno: docs/design.md § Illustrazioni SVG.
+ * Gusto Bread — illustrazione di categoria «gusti» (id `tastes-bread`).
+ * Pane: pagnotta di marrone coi tagli di crema.
+ * Forme e tinte dalla reference del proprietario (D-68): docs/design.md § Illustrazioni SVG.
  */
 import type { IllustrationProps } from "./types";
 
@@ -20,10 +21,9 @@ export function TastesBread({ x = 0, y = 0, size = 100, className }: Illustratio
       aria-hidden="true"
       className={className}
     >
-      {/* Crosta piena in basso e tre tagli sulla superficie. */}
-      <rect x="14" y="38" width="72" height="34" rx="15" />
-      <rect x="14" y="64" width="72" height="8" rx="4" fill="currentColor" />
-      <path d="M32 50l8-8M48 50l8-8M64 50l8-8" strokeWidth={4} />
+      <ellipse cx="50" cy="56" rx="35" ry="25" fill="var(--color-art-brown)" />
+      <path d="M35 36 29 54M50 32 44 58M65 36 59 54" stroke="var(--color-art-cream)" strokeWidth={5} />
+      <path d="M22 46c4-8 14-13 26-13" stroke="var(--color-art-cream)" strokeWidth={4} />
     </svg>
   );
 }
