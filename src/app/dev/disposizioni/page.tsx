@@ -7,8 +7,10 @@ import { Board } from "@/features/board/board";
 import { HOTSEAT_SETTINGS } from "@/features/game/dev-context";
 import {
   READABILITY_BUDGET,
+  RULES,
   createInitialState,
   describeBudget,
+  elementAngle,
   fitsBudget,
   generateBoard,
   measureReadability,
@@ -69,8 +71,23 @@ function Summary({ board }: { board: BoardLayout }) {
           {describeBudget(READABILITY_BUDGET)} {within ? "✓" : "✗"}
         </dd>
       </div>
+      {/* L'inclinazione (J1): la linea più piatta del tabellone, in gradi sull'orizzontale. Sotto la
+          soglia di docs/design.md una scala si legge come una sbarra piatta, non come una salita. */}
+      <div>
+        <dt className="inline font-semibold">Inclinazione </dt>
+        <dd className="inline">
+          la linea più piatta è a {steepestDegrees(board).toFixed(1)}° — la soglia è{" "}
+          {RULES.board.minAngleDegrees}° {steepestDegrees(board) >= RULES.board.minAngleDegrees ? "✓" : "✗"}
+        </dd>
+      </div>
     </dl>
   );
+}
+
+/** L'inclinazione della linea più piatta del tabellone, in gradi (J1). */
+function steepestDegrees(board: BoardLayout): number {
+  const angles = [...board.ladders, ...board.snakes].map(({ from, to }) => elementAngle(from, to));
+  return angles.length > 0 ? Math.min(...angles) : 0;
 }
 
 /** Un tabellone con il suo riepilogo: lo stesso riquadro per i semi e per le disposizioni congelate. */

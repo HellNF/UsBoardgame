@@ -67,6 +67,26 @@ export function cellCorner(n: CellNumber): Point {
   return { x: col * CELL, y: (RULES.board.size - 1 - row) * CELL };
 }
 
+/**
+ * L'inclinazione di una scala o di un serpente, in gradi **sull'orizzontale** (0 = piatta,
+ * 90 = verticale): l'angolo della retta fra i **centri** delle due caselle.
+ *
+ * È la misura che si legge guardando il tabellone — quanto una linea «sale» — e serve al generatore
+ * di disposizioni (F7-02) per tenere le linee sopra la soglia di `RULES.board.minAngleDegrees`.
+ * Sotto quella soglia una scala lunga una sola fila si legge come una sbarra piatta, non come una
+ * salita (docs/design.md § Tabellone: il numero viene dalla `classic`, dove la linea più piatta è
+ * proprio la scala 51→67, 18,4°).
+ *
+ * Le unità delle caselle si semplificano: conta il rapporto fra file coperte e colonne percorse.
+ */
+export function elementAngle(from: CellNumber, to: CellNumber): number {
+  const a = cellToCoord(from);
+  const b = cellToCoord(to);
+  const rows = Math.abs(b.row - a.row);
+  const cols = Math.abs(b.col - a.col);
+  return (Math.atan2(rows, cols) * 180) / Math.PI;
+}
+
 /** Rettangolo della casella, con `margin` di tolleranza (negativo = ritirato verso il centro). */
 export function cellRect(n: CellNumber, margin = 0): { x: number; y: number; w: number; h: number } {
   const corner = cellCorner(n);

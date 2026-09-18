@@ -45,8 +45,10 @@ Sintesi operativa di [specs.md § Estetica](specs.md#estetica). Reference visive
 - **Scale:** due montanti neri spessi, pioli bianchi bordati di nero, generate dagli estremi `from`/`to`.
   **Inclinazione minima 18° sull'orizzontale**, per le scale e per i serpenti: sotto quella soglia la linea si
   legge come una sbarra piatta e non come una salita o una discesa. Il numero viene dalla `classic`, dove la
-  linea più piatta è esattamente 18° (la scala 51→67); il generatore di F7-02 ne produceva il 17% sotto i 20°,
-  fino a 8°, ed è un vincolo che gli manca.
+  linea più piatta è esattamente 18° (la scala 51→67); il generatore di F7-02 ne produceva il 17% sotto i 20°, fino
+  a 6,3° su 200 semi. **Dal pacchetto J il vincolo è anche nel generatore** (`RULES.board.minAngleDegrees`,
+  misurato con `elementAngle` in `src/engine/board-geometry.ts`): il candidato sotto soglia non entra nemmeno
+  nell'elenco di quelli pescabili, come per i tetti di leggibilità.
 - **Serpenti:** curva di Bézier sinuosa generata dagli estremi, corpo nero a macchie, coda che si assottiglia,
   testa con un occhio e la lingua. La generazione deve essere deterministica per disposizione (stesso tabellone =
   stessa forma).

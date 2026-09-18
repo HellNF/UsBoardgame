@@ -1,5 +1,5 @@
 import { cellToCoord, coordToCell, rowOf } from "./board";
-import { crossedCells, elementFootprints, isBorderCell } from "./board-geometry";
+import { crossedCells, elementAngle, elementFootprints, isBorderCell } from "./board-geometry";
 import {
   READABILITY_BUDGET,
   addLine,
@@ -34,6 +34,14 @@ import {
  * serpenti che scendono, nessun estremo condiviso fra due di loro (nemmeno fra una scala e un
  * serpente), niente che parta o arrivi sulla 1 e sulla 100, una scala o un serpente che coprono
  * al massimo `board.maxSpanRows` file, nessuna testa di serpente fra la 2 e la 12.
+ *
+ * E due vincoli **misurati**, tutti e due applicati durante la pesca dei candidati (non scartando
+ * tabelloni finiti):
+ *
+ * - **l'inclinazione minima** (`board.minAngleDegrees`, docs/design.md § Tabellone): sotto i 18°
+ *   sull'orizzontale una linea si legge come una sbarra piatta, non come una salita;
+ * - il **budget di leggibilità** (D-72, `src/engine/board-readability.ts`): quante caselle possono
+ *   avere più di una linea e quante linee al massimo sulla stessa.
  *
  * E le **decorazioni** (D-65) solo su caselle libere, che nessuna scala e nessun serpente
  * attraversa e che non stanno sulla cornice, misurate con la geometria di `board-geometry` — la
@@ -175,28 +183,40 @@ function buildCells(next: () => number, pool: IllustrationPool): Cell[] {
   return cells;
 }
 
-/** Tutte le scale possibili: salgono, non toccano la 1 né la 100, non coprono più di 5 file. */
+/** Tutte le scale possibili: salgono, non toccano la 1 né la 100, non coprono più di 5 file, sopra la soglia. */
 function ladderCandidates(): Ladder[] {
   const out: Ladder[] = [];
   for (let from = 2; from < RULES.board.cells; from++) {
     for (let to = from + 1; to < RULES.board.cells; to++) {
       const span = rowOf(to) - rowOf(from);
-      if (span >= 1 && span <= RULES.board.maxSpanRows) out.push({ from, to });
+      if (span >= 1 && span <= RULES.board.maxSpanRows && steepEnough(from, to)) out.push({ from, to });
     }
   }
   return out;
 }
 
-/** Tutti i serpenti possibili: scendono, la testa non sta fra la 2 e la 12, al massimo 5 file. */
+/** Tutti i serpenti possibili: scendono, la testa non sta fra la 2 e la 12, al massimo 5 file, sopra la soglia. */
 function snakeCandidates(): Snake[] {
   const out: Snake[] = [];
   for (let from = 13; from < RULES.board.cells; from++) {
     for (let to = 2; to < from; to++) {
       const span = rowOf(from) - rowOf(to);
-      if (span >= 1 && span <= RULES.board.maxSpanRows) out.push({ from, to });
+      if (span >= 1 && span <= RULES.board.maxSpanRows && steepEnough(from, to)) out.push({ from, to });
     }
   }
   return out;
+}
+
+/**
+ * Vero se la linea fra le due caselle è abbastanza **inclinata** (docs/design.md § Tabellone):
+ * una scala che sale di una fila e si sposta di cinque colonne è una sbarra piatta, non una salita.
+ *
+ * Il vincolo si applica qui, come gli altri della pesca (1 e 100, file massime, testa del serpente):
+ * il candidato sotto soglia non entra nemmeno nell'elenco, quindi non si scarta mai un tabellone
+ * finito — la stessa scelta fatta per il budget di leggibilità.
+ */
+function steepEnough(from: CellNumber, to: CellNumber): boolean {
+  return elementAngle(from, to) >= RULES.board.minAngleDegrees;
 }
 
 /** Sceglie gli elementi a estremi tutti diversi, mescolando i candidati con il seme. */

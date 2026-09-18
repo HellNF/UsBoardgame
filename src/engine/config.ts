@@ -17,6 +17,16 @@ export const RULES = {
      */
     maxSpanRows: 5,
     /**
+     * Inclinazione minima di una scala o di un serpente, in gradi sull'orizzontale (F7-02, pacchetto J):
+     * sotto questa soglia la linea si legge come una sbarra piatta, non come una salita o una discesa.
+     *
+     * Il numero è del proprietario e viene dalla `classic`, dove la linea più piatta è la scala 51→67
+     * (una fila sola e tre colonne: 18,4°). La misura è `elementAngle` in `src/engine/board-geometry.ts`,
+     * l'angolo fra i centri delle due caselle; il generatore scarta i candidati sotto soglia, come fa
+     * con i tetti di leggibilità.
+     */
+    minAngleDegrees: 18,
+    /**
      * Budget di leggibilità di una disposizione generata (F7-02, pacchetto I): quante caselle possono avere
      * due o più linee sopra e quante linee al massimo possono passare sulla stessa casella.
      *
