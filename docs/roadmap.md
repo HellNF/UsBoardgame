@@ -192,12 +192,16 @@ Dopo la fase 3: **prima serata giocabile**.
   Nota: 17 carte in `src/content/challenges.ts` (5 integrate, 10 in videochiamata di cui 6 lampo, 2 esterne).
   `quiz-lampo` e `riflessi` sono duelli a doppia conferma finché F4-04 non aggiunge i loro moduli al motore
   (D-41). La revisione dei testi è del proprietario.
-- [x] **F4-02** Carta sfida: duello/prova, giudice, doppia conferma, disputa, timer (`TIMER_EXPIRED`).
+- [x] **F4-02** Carta sfida: duello/prova, giudice, doppia conferma, disputa, tempo finito (`DECLARE_TIME_UP`).
       Nota: motore completo e testato (pacchetto A, con D-33 e D-36), carta e route dal pacchetto D. Dal pacchetto E
       la carta è per posto (D-56): nella prova giudica solo l'altro, nella doppia conferma e nel disaccordo ognuno ha
       il suo pezzo e legge se l'altro ha già dichiarato.
       Chiuso in locale il 2026-09-18: prova giudicata dall'altro e doppia conferma per posto, in partita vera
       (voce F4-02 del Registro).
+      **Il timer è cambiato nel pacchetto L (D-82):** `TIMER_EXPIRED` non c'è più — era l'azione che il client
+      mandava da solo alla scadenza — e al suo posto c'è `DECLARE_TIME_UP`, la dichiarazione di **entrambi** i
+      giocatori. La carta porta la durata suggerita (`suggestedSeconds`) invece di `deadlineAt`: il tempo è
+      un'informazione, non un giudice (voce L1 del Registro).
 - [x] **F4-03** Minigiochi nel motore + UI: tris, forza 4, memory.
       Nota: i tre moduli puri sono in `src/engine/minigames` con test (pacchetto A), la UI è in
       `src/features/minigames` (provabile in `/dev/hotseat`: D-44) e le mosse passano dal server via `MINIGAME_MOVE`
@@ -211,19 +215,23 @@ Dopo la fase 3: **prima serata giocabile**.
       momento del segnale dall'orologio del server. Le carte `quiz-lampo` e `riflessi` sono diventate `automatic`
       (D-41 superata) e si possono provare in `/dev/scenari` (due riquadri nuovi) e in `/dev/hotseat`.
       Chiuso in locale il 2026-09-18: quiz giocato online dal browser (punti e turno giusti, riga di attesa per
-      l'altro) e riflessi risolti dal server. Da decidere la durata della carta del quiz, che può scadere prima delle
-      cinque domande e mandare la sfida alla doppia conferma (voce F4-04 del Registro).
+      l'altro) e riflessi risolti dal server. La durata della carta del quiz — che poteva scadere prima delle
+      cinque domande e mandare la sfida alla doppia conferma — **non è più un problema dal pacchetto L (D-82)**:
+      la durata è indicativa e la carta si chiude da sé solo giocandola (voce F4-04 del Registro).
 - [x] **F4-05** Pausa per sfida esterna (link Lichess, skribbl.io) e ritorno con "Chi ha vinto?".
       Nota: dal pacchetto E la carta delle sfide esterne mostra il link, ha il pulsante «Andiamo a giocare» che mette
       la partita in pausa (le dichiarazioni spariscono finché non si torna) e al ritorno chiede «Siamo tornati: chi ha
       vinto?» e riapre le dichiarazioni di entrambi. La pausa è della schermata, non dello stato condiviso: la serata
       resta ferma sulla carta.
       Chiuso in locale il 2026-09-18 in partita vera: la pausa è davvero della schermata (l'altro posto continua a
-      vedere le sue dichiarazioni) e il ritorno le riapre. Resta da decidere se la pausa deve fermare anche il timer
-      della carta, che intanto scorre (voce F4-05 del Registro).
+      vedere le sue dichiarazioni) e il ritorno le riapre. **La domanda che restava** — se la pausa dovesse fermare
+      anche il timer della carta — **è chiusa dal pacchetto L (D-82):** non c'è più nessun conto che scorre, quindi
+      non c'è niente da fermare e si può restare fuori quanto serve (voce L2 del Registro).
 - [x] **F4-06** Sfida lampo del serpente.
-      Nota: motore (30 s, Antidoto, vittoria = resta, altrimenti scende) e test fatti nel pacchetto A; UI in C e dal
-      pacchetto E la vista è per posto (D-56).
+      Nota: motore (30 s come **durata suggerita**, Antidoto, vittoria = resta, altrimenti scende) e test fatti nel
+      pacchetto A; UI in C e dal pacchetto E la vista è per posto (D-56). Dal pacchetto L (D-82) i 30 secondi non
+      chiudono più la carta: chi non vince scende comunque, e se i due dicono che il tempo è finito la prova è non
+      riuscita e si scende lo stesso.
       Chiuso in locale il 2026-09-18: la sfida lampo è comparsa da sola sullo schermo dell'altro posto e il giudizio
       «Non riuscita» ha fatto scendere la pedina dalla 17 alla 7, con −2 monete (voce F4-06 del Registro).
 

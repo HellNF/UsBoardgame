@@ -94,41 +94,43 @@ export function ChallengeCard({
 
       {/*
         Il tempo è indicativo (D-82): la carta non scade da sé, e si chiude quando i due dicono
-        che il tempo è finito. Un'orologio non decide più niente al posto loro.
+        che il tempo è finito. Un orologio non decide più niente al posto loro. Con un disaccordo
+        aperto il blocco non c'è: lì c'è già una scelta da fare (D-27).
       */}
-      <div className="flex flex-col gap-2 border-t-2 border-ink pt-4">
-        <p className="text-sm">
-          Il tempo è indicativo: questa carta non scade da sé. Se non volete più giocarla, ditelo tutti e
-          due.
-        </p>
-        {SEATS.map((seat) => {
-          const declared = card.timeUp[seat] === true;
-          if (!owns(viewerSeat, seat)) {
+      {!card.disputed && (
+        <div className="flex flex-col gap-2 border-t-2 border-ink pt-4">
+          <p className="text-sm">
+            Il tempo è indicativo: questa carta non scade da sé. Se non volete più giocarla, ditelo tutti e
+            due.
+          </p>
+          {SEATS.map((seat) => {
+            const declared = card.timeUp[seat] === true;
+            if (!owns(viewerSeat, seat)) {
+              return (
+                <p key={seat} className="text-sm text-ink/70">
+                  <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+                  {declared ? " dice che il tempo è finito." : " vuole ancora giocarla."}
+                </p>
+              );
+            }
             return (
-              <p key={seat} className="text-sm text-ink/70">
-                <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
-                {declared ? " dice che il tempo è finito." : " vuole ancora giocarla."}
-              </p>
+              <div key={seat} className="flex flex-wrap items-center gap-2">
+                {viewerSeat === "all" && (
+                  <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
+                )}
+                <button
+                  type="button"
+                  className={OUTLINE_BUTTON}
+                  disabled={declared}
+                  onClick={() => act({ type: "DECLARE_TIME_UP", seat })}
+                >
+                  {declared ? "Hai detto che il tempo è finito" : "Il tempo è finito"}
+                </button>
+              </div>
             );
-          }
-          return (
-            <div key={seat} className="flex flex-wrap items-center gap-2">
-              {viewerSeat === "all" && (
-                <span className={`font-semibold ${SEAT_TEXT[seat]}`}>{names[seat]}</span>
-              )}
-              <button
-                type="button"
-                className={OUTLINE_BUTTON}
-                disabled={declared}
-                onClick={() => act({ type: "DECLARE_TIME_UP", seat })}
-              >
-                {declared ? "Hai detto che il tempo è finito" : "Il tempo è finito"}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
+          })}
+        </div>
+      )}
       {/* Sfida esterna in pausa: la partita resta ferma finché non si torna (F4-05). */}
       {isExternal && away && (
         <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">

@@ -11,7 +11,15 @@ import {
   slideDownSnake,
 } from "./resolution";
 import { movePlayer, pushEvent, reachFinish, type Draft } from "./turn";
-import { ITEM_IDS, otherSeat, SEATS, type Action, type AnswerVerdict, type EngineContext, type Seat } from "./types";
+import {
+  ITEM_IDS,
+  otherSeat,
+  SEATS,
+  type Action,
+  type AnswerVerdict,
+  type EngineContext,
+  type Seat,
+} from "./types";
 
 /**
  * Carte da risolvere con un'azione: domande (docs/rules.md § Domande), sfide
@@ -243,6 +251,8 @@ export const declareTimeUp: Handler<Extract<Action, { type: "DECLARE_TIME_UP" }>
   const state = draft.state;
   const card = state.card;
   if (card?.type !== "challenge") return "Nessuna sfida aperta.";
+  // Con un disaccordo aperto c'è già una scelta da fare: dichiarare il tempo finito non aggiunge niente.
+  if (card.disputed) return "Le dichiarazioni non coincidono: si sceglie con RESOLVE_DISPUTE.";
   if (card.timeUp[action.seat] === true) return "L'hai già detto: manca l'altro giocatore.";
 
   card.timeUp[action.seat] = true;

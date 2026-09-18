@@ -1540,3 +1540,61 @@ giusta: se una cosa si è scoperta per fortuna una volta, la volta dopo deve sco
   prova produrrebbe: non sono usciti da un database vero.
 - **Il nome del comando di K3 non è `doctor`** come proposto: `pnpm doctor` è un comando di pnpm che stampa i
   controlli di pnpm — uno script con quel nome non verrebbe mai eseguito. Il file si chiama `scripts/check-ready.ts`.
+
+---
+
+## Registro · Pacchetto L (il tempo indicativo, e la pausa che non ferma niente) — branch `hermes/l-tempo`
+
+Niente database e niente Docker: si prova tutto con `pnpm dev`. Le carte rare si vedono dalla pagina degli
+scenari, che serve esattamente a questo — e due riquadri nuovi sono nati qui per L.
+
+### L1 · Il tempo non decide più (D-82)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/scenari>, riquadro **«Sfida prova a giudizio»**.
+   - La carta **non ha più nessun conto alla rovescia**. Lasciala aperta un minuto, due, cinque: non succede
+     niente, non arriva nessun esito, la carta resta lì con i suoi comandi. Prima, dopo 30 secondi, la prova
+     diventava «non riuscita» da sola.
+   - Il pulsante **«Il tempo è finito»** c'è per tutti e due i posti (con l'interruttore su «Tutti e due»). Premilo
+     per il posto 1: compare la riga che dice che l'ha detto e **la carta resta aperta**. Premilo anche per il
+     posto 2: la prova è non riuscita, nessuno prende il premio, la carta si chiude.
+2. Riquadro **«Sfida · il tempo è finito (detto da uno solo)»**: è lo stato di partenza con una dichiarazione già
+   fatta, per vedere la riga dell'altro («Marta vuole ancora giocarla») e il pulsante bloccato («Hai detto che il
+   tempo è finito»). Non succede niente finché non lo dicono tutti e due.
+3. In partita vera (con Docker e due finestre, come F4-02): ogni schermo vede **solo il proprio** pulsante e la
+   riga dell'altro stato. Premerlo due volte non si può: la seconda riceve il rifiuto del motore («L'hai già
+   detto: manca l'altro giocatore»).
+4. Le altre carte di sfida restano chiudibili come prima — tris, quiz, doppia conferma, disaccordo, sfida lampo:
+   si giocano fino in fondo **oppure** finiscono con le due dichiarazioni (un duello passa alla doppia conferma e
+   il minigioco si abbandona). Da provare in `/dev/scenari`, un riquadro per volta. Nel riquadro «Doppia conferma
+   · in disaccordo» il blocco del tempo **non compare**: lì c'è già una scelta da fare (rivincita o moneta).
+5. `npx vitest run src/engine/challenges.test.ts src/engine/simulation.test.ts` → verde. La simulazione è la prova
+   che conta: **200 partite giocate a caso finiscono tutte senza bloccarsi**, e il test **non fa più avanzare
+   nessun orologio** (prima, quando nessuna azione passava, avanzava il tempo finto e provava la scadenza). Se una
+   fase avesse bisogno del tempo per uscire, quel test si fermerebbe lì.
+
+### L2 · La pausa della sfida esterna (F4-05)
+
+1. `/dev/scenari`, riquadro **«Sfida esterna · in pausa si gioca fuori»**: premi «Andiamo a giocare», poi
+   **lascialo lì** qualche minuto. Al ritorno la partita è ancora sulla stessa carta, «Siamo tornati: chi ha
+   vinto?» riapre le dichiarazioni e **non è scaduto niente**.
+2. La pausa è della schermata, non della partita: con due finestre, mentre il posto 1 è «in pausa» il posto 2
+   continua a vedere i suoi comandi. Era già così prima, si guarda che sia rimasto così.
+3. Cosa è sparito: l'orologio di pagina che passava `now` a ogni carta ogni secondo (`game-table.tsx`,
+   `online-table.tsx`, `scenario-card.tsx`) non c'è più, perché nessuna carta legge più un conto. Se il conto che
+   sale sulla carta avrà bisogno dell'ora, il numero è `card.suggestedSeconds` e l'hook idratato è `useHydrated`
+   (D-60): sono rimasti lì apposta.
+
+### Note su come sono state fatte queste prove
+
+- **Quello che ho potuto provare io:** `pnpm check` verde (493 prove su 44 file) e `pnpm build` verde; la
+  simulazione con 200 partite che arrivano in fondo **senza che il test tocchi l'orologio**; i test nuovi del
+  motore (una dichiarazione sola non chiude niente, lo dicono entrambi e la prova è non riuscita, il duello passa
+  alla doppia conferma, il minigioco abbandonato non accetta più mosse, la rivincita azzera le dichiarazioni, la
+  sfida lampo non suggerisce più di `snakeFlashSeconds`).
+- **Quello che non ho potuto provare:** l'aspetto e il comportamento delle carte nel browser — la validazione a
+  occhio è tua (D-43, D-45). In particolare i pulsanti della dichiarazione, che sono UI nuova e devono
+  somigliare al resto della carta: se non ti piacciono, si cambiano (D-75).
+- **Il conto sulla carta non c'è più:** il vecchio conto alla rovescia leggeva `deadlineAt`, che non esiste più,
+  quindi è stato tolto invece di lasciarlo fermo a zero. Il conto nuovo — quello che sale, quieto, accanto a
+  «circa N minuti» — lo scrivi tu: il numero è `card.suggestedSeconds`, e sulla carta non c'è nessun'altra
+  indicazione di tempo.

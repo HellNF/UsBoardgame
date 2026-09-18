@@ -105,6 +105,10 @@ La rivincita dopo un disaccordo rigioca la stessa carta con una nuova scadenza (
 inizio). Una sfida con verdetto `automatic` scaduta passa alla doppia conferma e il minigioco viene abbandonato.
 _Perché:_ serviva una durata unica e prevedibile quando la carta non dichiara un massimo compatibile con la serata.
 
+**Superata in parte da [D-82](#d-82--il-tempo-è-indicativo-e-la-carta-si-chiude-a-mano) (pacchetto L).** La scadenza
+non esiste più: la carta porta una **durata suggerita** e si chiude con la dichiarazione di entrambi i giocatori.
+La rivincita resta come scritta qui, ma non riparte da una nuova scadenza.
+
 ---
 
 ## Regole di gioco
@@ -1074,6 +1078,8 @@ esito**.
   guardia sull'orologio (un duello non si può abbandonare per scappare da un minigioco che si sta perdendo).
   Il prezzo è dichiarato e sta nel rapporto del pacchetto L: **con un posto assente la carta aspetta**, e non
   c'è più nessun timer che la chiuda al posto suo.
+- **Con un disaccordo aperto** (D-27) la dichiarazione è rifiutata — lì c'è già una scelta da fare — e sulla
+  carta il blocco non compare: due strade per lo stesso nodo sono una strada di troppo.
 - La **regola del tempo finito resta**: non si cancella niente, si sposta la decisione dai due giocatori
   all'orologio — che è esattamente quello che chiedeva il proprietario.
 - Supera la parte «timer» di [D-33](#d-33--timer-e-rivincita-delle-sfide): la rivincita dopo un disaccordo

@@ -911,3 +911,108 @@ con lo stesso topic` → KO «una terza sessione vede 2 posti collegati», con i
   - il filtro della lobby sui tabelloni pubblicati aggiunge una lettura a ogni caricamento della lobby: se il
     database non risponde si offre la lista intera del codice (e la pagina della partita dirà cosa manca);
   - **`pnpm doctor` non esiste**: se un giorno lo cerchi fra gli script, il suo contenuto è `pnpm check:ready`.
+
+## Pacchetto L · Il tempo non mette ansia — 2026-09-18
+
+Branch: `hermes/l-tempo` · Il primo commit è `59b318c`; l'ultimo è quello che contiene questo rapporto
+(`git log -1 hermes/l-tempo`).
+
+- **Fatto:** **L1** e **L2**, entrambi `[x]` per la parte che si prova con i test (il giudizio a occhio è tuo).
+  Il tempo non produce più nessun esito: `card.deadlineAt` sparisce e al suo posto la carta porta
+  **`suggestedSeconds`** (la durata suggerita: min(durata del contenuto, massimo della serata, e per la sfida
+  lampo `challenges.snakeFlashSeconds`)); `TIMER_EXPIRED` — l'azione che il **client** mandava da solo quando
+  l'orologio passava — diventa **`DECLARE_TIME_UP`**, la dichiarazione di una persona, e la carta si chiude solo
+  quando l'hanno detta **entrambi**. Gli esiti sono quelli di prima: una prova senza verdetto è non riuscita, un
+  duello passa alla doppia conferma e il minigioco si abbandona. Eventi nuovi: `TIME_UP_DECLARED` (uno dei due) e
+  `CHALLENGE_TIME_UP` (lo dicono tutti e due).
+  **L2 non ha richiesto codice di gioco:** la pausa della sfida esterna era già solo della schermata, e da L1 non
+  c'è più nessun conto da fermare. Quello che c'era ancora era il contrario — un orologio che continuava a girare
+  per un conto che non esisteva più: `game-table.tsx`, `online-table.tsx` e `scenario-card.tsx` avevano un
+  `setInterval` da un secondo che passava `now` a ogni carta e **rifaceva l'albero della partita ogni secondo**
+  per una prop che dopo L1 non legge più nessuno. Tolto (più la prop `now` da `CardPanelProps`).
+- **Il rinomino, come chiesto:** `deadlineAt` → `suggestedSeconds` tocca **8 file / 20 occorrenze**
+  (`src/engine/types.ts`, `resolution.ts`, `cards.ts`, `challenges.test.ts`, `simulation.test.ts`,
+  `src/features/cards/challenge-card.tsx`, `src/features/cards/viewer.test.ts`,
+  `src/features/game/dev-scenarios.ts`); `TIMER_EXPIRED` → `DECLARE_TIME_UP` ne tocca **11 / 24** (si aggiungono
+  `reducer.ts`, `turn.test.ts`, `src/server/game/action-schema.ts` (+ test), `src/server/diary/read-diary.ts`
+  (+ test)). **Non ho rinominato `durationSeconds` nel contenuto** (0 file): il nome era già onesto — è una durata,
+  non una scadenza — e i due nomi ora dicono due cose diverse (`durationSeconds` è l'intervallo nel contenuto,
+  `suggestedSeconds` è il numero effettivo sulla carta, già tagliato dal massimo della serata). Se lo vuoi
+  rinominato lo stesso, sono **14 file / 45 occorrenze**, quasi tutte meccaniche: si fa in un commit a parte.
+- **Verificato da me:** `pnpm check` **verde, 493 prove su 44 file** (prima 487: sei prove nuove, una riscritta);
+  `pnpm build` verde. Test nuovi che citano la regola: l'orologio che passa **non** chiude la carta e non produce
+  nessun evento, una dichiarazione sola non chiude niente, lo stesso posto non può dirlo due volte, la prova è non
+  riuscita quando lo dicono entrambi, il duello passa alla doppia conferma e si chiude con le dichiarazioni, il
+  minigioco abbandonato non accetta più mosse, la rivincita azzera le dichiarazioni, una sfida lampo non
+  suggerisce più di `snakeFlashSeconds`; con un disaccordo aperto la dichiarazione è rifiutata (lì c'è già una
+  scelta da fare, D-27) e sulla carta il blocco non compare.
+  **La prova che vale più di tutte:** la simulazione (`src/engine/simulation.test.ts`) — **200 partite giocate a
+  caso finiscono tutte senza bloccarsi**, e il test **non fa più avanzare nessun orologio**: prima, quando nessuna
+  azione era accettata, avanzava il tempo finto e provava la scadenza; adesso un'azione non accettata è subito uno
+  stallo, e stalli non ce ne sono. Detto in una riga: al motore non serve il tempo per uscire da nessuna fase.
+  (Numeri del giro: 1.642 carte sfida aperte, 1.642 chiuse, 200 partite arrivate in fondo, e le chiusure per
+  dichiarazione sono **42** — la via d'uscita c'è, e quasi sempre si finisce prima giocando.)
+- **La domanda in più che mi hai fatto — quali fasi restano senza una via d'uscita automatica dopo L1, e come si
+  esce a mano da ognuna.** È l'unico punto che può rompere una serata, quindi va letto tutto.
+  1. **Prova a giudizio** (la carta aspetta il verdetto dell'altro): *automatico: nessuno.* A mano: chi giudica
+     preme «Riuscita» / «Non riuscita», oppure **i due dicono che il tempo è finito** e la prova è non riuscita.
+  2. **Doppia conferma** (il duello aspetta le dichiarazioni): *automatico: nessuno.* A mano: ognuno dichiara chi
+     ha vinto (se non coincidono si apre il disaccordo, e lì si sceglie rivincita o moneta), oppure le due
+     dichiarazioni del tempo finito. Se restano le dichiarazioni sospese, non succede nulla: la carta aspetta.
+  3. **Duello con minigioco** (tris, forza 4, memory, quiz, riflessi): *automatico: sì, ma solo se il minigioco
+     arriva in fondo* — e un **pareggio lo fa ripartire** (tris, forza 4 e memory rigiocano la stessa carta), per
+     cui chi gioca per pareggiare può allungarla quanto vuole. A mano: le due dichiarazioni del tempo finito, che
+     abbandonano il minigioco e portano alla doppia conferma. (Quiz e riflessi finiscono sempre: cinque domande,
+     al meglio di cinque.)
+  4. **Sfida lampo del serpente**: *automatico: nessuno* — non c'è più il muro dei 30 secondi. A mano: la sfida
+     si gioca e si giudica come le altre, oppure le due dichiarazioni (prova non riuscita → si scende alla coda).
+  5. **Disaccordo** (dichiarazioni diverse): *automatico: nessuno, e non c'era nemmeno prima.* A mano: ognuno
+     sceglie rivincita o moneta; se le scelte non coincidono decide la moneta.
+  6. **Le carte che non hanno mai avuto un timer** (domanda aperta da confermare, risposta breve da giudicare,
+     imprevisto da leggere, offerta della stella, zaino pieno): *automatico: nessuno, come prima di L1.* A mano:
+     un comando ciascuna, sempre stato così.
+  **Il buco vero, ed è uno solo: un posto assente.** Prima il timer era anche la rete di sicurezza — se l'altro si
+  addormentava o perdeva la connessione, dopo al massimo la durata della carta la serata andava avanti da sola.
+  Adesso no: in una prova a giudizio, in una doppia conferma, in un disaccordo o in un duello col minigioco, **il
+  posto presente non può chiudere la carta da solo**, e se l'altro non torna la serata è ferma lì. Non ho inventato
+  una regola per coprire il caso (non me l'hai chiesta, e cambiare le regole del gioco è una tua decisione): le
+  uscite che ci sono sono **aspettare**, oppure «Nuova partita» (che abbandona la serata non conclusa). Le due
+  strade che avrei in mano se lo vuoi coprire: lasciare che **una** dichiarazione chiuda quando l'altro posto non
+  è collegato (la presenza il motore non la conosce, quindi va passata dal server: è un lavoro vero), oppure una
+  durata suggerita che, passata, **apre** la dichiarazione a uno solo invece di chiudere la carta da sé.
+- **Da verificare in locale:** Registro di [local-testing.md](local-testing.md), sezione «Pacchetto L»: **L1** (la
+  carta aperta che non scade più; la dichiarazione di uno che non chiude niente e quella di entrambi che chiude; i
+  riquadri nuovi «il tempo è finito (detto da uno solo)»; le altre sfide ancora chiudibili) e **L2** (la sfida
+  esterna lasciata in pausa qualche minuto, che al ritorno è ancora lì). Si prova tutto con `pnpm dev`, **senza
+  Docker**: è l'unico pacchetto da un po' che si verifica per intero senza database.
+- **Decisioni Derivate aggiunte:** **D-82** (il tempo è indicativo e la carta si chiude a mano: `suggestedSeconds`,
+  `DECLARE_TIME_UP`, il perché di «entrambi», e la chiusura di L2). Aggiornate anche **D-33** (superata in parte:
+  la scadenza non esiste più, la rivincita resta) e le due voci di «Ancora aperte» — **il tempo nelle attività** e
+  **la pausa della sfida esterna** — che si chiudono insieme, perché erano la stessa cosa. `docs/rules.md` (§ Sfide,
+  § Turno 4, § Minigiochi), `docs/architecture.md` (la nota sul timer e i due eventi nuovi), `docs/roadmap.md`
+  (F4-02, F4-04, F4-05, F4-06).
+- **Domande per il proprietario:**
+  1. **Chi può dire che il tempo è finito.** Ho scelto che serva la dichiarazione di **entrambi**: nessuno chiude la
+     sfida dell'altro e non serve nessuna guardia sull'orologio (un minigioco che sta perdendo non si può
+     abbandonare). Il prezzo è nella voce «fasi senza uscita automatica» sopra: se l'altro non c'è, la carta
+     aspetta. Se preferisci che basti uno dei due, è una riga in `cards.ts` — ma allora torna comodo poter
+     scappare da un minigioco, e va messa una guardia sulla durata suggerita.
+  2. **La frase sulla carta lampo** diceva «Sfida lampo da 30 secondi»: adesso dice «di circa 30 secondi» (i 30 non
+     chiudono più niente). È testo di regola, non estetica: se il tono non ti piace, cambialo pure.
+  3. **Il conto sulla carta non c'è più**, non l'ho sostituito: il vecchio leggeva `deadlineAt` e sarebbe rimasto
+     fermo a zero. Sulla carta oggi non c'è nessuna indicazione di tempo; il numero per il tuo «circa N minuti» è
+     `card.suggestedSeconds`, e `useHydrated` (D-60) è rimasto lì apposta per il conto che sale.
+  4. **`docs/specs.md`** nomina ancora il timer (tabella delle schermate, righe 206-207): non l'ho toccato perché è
+     tuo. Dimmi se lo vuoi allineato a D-82.
+- **Limiti noti / debito tecnico:**
+  - **un posto assente ferma la serata** (la voce 5 sopra): è il prezzo della dichiarazione a due, ed è una
+    decisione tua se coprirlo;
+  - le **dichiarazioni di uno solo** non finiscono nel diario: se uno dice che il tempo è finito e poi la sfida si
+    chiude per un'altra via, nel racconto della serata non resta traccia di quella dichiarazione (l'evento c'è, il
+    diario lo ignora apposta per non riempire la serata di momenti che non sono successi);
+  - le **partite già giocate** nel database locale hanno righe `game_events` con `type = "TIMER_EXPIRED"`: il
+    diario adesso le salta (non ha più quel caso) e non le racconta. Vale solo per le serate di prova in locale;
+  - la simulazione non gioca i **riflessi** (nessuna euristica per toccare al momento giusto) e non "gioca" per
+    pareggiare: le due vie d'uscita che rendono lenti quei casi restano fuori dalla prova automatica;
+  - `useHydrated` e `src/features/cards/use-hydrated.ts` restano senza nessun chiamante: li ho lasciati per il
+    conto che sale, ma se il conto non nascerà sono codice morto da togliere.

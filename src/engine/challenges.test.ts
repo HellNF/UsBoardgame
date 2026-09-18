@@ -330,6 +330,15 @@ describe("il tempo è indicativo (docs/rules.md § Sfide, D-82)", () => {
     const game = createTestGame({ challenges: [trial] });
     expect(game.reject({ type: "DECLARE_TIME_UP", seat: 1 })).toBe("Nessuna sfida aperta.");
   });
+
+  it("con un disaccordo aperto la dichiarazione è rifiutata", () => {
+    const game = openChallenge([duel]);
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 1, winner: 1 });
+    game.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 2, winner: 2 });
+    expect(game.reject({ type: "DECLARE_TIME_UP", seat: 1 })).toBe(
+      "Le dichiarazioni non coincidono: si sceglie con RESOLVE_DISPUTE.",
+    );
+  });
 });
 
 describe("sfida lampo del serpente (docs/rules.md § Turno 4, F4-06)", () => {

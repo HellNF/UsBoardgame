@@ -134,7 +134,8 @@ Ogni carta: nome, categoria, modalità, verdetto, durata suggerita, istruzioni, 
   orologio produce esiti da solo ([D-82](decisions.md#d-82--il-tempo-è-indicativo-e-la-carta-si-chiude-a-mano)).
   La carta si chiude con un verdetto, oppure con `DECLARE_TIME_UP`: quando **entrambi** i giocatori dicono che
   il tempo è finito, una prova senza verdetto è non riuscita e un duello passa alla doppia conferma (il
-  minigioco, se c'era, si abbandona). Una dichiarazione sola non chiude niente.
+  minigioco, se c'era, si abbandona). Una dichiarazione sola non chiude niente; con un **disaccordo** aperto la
+  dichiarazione è rifiutata, perché lì c'è già una scelta da fare ([D-27](decisions.md#d-27--disaccordo-rivincita-o-lancio-di-moneta)).
 - **Vittorie:** ogni sfida vinta (compresa la lampo) incrementa `challengesWon`.
 - **Emulatore DS:** sfida "a punteggio" sullo stesso livello; vince il tempo migliore; doppia conferma. Nessun
   file di gioco passa dal server.
