@@ -137,12 +137,14 @@ export const classic: BoardLayout = {
     // margine (il disco sulle 4-5 si fondeva con la cornice di sotto); e dove passano una scala
     // o un serpente i due neri diventano una macchia (era il caso delle 23 e 26).
     //
-    // In questa disposizione `crossedCells(classic)` lascia **quattro** caselle legali — 35, 46,
-    // 64, 84 — e le uniche due adiacenti sono la 35 e la 46, quindi qui non c'è posto per una
-    // forma su due caselle (la usa il generatore, F7-02). Tre decorazioni su righe diverse, senza
-    // due caselle decorate vicine: la falce resta fuori perché somiglia a `deep-moon`.
+    // Le caselle legali le dà `crossedCells`, non l'occhio: da quando scale e serpenti sono più
+    // sottili sono cinque (35, 46, 64, 65, 84) e la 64 con la 65 sono attaccate, quindi il disco
+    // torna a stare **su due caselle** — è il solo posto dove si vede che la forma è una, e il
+    // bordo coperto in mezzo va bene così (approvato dal proprietario nel pacchetto G).
+    // La 35 resta vuota perché è attaccata alla 46: due caselle decorate vicine si leggono come
+    // una forma sola. La falce resta fuori perché somiglia all'illustrazione `deep-moon`.
     { shape: "hill", cells: [46] },
-    { shape: "disc", cells: [64] },
+    { shape: "disc", cells: [64, 65] },
     { shape: "diamond", cells: [84] },
   ],
 };

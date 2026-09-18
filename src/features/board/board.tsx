@@ -4,6 +4,8 @@ import { motion } from "motion/react";
 import { useMemo } from "react";
 import { Illustration } from "@/art/illustrations";
 import {
+  LADDER_STROKE,
+  SNAKE_BODY_WIDTH,
   type BoardLayout,
   type Cell,
   type CellNumber,
@@ -258,11 +260,19 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
       <g aria-hidden="true">
         {ladders.map((ladder, index) => (
           <g key={index}>
+            {/* L'alone: tiene la scala visibile anche dove passa su una casella sfida, che è nera. */}
+            <path
+              d={ladder.rails}
+              fill="none"
+              stroke="var(--color-paper)"
+              strokeWidth={LADDER_STROKE + 5}
+              strokeLinecap="round"
+            />
             <path
               d={ladder.rails}
               fill="none"
               stroke="var(--color-ink)"
-              strokeWidth={14}
+              strokeWidth={LADDER_STROKE}
               strokeLinecap="round"
             />
             {ladder.rungs.map((rung, rungIndex) => (
@@ -273,7 +283,7 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
                   x2={rung.b.x}
                   y2={rung.b.y}
                   stroke="var(--color-ink)"
-                  strokeWidth={13}
+                  strokeWidth={LADDER_STROKE}
                   strokeLinecap="round"
                 />
                 <line
@@ -282,7 +292,7 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
                   x2={rung.b.x}
                   y2={rung.b.y}
                   stroke="var(--color-paper)"
-                  strokeWidth={6}
+                  strokeWidth={LADDER_STROKE / 2}
                   strokeLinecap="round"
                 />
               </g>
@@ -295,11 +305,20 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
       <g aria-hidden="true">
         {snakes.map((snake, index) => (
           <g key={index}>
+            {/* L'alone, come per le scale: sulle caselle nere il corpo sparirebbe. */}
+            <path
+              d={snake.body}
+              fill="none"
+              stroke="var(--color-paper)"
+              strokeWidth={SNAKE_BODY_WIDTH + 6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
             <path
               d={snake.body}
               fill="none"
               stroke="var(--color-ink)"
-              strokeWidth={26}
+              strokeWidth={SNAKE_BODY_WIDTH}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -330,11 +349,17 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
             ))}
             {/* La testa: un occhio solo e la lingua fuori. */}
             <g transform={`translate(${snake.head.x} ${snake.head.y}) rotate(${snake.headAngle})`}>
-              <ellipse rx={32} ry={25} fill="var(--color-ink)" />
-              <circle cx={8} cy={-9} r={7} fill="var(--color-paper)" />
-              <circle cx={9} cy={-9} r={3.5} fill="var(--color-ink)" />
+              <ellipse
+                rx={SNAKE_BODY_WIDTH * 1.25}
+                ry={SNAKE_BODY_WIDTH}
+                fill="var(--color-ink)"
+                stroke="var(--color-paper)"
+                strokeWidth={4}
+              />
+              <circle cx={5} cy={-5} r={4.5} fill="var(--color-paper)" />
+              <circle cx={5.5} cy={-5} r={2.2} fill="var(--color-ink)" />
               <path
-                d="M-30 0h-12l-5-6M-42 0l-5 6"
+                d="M-19 0h-9l-4-5M-28 0l-4 5"
                 fill="none"
                 stroke="var(--color-ink)"
                 strokeWidth={4}
@@ -384,14 +409,7 @@ export function Board({ board, state, names, colors, pawns, moves }: BoardProps)
               animate={{ x: route.points.map((point) => point.x), y: route.points.map((point) => point.y) }}
               transition={{ duration: route.duration, ease: "easeInOut" }}
             >
-              <Pawn
-                seat={seat}
-                name={names[seat]}
-                color={colors[seat]}
-                animal={pawns?.[seat]}
-                x={0}
-                y={0}
-              />
+              <Pawn seat={seat} name={names[seat]} color={colors[seat]} animal={pawns?.[seat]} x={0} y={0} />
             </motion.g>
           </g>
         );

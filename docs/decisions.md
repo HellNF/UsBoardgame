@@ -319,6 +319,12 @@ pedina tra 6 e un colore tra rosso `#D83B2C`, blu `#2F4B9E`, verde bosco e ocra 
 - [ ] Le risposte giuste del quiz-lampo viaggiano nello stato (D-55): chi guarda gli strumenti per sviluppatori del
       browser le vede. Per una partita fra due persone che si fidano va bene; se dovesse dare fastidio, il
       confronto va spostato sul server come per le domande a scelta multipla.
+- [ ] **Il tempo nelle attività, e quanto deve pesare.** Indicazione del proprietario (2026-09-18): il conto alla
+      rovescia è **ansiogeno** e non è quello che si cerca in una serata in due — «se esce una bella riflessione con
+      l'altra persona vale più il tempo che passa con l'altra persona che il vincere». Un limite alle attività ci
+      sta, ma non come pressione. Da decidere insieme, e riguarda tre cose che oggi hanno un timer: la carta del
+      quiz (`durationSeconds`), le sfide lampo e la pausa della sfida esterna. Le due voci qui sotto sono casi
+      particolari di questa.
 - [ ] La pausa della sfida esterna (F4-05) non ferma il timer della carta: se si va a giocare fuori il tempo
       scorre e la sfida può scadere mentre non si guarda. Per i duelli non è un guaio (alla scadenza si passa alla
       doppia conferma, che è già dove si dichiara), ma va deciso se la pausa deve fermare anche il conto.

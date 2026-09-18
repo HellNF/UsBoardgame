@@ -226,9 +226,13 @@ describe("generateBoard: quando i disegni non bastano", () => {
 });
 
 describe("generateBoard: il budget di leggibilità (I2)", () => {
-  it("il conto della classic è quello contato a mano: 17 incroci e 2 linee per casella", () => {
+  it("il conto della classic segue la larghezza delle linee: 14 incroci e 2 linee per casella", () => {
+    // Il numero dipende dall'inchiostro, non solo dalle posizioni: era 17 quando una scala era
+    // larga 62 unità e un serpente 26. Assottigliate a 40 e 16 (docs/design.md § Tabellone), le
+    // stesse scale e gli stessi serpenti sfiorano meno caselle. Se cambiano le larghezze, questo
+    // numero cambia con loro: è la misura dell'ingombro, non un vincolo della disposizione.
     const measure = measureReadability(classic);
-    expect(measure.crossings).toBe(17);
+    expect(measure.crossings).toBe(14);
     expect(measure.linesPerCell).toBe(2);
   });
 
