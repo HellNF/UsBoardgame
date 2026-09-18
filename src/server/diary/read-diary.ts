@@ -125,12 +125,32 @@ export function diaryEntriesFromEvents(events: EventRow[]): DiaryEntryRow[] {
         break;
       case "CHALLENGE_RESOLVED": {
         const winner = event.payload.seat;
+        const method = METHODS[asString(event.payload.method)] ?? "?";
+        const prize = asNumber(event.payload.prize);
+        const name = challengeName(asString(event.payload.challengeId, "?"));
+        if (winner === "draw" || winner === null) {
+          push("challenge", name, `Pareggio: nessun premio (${method}).`);
+          break;
+        }
+        // Prova non riuscita (D-59): il verdetto va all'altro posto, ma il momento è di chi ha
+        // provato, e non è una vittoria.
+        if (event.payload.won === false) {
+          entries.push({
+            id: String(event.id),
+            round,
+            seat: seat === 1 ? 2 : 1,
+            kind: "challenge",
+            title: name,
+            detail: `Prova non riuscita: nessun premio (${method}).`,
+          });
+          break;
+        }
         push(
           "challenge",
-          challengeName(asString(event.payload.challengeId, "?")),
-          winner === "draw" || winner === null
-            ? `Pareggio: nessun premio (${METHODS[asString(event.payload.method)] ?? "?"}).`
-            : `Vinta: +${plural(asNumber(event.payload.prize), "moneta", "monete")} (${METHODS[asString(event.payload.method)] ?? "?"}).`,
+          name,
+          prize > 0
+            ? `Vinta: +${plural(prize, "moneta", "monete")} (${method}).`
+            : `Vinta: nessun premio in monete (${method}).`,
         );
         break;
       }

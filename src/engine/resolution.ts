@@ -309,15 +309,14 @@ export function resolveChallenge(
   state.phase = "pre_roll";
 
   let prize = 0;
-  if (args.winner !== "draw") {
-    // In una prova il premio va solo a chi ha giocato ed è stato dichiarato riuscito.
-    const won = args.method === "judge" ? args.winner === activeSeat : true;
-    if (won) {
-      state.players[args.winner].stats.challengesWon += 1;
-      if (!card.snakeFlash) {
-        prize = card.prize;
-        gainCoins(draft, args.winner, card.prize, "challenge");
-      }
+  // In una prova il premio va solo a chi ha giocato ed è stato dichiarato riuscito: se il
+  // giudizio va all'altro posto la prova è fallita e nessuno ha vinto (D-59).
+  const won = args.winner !== "draw" && (args.method === "judge" ? args.winner === activeSeat : true);
+  if (won && args.winner !== "draw") {
+    state.players[args.winner].stats.challengesWon += 1;
+    if (!card.snakeFlash) {
+      prize = card.prize;
+      gainCoins(draft, args.winner, card.prize, "challenge");
     }
   }
   pushEvent(draft, {
@@ -326,6 +325,7 @@ export function resolveChallenge(
     challengeId: card.challengeId,
     prize,
     method: args.method,
+    won,
   });
 
   // Nella sfida lampo chi non vince scende: vincere serve a restare dov'è.

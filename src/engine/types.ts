@@ -360,10 +360,17 @@ export type GameEvent =
   | { type: "CHALLENGE_DISPUTED"; seat: null; challengeId: string }
   | {
       type: "CHALLENGE_RESOLVED";
+      /** Chi è dichiarato vincitore (in una prova: il posto a favore del quale si è deciso). */
       seat: Seat | "draw";
       challengeId: string;
       prize: number;
       method: ChallengeResultMethod;
+      /**
+       * Vero se la sfida è stata **vinta** da `seat`. In una prova giudicata "non riuscita" il
+       * verdetto va all'altro posto ma nessuno ha vinto: senza questo campo il diario
+       * raccontava una vittoria che non c'è stata (D-59).
+       */
+      won: boolean;
     }
   | { type: "CHALLENGE_REMATCH"; seat: null; challengeId: string; deadlineAt: string | null }
   | { type: "TIMER_EXPIRED"; seat: null; challengeId: string; outcome: TimeoutOutcome }

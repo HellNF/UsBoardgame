@@ -109,6 +109,38 @@ describe("diario della serata (F5-06)", () => {
     expect(entries[1].detail).toContain("dichiarazioni");
   });
 
+  it("una prova non riuscita non è una vittoria, ed è il momento di chi ha provato (D-59)", () => {
+    // Il verdetto va al posto 1 (la prova del posto 2 è fallita): il momento è del posto 2.
+    const entries = diaryEntriesFromEvents([
+      row(1, "CHALLENGE_RESOLVED", 1, {
+        challengeId: "mimo",
+        prize: 0,
+        method: "judge",
+        seat: 1,
+        won: false,
+      }),
+    ]);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].seat).toBe(2);
+    expect(entries[0].detail).toContain("Prova non riuscita");
+    expect(entries[0].detail).not.toContain("+0");
+  });
+
+  it("una sfida vinta senza premio non scrive «+0 monete»", () => {
+    const entries = diaryEntriesFromEvents([
+      row(1, "CHALLENGE_RESOLVED", 2, {
+        challengeId: "mimo",
+        prize: 0,
+        method: "judge",
+        seat: 2,
+        won: true,
+      }),
+    ]);
+    expect(entries[0].seat).toBe(2);
+    expect(entries[0].detail).toContain("nessun premio in monete");
+    expect(entries[0].detail).not.toContain("+0");
+  });
+
   it("le monete perse si vedono con il segno meno", () => {
     const entries = diaryEntriesFromEvents([row(1, "COINS_LOST", 2, { amount: 4, source: "thief" })]);
     expect(entries[0].title).toBe("−4 monete");

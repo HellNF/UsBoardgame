@@ -150,6 +150,19 @@ describe("prova (trial) giudicata dall'altro (docs/rules.md § Sfide)", () => {
     expect(game.state.players[1].stats.challengesWon).toBe(0);
     expect(game.state.players[2].stats.challengesWon).toBe(0);
   });
+
+  it("l'esito della sfida sta nell'evento: `won` distingue la prova fallita (D-59)", () => {
+    const riuscita = openChallenge([trial]);
+    riuscita.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 2, winner: 1 });
+    const vinta = riuscita.events.find((event) => event.type === "CHALLENGE_RESOLVED");
+    expect(vinta).toMatchObject({ seat: 1, won: true, prize: trial.prize });
+
+    const fallita = openChallenge([trial]);
+    fallita.do({ type: "CLAIM_CHALLENGE_RESULT", seat: 2, winner: 2 });
+    const persa = fallita.events.find((event) => event.type === "CHALLENGE_RESOLVED");
+    // Il verdetto è a favore del posto 2, ma nessuno ha vinto: il diario non deve dire «Vinta».
+    expect(persa).toMatchObject({ seat: 2, won: false, prize: 0 });
+  });
 });
 
 describe("minigioco integrato (docs/rules.md § Sfide, D-26)", () => {

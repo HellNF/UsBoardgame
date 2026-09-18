@@ -253,6 +253,7 @@ export const timerExpired: Handler<Extract<Action, { type: "TIMER_EXPIRED" }>> =
       challengeId: card.challengeId,
       prize: 0,
       method: "judge",
+      won: false,
     });
     if (card.snakeFlash) slideDownSnake(draft, ctx, activeSeat);
     resolveLadderOrSnake(draft, ctx, activeSeat);
