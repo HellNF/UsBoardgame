@@ -752,7 +752,28 @@ Poi la prova a occhio, che è quella che conta:
 9. `npx vitest run src/server/game/game-status.test.ts` → verde (le regole pure: fase → stato della riga, e
    «Nuova partita» che abbandona solo una serata non conclusa).
 
-**Esito:** _
+**Esito:** verificato il 2026-09-18 (Opus, con Docker). `pnpm db:reset` applica la migrazione nuova; `pnpm db:types`
+non cambia una riga (a patto di passare il formatter: `supabase gen types` scrive senza Prettier, quindi a prima
+vista sembra un diff da 750 righe — è solo formattazione).
+
+- `supabase/tests/finish_game.sql` eseguito su Supabase vero: **tutti i NOTICE `ok:`**, nessun ERROR, `ROLLBACK`.
+- Serata giocata fino in fondo dai due posti: la riga diventa `finished` **con** `finished_at`, nella stessa
+  azione che conclude la partita. «Partite passate» nel diario mostra la serata con data, vincitore, stelle e
+  monete — la prima volta da quando esiste il diario.
+- «Nuova partita»: la serata conclusa **resta** `finished` e resta nell'archivio; solo una serata non conclusa
+  diventa `abandoned`; la partita nuova nasce in `lobby`.
+
+**Due difetti trovati qui, corretti (D-64):**
+
+1. Appena la serata si concludeva, `currentRoom` non trovava più una partita aperta e ne **apriva una nuova da
+   sé**: bastava ricaricare una pagina qualsiasi della stanza perché la schermata finale sparisse e al suo posto
+   comparisse una lobby vuota. Ora la stanza resta sull'ultima serata conclusa finché non se ne comincia un'altra
+   (il punto 7 del Registro, scritto come «prezzo dichiarato», non vale più: la schermata finale si riapre).
+2. Il pulsante «Nuova partita» della schermata finale si limitava a passare al diario: non apriva nessuna serata.
+   Con la correzione di sopra sarebbe diventato un vicolo cieco. Ora chiama `{ action: "new" }` e porta in lobby —
+   provato dal vivo: la partita nuova compare in `lobby` e quella conclusa resta nell'archivio.
+   Terzo, minore e corretto: con la serata conclusa mostrata **e** in archivio, il diario la scriveva **due volte**
+   fra le «Partite passate».
 
 ### F2-05 · Le pedine dei minigiochi si animano (D-62)
 
@@ -772,4 +793,38 @@ Poi la prova a occhio, che è quella che conta:
 6. Con `prefers-reduced-motion` acceso (Chrome → strumenti per sviluppatori → Rendering → «Emulate CSS media
    feature: prefers-reduced-motion»): le pedine entrano **senza** animazione (docs/design.md).
 
-**Esito:** _
+**Esito:** verificato in parte il 2026-09-18 (Opus, con Docker). `npx vitest run
+src/features/minigames/queue.test.ts` verde (8 prove: i tempi e quali caselle entrano), e la coda è collegata a
+tris, forza 4 e memory, in hot seat, negli scenari e nella partita vera (`use-minigame-queue.ts`, stessa forma di
+`useMoveQueue`). Nel browser il primo clic sul tris mette il segno e passa il turno, come deve.
+**Non misurato:** i tempi in millisecondi. Chrome strozza `setTimeout` e `requestAnimationFrame` nella scheda
+guidata da qui — un'attesa di 120 ms ne diventa una di 1000 — quindi il campionamento non dice niente. È lo stesso
+limite già annotato nel pacchetto E. Resta da guardare a occhio: i punti 2, 3, 4 e 6 sono per voi, e bastano
+pochi secondi ciascuno.
+
+**Da fare, piccolo:** in `/dev/scenari` non c'è un riquadro per **memory** né per **forza 4**, quindi le due
+animazioni si vedono solo se la carta esce per caso in partita. Hermes si era offerto di aggiungerli: vale la
+pena (è la ragione per cui esiste quella pagina).
+
+### F6-02 · F6-03 · Le illustrazioni e i serpenti nuovi
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/art>: 38 disegni (35 delle domande, 7 per categoria, più 3 stelle),
+   ognuno a **48 px** (la misura che si vede davvero in una casella) e a 200 px.
+   Guardali a 48 px: è lì che si decide se un disegno si capisce.
+2. <http://localhost:3000/dev/hotseat>: il tabellone con le illustrazioni dentro le caselle, al posto delle
+   iniziali delle categorie. Le 35 caselle domanda hanno 35 disegni **diversi** (prima 16 si ripetevano).
+3. Scale e serpenti: montanti e pioli bianchi bordati di nero; il serpente ha macchie, un occhio, la lingua e la
+   coda che si assottiglia. Devono restare leggibili **sopra** le caselle nere.
+4. In produzione `/dev/art` risponde **404**, come le altre pagine `/dev` (D-43).
+5. `npx vitest run src/art src/features/board/geometry.test.ts` → verde (registro delle illustrazioni e geometrie).
+
+**Esito:** verificato il 2026-09-18 (Opus): `/dev/art` mostra tutti e 38 i disegni alle due misure, il tabellone
+della hot seat li porta nelle caselle e i serpenti nuovi si leggono anche sopra le caselle nere; `pnpm check`
+verde compresi i test geometrici, che Hermes non aveva potuto eseguire. In produzione `/dev/art` è 404.
+**Quello che resta da decidere a voi** (è il vostro mestiere, non il mio):
+
+- `deep-mirror` si legge come una racchetta o un lecca-lecca, non come uno specchio: da rifare;
+- `memories-phone` non si riconosce come un telefono (Hermes l'aveva già ridisegnato una volta);
+- `deep-roots` a 48 px somiglia ancora a un omino;
+- le **decorazioni** del tabellone (i cerchi, le mezzelune, le diagonali su più caselle) sono ancora i segnaposto
+  geometrici del pacchetto C: accanto ai disegni nuovi stonano. Fanno parte di F6-02 e non sono state fatte.
