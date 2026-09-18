@@ -580,3 +580,21 @@ data, e farlo da fuori avrebbe aperto la finestra in cui lo stato è salvato ma 
 _Effetto collaterale accettato:_ dopo la fine, rientrando nella pagina della partita non si riapre più la
 schermata finale (la riga non è più aperta): si arriva al diario, dove la serata è nell'archivio. È la voce F1
 del Registro, da guardare in locale.
+
+### D-62 · Le mosse dei minigiochi si accodano e si animano una per volta
+
+**Derivata, su indicazione del proprietario (F2-05).** Tris, forza 4 e memory ricevevano `MINIGAME_MOVED` ma
+ridisegnavano lo stato **senza transizione**: due mosse ravvicinate (l'altra schermata che muove, il tempo reale
+che consegna due righe insieme) cambiavano il disegno nello stesso istante. Ora `useMinigameQueue`
+(`src/features/minigames/use-minigame-queue.ts`) è lo stesso impianto di `useMoveQueue` per la pedina del
+tabellone: ogni stato nuovo del minigioco entra in coda e va in scena uno per volta, e gli elementi comparsi
+adesso entrano con Motion (`enteringCells` dice quali sono, `useEnterFrom` li anima e si spegne con
+`prefers-reduced-motion`).
+L'attesa la decide `revealDelay` (`src/features/minigames/queue.ts`, puro e provato): il minimo fra due scene è
+320 ms, e il memory ha i suoi tempi perché le sue mosse sono giri di carte — la prima carta del turno resta
+leggibile 600 ms, la seconda si vede accanto alla prima, e una **coppia sbagliata resta scoperta 900 ms** prima
+che la mossa successiva la richiuda.
+_Non serve nessun evento:_ ogni stato nuovo del minigioco **è** una mossa, quindi la coda si costruisce dal solo
+`state` e vale identica nella hot seat, negli scenari e nella partita vera.
+_Perché:_ con il solo disegno nuovo e nessuna coda il tabellone saltava da una posizione all'altra e in memory
+una coppia sbagliata poteva sparire prima di essere vista; la coda invece non dipende dai tempi della rete.

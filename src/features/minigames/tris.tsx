@@ -1,6 +1,8 @@
 "use client";
 
+import { motion } from "motion/react";
 import type { Seat } from "@/engine";
+import { ENTER_TRANSITION, useEnterFrom } from "@/features/minigames/enter";
 import type { MinigameViewProps } from "@/features/minigames/minigame";
 
 /** Tris: griglia 3 × 3 di pulsanti. `board` è row-major, cella 0 in alto a sinistra. */
@@ -15,10 +17,17 @@ const statusText = (winner: Seat | "draw" | null, turn: Seat, names: Record<Seat
   return `Tocca a ${names[turn]}`;
 };
 
-/** Croce per il posto 1, cerchio per il posto 2, nei colori dei giocatori. */
-function Mark({ seat }: { seat: Seat }) {
+/**
+ * Croce per il posto 1, cerchio per il posto 2, nei colori dei giocatori.
+ * `enter` è vero quando la pedina è appena entrata in scena: entra con uno scatto (F2-05).
+ */
+function Mark({ seat, enter }: { seat: Seat; enter: boolean }) {
+  const initial = useEnterFrom({ scale: 0.4, opacity: 0 }, enter);
   return (
-    <svg
+    <motion.svg
+      initial={initial}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={ENTER_TRANSITION}
       viewBox="0 0 100 100"
       fill="none"
       stroke="currentColor"
@@ -35,12 +44,12 @@ function Mark({ seat }: { seat: Seat }) {
       ) : (
         <circle cx="50" cy="50" r="30" />
       )}
-    </svg>
+    </motion.svg>
   );
 }
 
 export function TicTacToeBoard(props: MinigameViewProps) {
-  const { state, seat, onMove, names } = props;
+  const { state, seat, onMove, names, entering = [] } = props;
 
   // Il dispatcher passa sempre lo stato giusto: il controllo è solo difensivo.
   if (state.kind !== "tic-tac-toe") return null;
@@ -77,7 +86,7 @@ export function TicTacToeBoard(props: MinigameViewProps) {
                 playable ? "cursor-pointer" : "cursor-default"
               }`}
             >
-              {cell === null ? null : <Mark seat={cell} />}
+              {cell === null ? null : <Mark seat={cell} enter={entering.includes(index)} />}
             </button>
           );
         })}

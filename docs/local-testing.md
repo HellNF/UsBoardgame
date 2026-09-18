@@ -753,3 +753,23 @@ Poi la prova a occhio, che è quella che conta:
    «Nuova partita» che abbandona solo una serata non conclusa).
 
 **Esito:** _
+
+### F2-05 · Le pedine dei minigiochi si animano (D-62)
+
+1. `pnpm dev`, poi <http://localhost:3000/dev/scenari>: riquadro «Sfida duello automatica · tris», interruttore
+   su **«Tutti e due (hot seat)»**.
+2. Clicca due caselle libere a distanza di un istante (anche due clic velocissimi uno dietro l'altro): atteso
+   **due segni in fila, mai nello stesso momento** — il primo entra con uno scatto, il secondo mezzo secondo
+   dopo, e nessuna delle due mosse va persa (alla fine il tabellone ha due segni, uno per posto).
+3. Forza 4 e memory: nella hot seat (`/dev/hotseat`) quando esce `dev-forza-4` o `dev-memory` come carta sfida
+   (D-44). In forza 4 la pedina **cade** dall'alto; in memory la carta girata si scopre con un mezzo giro e una
+   **coppia sbagliata resta scoperta circa un secondo** prima di richiudersi (è `MEMORY_PEEK_MS` in
+   `src/features/minigames/queue.ts`).
+4. In partita vera (due finestre) una sfida a turni: la mossa dell'altro posto compare **una mossa per volta**,
+   anche se ne arrivano due dal tempo reale, e le due schermate non si accavallano.
+5. `npx vitest run src/features/minigames/queue.test.ts` → verde (i tempi: 320 ms fra due scene, 600/500/900 ms
+   del memory, e quali caselle si animano).
+6. Con `prefers-reduced-motion` acceso (Chrome → strumenti per sviluppatori → Rendering → «Emulate CSS media
+   feature: prefers-reduced-motion»): le pedine entrano **senza** animazione (docs/design.md).
+
+**Esito:** _

@@ -117,16 +117,17 @@ Dopo la fase 3: **prima serata giocabile**.
 - [x] **F2-04** Presence: indicatore dell'altro giocatore e `last_seen_at`.
       Nota: Presence sul canale della stanza (`{ seat, screen }`) alimenta l'indicatore in lobby e in partita;
       `players.last_seen_at` si aggiorna a ogni caricamento di pagina della stanza (lato server).
-- [~] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
+- [L] **F2-05** Animazioni guidate dagli eventi (pedina che salta, scala, serpente) con Motion.
   Nota: dal pacchetto E il percorso della pedina è **cella per cella** (`src/features/board/route.ts`: un saltello
   per ogni casella, gradino per gradino sulle scale, lungo il corpo sui serpenti) e gli eventi di spostamento si
   **accodano** e si animano in ordine, uno per volta (`src/features/board/use-move-queue.ts`), anche nella partita
-  online, dove gli eventi arrivano dal tempo reale. Anche l'ingresso della carta è un'animazione (D-57). Manca
-  l'animazione delle pedine dei minigiochi dagli eventi `MINIGAME_MOVED` (tris, forza 4 e memory cambiano stato
-  senza animazione).
+  online, dove gli eventi arrivano dal tempo reale. Anche l'ingresso della carta è un'animazione (D-57).
+  Dal pacchetto F anche le **pedine dei minigiochi** si animano (D-62): tris, forza 4 e memory passano dalla
+  stessa coda (`src/features/minigames/use-minigame-queue.ts`, con i tempi puri e provati in `queue.ts`), e in
+  memory una coppia sbagliata resta scoperta il tempo di vederla prima di richiudersi.
   Verificato in parte in locale il 2026-09-18: online nessun movimento perso né tornato indietro, con la coda che
   regge anche mentre si apre una carta. Restano il saltello cella per cella guardato a occhio in due (da una
-  scheda di sfondo non si può campionare) e le pedine dei minigiochi (voce F2-05 del Registro).
+  scheda di sfondo non si può campionare) e le pedine dei minigiochi in partita vera: la voce F2-05 del Registro.
 
 ## Fase 3 · Domande — _prima serata giocabile_
 

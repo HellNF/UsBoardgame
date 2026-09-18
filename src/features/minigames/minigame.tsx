@@ -19,6 +19,11 @@ export type MinigameViewProps = {
   seat: Seat | null;
   onMove: (move: unknown) => void;
   names: Record<Seat, string>;
+  /**
+   * Le caselle entrate in scena adesso, da animare (indici come da `enteringCells`,
+   * `src/features/minigames/queue.ts`): la mossa è appena arrivata e la sua pedina entra.
+   */
+  entering?: number[];
 };
 
 /** Sceglie il tabellone in base a `state.kind` (unione chiusa del motore). */
